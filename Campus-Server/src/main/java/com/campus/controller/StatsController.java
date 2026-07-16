@@ -95,4 +95,16 @@ public class StatsController {
         );
         return Result.ok(result);
     }
+
+    @GetMapping("/hometown-stats")
+    public Result<List<Map<String, Object>>> hometownStats() {
+        List<Map<String, Object>> result = userMapper.selectMaps(
+            new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.campus.entity.User>()
+                .select("hometown as name, count(*) as value")
+                .ne("hometown", "")
+                .isNotNull("hometown")
+                .groupBy("hometown")
+        );
+        return Result.ok(result);
+    }
 }

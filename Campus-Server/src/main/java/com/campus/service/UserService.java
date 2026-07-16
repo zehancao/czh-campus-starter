@@ -73,6 +73,7 @@ public class UserService {
         user.setCollege(req.getCollege());
         user.setMajor(req.getMajor());
         user.setClassId(classId);
+        user.setClassName(req.getClassName());
         user.setHometown(req.getHometown() != null ? req.getHometown() : "");
         user.setRole("student");
         user.setCreditScore(100);

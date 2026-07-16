@@ -16,6 +16,7 @@ public class User {
     private String major;
     private String grade;
     private Long classId;
+    private String className;
     private String phone;
     private String hometown;
     private String role;
@@ -42,6 +43,8 @@ public class User {
     public void setGrade(String grade) { this.grade = grade; }
     public Long getClassId() { return classId; }
     public void setClassId(Long classId) { this.classId = classId; }
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
     public String getHometown() { return hometown; }

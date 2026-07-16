@@ -3,7 +3,7 @@
 struct PublishPage {
   build() {
     Column() {
-      Text('发布商品 - 待实现')
+      Text('何隆 - 发布商品 - 待实现')
         .fontSize(20)
     }
     .width('100%')

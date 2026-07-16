@@ -909,7 +909,7 @@ struct MainPage {
       this.aiScroller.scrollEdge(Edge.Bottom);
     }, 100);
 
-    const baseUrl: string = 'http://192.168.3.22:8000';
+    const baseUrl: string = 'http://192.168.1.3:8000';
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
     let fullContent: string = '';
