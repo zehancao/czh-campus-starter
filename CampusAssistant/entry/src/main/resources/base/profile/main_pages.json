@@ -18,6 +18,8 @@
     "pages/MyLostFoundPage",
     "pages/MyHistoryPage",
     "pages/PasswordChangePage",
+    "pages/EditProfilePage",
+    "pages/AddCoursePage",
     "pages/ClubActivityListPage",
     "pages/ClubActivityPublishPage",
     "pages/ClubActivityDetailPage",

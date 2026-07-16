@@ -5,6 +5,12 @@ import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
+import { router } from '@kit.ArkUI';
+
+const WEEK_DAY_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
+const SCHEDULE_CARD_BG: string[] = ['#EEF0FF', '#E9F6FF', '#FFF5D8', '#FDECF5', '#EAF8EA', '#FFF0E1', '#F2EDFF', '#EDF3F5'];
+const SCHEDULE_CARD_FG: string[] = ['#6A63B6', '#2F8DB8', '#C69212', '#C85796', '#36A957', '#CB7A1B', '#7B61C8', '#7A8A92'];
+const SCHEDULE_SECTION_HEIGHT: number = 66;
 
 @Entry
 @Component
@@ -19,10 +25,24 @@ struct MainPage {
   @State scheduleGrid: CourseSchedule[][] = [];
   @State isRefreshing: boolean = false;
   @State currentWeek: number = 1;
+  @State todayWeek: number = 1;
   @State semesterWeekCount: number = 20;
+  @State semesterName: string = '';
+  @State semesterStartDate: string = '';
   @State unreadCount: number = 0;
   @State categories: ProductCategory[] = [];
   @State selectedCategoryId: number = 0;
+  @State showAddCourseForm: boolean = false;
+  @State showCourseDetail: boolean = false;
+  @State selectedCourse: CourseSchedule = new CourseSchedule();
+  @State addCourseName: string = '';
+  @State addClassroom: string = '';
+  @State addTeacherName: string = '';
+  @State addDayOfWeek: number = 1;
+  @State addStartSection: number = 1;
+  @State addEndSection: number = 2;
+  @State addStartWeek: number = 1;
+  @State addEndWeek: number = 20;
   private mainWsCallback: MessageCallback | null = null;
   @State aiMessages: AiMsg[] = [];
   @State aiInputText: string = '';
@@ -57,6 +77,26 @@ struct MainPage {
     this.userInfo = store.userInfo;
     this.loadProducts();
     this.loadMyActivities();
+    // 接收 AddCoursePage 返回的手动添课数据
+    const hasPending = AppStorage.Get<boolean>('pending_hasManualCourse');
+    if (hasPending === true) {
+      AppStorage.Delete('pending_hasManualCourse');
+      const item: CourseSchedule = new CourseSchedule();
+      item.id = Date.now();
+      item.courseName = AppStorage.Get<string>('pending_courseName') ?? '';
+      item.classroom = AppStorage.Get<string>('pending_classroom') ?? '';
+      item.teacherName = AppStorage.Get<string>('pending_teacherName') ?? '';
+      item.dayOfWeek = AppStorage.Get<number>('pending_dayOfWeek') ?? 1;
+      item.startSection = AppStorage.Get<number>('pending_startSection') ?? 1;
+      item.endSection = AppStorage.Get<number>('pending_endSection') ?? 2;
+      item.startWeek = AppStorage.Get<number>('pending_startWeek') ?? 1;
+      item.endWeek = AppStorage.Get<number>('pending_endWeek') ?? 20;
+      item.weekParity = AppStorage.Get<string>('pending_weekParity') ?? 'all';
+      item.colorIndex = this.scheduleList.length % SCHEDULE_CARD_BG.length;
+      this.scheduleList.push(item);
+      this.updateScheduleGrid();
+      this.getUIContext().getPromptAction().showToast({ message: '课程已添加到当前课表' });
+    }
   }
 
   aboutToDisappear(): void {
@@ -73,6 +113,12 @@ struct MainPage {
     }
   }
 
+  private openEditProfilePage(): void {
+    router.pushUrl({ url: 'pages/EditProfilePage' }).catch(() => {
+      this.getUIContext().getPromptAction().showToast({ message: '打开编辑资料失败，请重新编译后再试' });
+    });
+  }
+
   private async loadCategories(): Promise<void> {
     const result: ApiResult = await ApiService.getProductCategories();
     if (result.code === 200 && result.data !== undefined) {
@@ -84,8 +130,12 @@ struct MainPage {
     const result: ApiResult = await ApiService.getCurrentSemester();
     if (result.code === 200 && result.data !== undefined) {
       const semester: Semester = ApiService.parseSemester(result.data);
+      this.semesterName = semester.name;
+      this.semesterStartDate = semester.startDate;
       this.semesterWeekCount = semester.weekCount;
-      this.currentWeek = this.calcCurrentWeek(semester.startDate, semester.weekCount);
+      this.addEndWeek = semester.weekCount;
+      this.todayWeek = this.calcCurrentWeek(semester.startDate, semester.weekCount);
+      this.currentWeek = this.todayWeek;
     }
     this.loadSchedule();
   }
@@ -121,7 +171,7 @@ struct MainPage {
     const today: number = new Date().getDay();
     const dayOfWeek: number = today === 0 ? 7 : today;
     const filtered: CourseSchedule[] = this.scheduleList.filter(
-      (item: CourseSchedule) => item.startWeek <= this.currentWeek && item.endWeek >= this.currentWeek);
+      (item: CourseSchedule) => this.isCourseActiveInWeek(item, this.currentWeek));
     this.todayCourses = filtered.filter((item: CourseSchedule) => item.dayOfWeek === dayOfWeek);
     this.scheduleGrid = [];
     for (let day = 1; day <= 7; day++) {
@@ -552,118 +602,734 @@ struct MainPage {
     }
   }
 
+  private isCourseActiveInWeek(item: CourseSchedule, week: number): boolean {
+    if (item.startWeek > week || item.endWeek < week) {
+      return false;
+    }
+    if (item.weekParity === 'odd') {
+      return week % 2 === 1;
+    }
+    if (item.weekParity === 'even') {
+      return week % 2 === 0;
+    }
+    return true;
+  }
+
+  private semesterTitle(): string {
+    return this.semesterName.length > 0 ? this.semesterName : '当前学期';
+  }
+
+  private weekDate(dayIndex: number): Date | null {
+    if (this.semesterStartDate.length < 10) {
+      return null;
+    }
+    const parts: string[] = this.semesterStartDate.split('-');
+    if (parts.length < 3) {
+      return null;
+    }
+    const date: Date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    date.setDate(date.getDate() + (this.currentWeek - 1) * 7 + dayIndex);
+    return date;
+  }
+
+  private weekMonthText(): string {
+    const date: Date | null = this.weekDate(0);
+    if (date === null) {
+      return '';
+    }
+    return `${date.getMonth() + 1}月`;
+  }
+
+  private weekDayText(dayIndex: number): string {
+    const date: Date | null = this.weekDate(dayIndex);
+    if (date === null) {
+      return `${dayIndex + 1}`;
+    }
+    return `${date.getDate()}`;
+  }
+
+  private courseAtStart(day: number, section: number): CourseSchedule {
+    for (let i = 0; i < this.scheduleList.length; i++) {
+      const item: CourseSchedule = this.scheduleList[i];
+      if (item.dayOfWeek === day && item.startSection === section && this.isCourseActiveInWeek(item, this.currentWeek)) {
+        return item;
+      }
+    }
+    return new CourseSchedule();
+  }
+
+  private hasCourseCovering(day: number, section: number): boolean {
+    for (let i = 0; i < this.scheduleList.length; i++) {
+      const item: CourseSchedule = this.scheduleList[i];
+      if (item.dayOfWeek === day && item.startSection < section && item.endSection >= section && this.isCourseActiveInWeek(item, this.currentWeek)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private courseDuration(item: CourseSchedule): number {
+    const duration: number = item.endSection - item.startSection + 1;
+    return duration > 0 ? duration : 1;
+  }
+
+  private courseBg(item: CourseSchedule): string {
+    return SCHEDULE_CARD_BG[Math.abs(item.colorIndex) % SCHEDULE_CARD_BG.length];
+  }
+
+  private courseFg(item: CourseSchedule): string {
+    return SCHEDULE_CARD_FG[Math.abs(item.colorIndex) % SCHEDULE_CARD_FG.length];
+  }
+
+  private sectionStartTime(section: number): string {
+    if (section >= 1 && section <= Constants.SECTION_TIMES.length) {
+      return Constants.SECTION_TIMES[section - 1][0];
+    }
+    return '';
+  }
+
+  private sectionEndTime(section: number): string {
+    if (section >= 1 && section <= Constants.SECTION_TIMES.length) {
+      return Constants.SECTION_TIMES[section - 1][1];
+    }
+    return '';
+  }
+
+  private courseTimeText(item: CourseSchedule): string {
+    return `${this.sectionStartTime(item.startSection)}-${this.sectionEndTime(item.endSection)}`;
+  }
+
+  private courseWeekText(item: CourseSchedule): string {
+    let text: string = `第${item.startWeek}-${item.endWeek}周`;
+    if (item.weekParity === 'odd') {
+      text += ' 单周';
+    }
+    if (item.weekParity === 'even') {
+      text += ' 双周';
+    }
+    return text;
+  }
+
+  private courseBriefText(item: CourseSchedule): string {
+    const room: string = item.classroom.length > 0 ? item.classroom : '教室未填';
+    return `${item.courseName} @${room}`;
+  }
+
+  private showWeekPicker(): void {
+    const weeks: string[] = [];
+    for (let i = 1; i <= this.semesterWeekCount; i++) {
+      weeks.push(`第${i}周`);
+    }
+    let currentIdx: number = this.currentWeek - 1;
+    TextPickerDialog.show({
+      range: weeks,
+      selected: currentIdx,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < weeks.length) {
+          this.currentWeek = idx + 1;
+          this.updateScheduleGrid();
+        }
+      }
+    });
+  }
+
+  private backToCurrentWeek(): void {
+    this.currentWeek = this.todayWeek;
+    this.updateScheduleGrid();
+  }
+
+  private openCourseDetail(item: CourseSchedule): void {
+    this.selectedCourse = item;
+    this.showCourseDetail = true;
+  }
+
+  private closeCourseDetail(): void {
+    this.showCourseDetail = false;
+    this.selectedCourse = new CourseSchedule();
+  }
+
+  private showAddCourse(): void {
+    router.pushUrl({
+      url: 'pages/AddCoursePage',
+      params: {
+        semesterWeekCount: this.semesterWeekCount,
+        semesterTitle: this.semesterTitle()
+      }
+    }).catch((err: Error) => {
+      console.error('[AddCourse] navigate failed:', err.message);
+      this.getUIContext().getPromptAction().showToast({ message: '打开添课页失败，请重新编译' });
+    });
+  }
+
+  private hideAddCourse(): void {
+    this.showAddCourseForm = false;
+  }
+
+  private showAddDayPicker(): void {
+    let currentIdx: number = this.addDayOfWeek - 1;
+    TextPickerDialog.show({
+      range: WEEK_DAY_LABELS,
+      selected: currentIdx,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < WEEK_DAY_LABELS.length) {
+          this.addDayOfWeek = idx + 1;
+        }
+      }
+    });
+  }
+
+  private showAddStartSectionPicker(): void {
+    const options: string[] = [];
+    for (let i = 1; i <= Constants.SECTION_TIMES.length; i++) {
+      options.push(`第${i}节 ${this.sectionStartTime(i)}-${this.sectionEndTime(i)}`);
+    }
+    TextPickerDialog.show({
+      range: options,
+      selected: this.addStartSection - 1,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < options.length) {
+          this.addStartSection = idx + 1;
+          if (this.addEndSection < this.addStartSection) {
+            this.addEndSection = this.addStartSection;
+          }
+        }
+      }
+    });
+  }
+
+  private showAddEndSectionPicker(): void {
+    const options: string[] = [];
+    for (let i = 1; i <= Constants.SECTION_TIMES.length; i++) {
+      options.push(`第${i}节 ${this.sectionStartTime(i)}-${this.sectionEndTime(i)}`);
+    }
+    TextPickerDialog.show({
+      range: options,
+      selected: this.addEndSection - 1,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < options.length) {
+          this.addEndSection = idx + 1;
+          if (this.addEndSection < this.addStartSection) {
+            this.addStartSection = this.addEndSection;
+          }
+        }
+      }
+    });
+  }
+
+  private showAddStartWeekPicker(): void {
+    const options: string[] = [];
+    for (let i = 1; i <= this.semesterWeekCount; i++) {
+      options.push(`第${i}周`);
+    }
+    TextPickerDialog.show({
+      range: options,
+      selected: this.addStartWeek - 1,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < options.length) {
+          this.addStartWeek = idx + 1;
+          if (this.addEndWeek < this.addStartWeek) {
+            this.addEndWeek = this.addStartWeek;
+          }
+        }
+      }
+    });
+  }
+
+  private showAddEndWeekPicker(): void {
+    const options: string[] = [];
+    for (let i = 1; i <= this.semesterWeekCount; i++) {
+      options.push(`第${i}周`);
+    }
+    TextPickerDialog.show({
+      range: options,
+      selected: this.addEndWeek - 1,
+      onAccept: (value: TextPickerResult) => {
+        const idx: number = value.index as number;
+        if (idx >= 0 && idx < options.length) {
+          this.addEndWeek = idx + 1;
+          if (this.addEndWeek < this.addStartWeek) {
+            this.addStartWeek = this.addEndWeek;
+          }
+        }
+      }
+    });
+  }
+
+  private saveManualCourse(): void {
+    if (this.addCourseName.trim().length === 0) {
+      this.getUIContext().getPromptAction().showToast({ message: '请输入课程名称' });
+      return;
+    }
+    const item: CourseSchedule = new CourseSchedule();
+    item.id = Date.now();
+    item.courseName = this.addCourseName.trim();
+    item.classroom = this.addClassroom.trim();
+    item.teacherName = this.addTeacherName.trim();
+    item.dayOfWeek = this.addDayOfWeek;
+    item.startSection = this.addStartSection;
+    item.endSection = this.addEndSection;
+    item.startWeek = this.addStartWeek;
+    item.endWeek = this.addEndWeek;
+    item.weekParity = 'all';
+    item.colorIndex = this.scheduleList.length % SCHEDULE_CARD_BG.length;
+    this.scheduleList.push(item);
+    this.updateScheduleGrid();
+    this.showAddCourseForm = false;
+    this.getUIContext().getPromptAction().showToast({ message: '课程已添加到当前课表' });
+  }
+
   @Builder
   ScheduleContent() {
-    Column() {
-      Row() {
-        Text('课程表')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
-        Blank()
-        Row() {
-          Text('<')
-            .fontSize(18)
-            .fontColor(this.currentWeek > 1 ? '#4A90D9' : '#CCCCCC')
-            .padding({ left: 12, right: 8, top: 4, bottom: 4 })
+    Stack() {
+      if (this.showAddCourseForm) {
+        this.AddCourseContent()
+      } else {
+        Column() {
+          this.ScheduleHeader()
+          this.ScheduleWeekHeader()
+          this.ScheduleGrid()
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#FFFFFF')
+
+        if (this.currentWeek !== this.todayWeek) {
+          Button('切回本周')
+            .height(48)
+            .fontSize(17)
+            .fontColor(Color.White)
+            .backgroundColor('#FF6B4A')
+            .borderRadius(24)
+            .padding({ left: 24, right: 24 })
+            .position({ x: 292, y: 610 })
             .onClick(() => {
-              if (this.currentWeek > 1) {
-                this.currentWeek--;
-                this.updateScheduleGrid();
-              }
-            })
-          Text(`第${this.currentWeek}周`)
-            .fontSize(14)
-            .fontColor('#4A90D9')
-            .fontWeight(FontWeight.Medium)
-          Text('>')
-            .fontSize(18)
-            .fontColor(this.currentWeek < this.semesterWeekCount ? '#4A90D9' : '#CCCCCC')
-            .padding({ left: 8, right: 12, top: 4, bottom: 4 })
-            .onClick(() => {
-              if (this.currentWeek < this.semesterWeekCount) {
-                this.currentWeek++;
-                this.updateScheduleGrid();
-              }
+              this.backToCurrentWeek();
             })
         }
-        .alignItems(VerticalAlign.Center)
-      }
-      .width('100%')
-      .padding({ left: 20, right: 20, top: 16, bottom: 12 })
 
-      Row() {
-        ForEach(['一', '二', '三', '四', '五', '六', '日'], (day: string) => {
-          Column() {
-            Text(day)
-              .fontSize(13)
-              .fontColor('#999999')
-          }
-          .layoutWeight(1)
-          .alignItems(HorizontalAlign.Center)
-        }, (day: string) => day)
-      }
-      .width('100%')
-      .padding({ left: 48, right: 8, bottom: 4 })
-
-      Scroll() {
-        Row() {
-          Column() {
-            ForEach([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], (section: number) => {
-              Column() {
-                Text(`${section}`)
-                  .fontSize(11)
-                  .fontColor('#CCCCCC')
-              }
-              .width(40)
-              .height(60)
-              .justifyContent(FlexAlign.Center)
-            }, (section: number) => `${section}`)
-          }
-          .width(40)
-
-          Row() {
-            ForEach([0, 1, 2, 3, 4, 5, 6], (dayIdx: number) => {
-              Column() {
-                ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], (secIdx: number) => {
-                  Stack() {
-                    if (this.scheduleGrid.length > dayIdx && this.scheduleGrid[dayIdx].length > secIdx && this.scheduleGrid[dayIdx][secIdx].courseName.length > 0) {
-                      Column() {
-                        Text(this.scheduleGrid[dayIdx][secIdx].courseName)
-                          .fontSize(10)
-                          .fontColor(Color.White)
-                          .maxLines(2)
-                          .textOverflow({ overflow: TextOverflow.Ellipsis })
-                        Text(this.scheduleGrid[dayIdx][secIdx].classroom)
-                          .fontSize(8)
-                          .fontColor('#FFFFFFCC')
-                          .margin({ top: 2 })
-                      }
-                      .width('100%')
-                      .height('100%')
-                      .padding({ left: 2, right: 2, top: 2, bottom: 2 })
-                      .backgroundColor(Constants.SCHEDULE_COLORS[this.scheduleGrid[dayIdx][secIdx].colorIndex % Constants.SCHEDULE_COLORS.length])
-                      .borderRadius(4)
-                      .justifyContent(FlexAlign.Center)
-                    }
-                  }
-                  .width('100%')
-                  .height(60)
-                  .padding(1)
-                }, (secIdx: number) => `${dayIdx}-${secIdx}`)
-              }
-              .layoutWeight(1)
-            }, (dayIdx: number) => `${dayIdx}`)
-          }
-          .layoutWeight(1)
+        if (this.showCourseDetail) {
+          this.CourseDetailOverlay()
         }
       }
-      .scrollBar(BarState.Off)
-      .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor('#FFFFFF')
+  }
+
+  @Builder
+  ScheduleHeader() {
+    Row() {
+      Column() {
+        Row() {
+          Text(`第${this.currentWeek}周`)
+            .fontSize(22)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#EF4A48')
+          Text('▼')
+            .fontSize(16)
+            .fontColor('#20242A')
+            .margin({ left: 8 })
+        }
+        .onClick(() => {
+          this.showWeekPicker();
+        })
+        Text(this.semesterTitle())
+          .fontSize(14)
+          .fontColor('#999999')
+          .margin({ top: 3 })
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+
+      Text('+')
+        .fontSize(30)
+        .fontColor(Color.White)
+        .fontWeight(FontWeight.Bold)
+        .width(42)
+        .height(42)
+        .textAlign(TextAlign.Center)
+        .backgroundColor('#080B12')
+        .borderRadius(10)
+        .onClick(() => {
+          this.showAddCourse();
+        })
+    }
+    .width('100%')
+    .height(58)
+    .padding({ left: 12, right: 14, top: 2, bottom: 2 })
+    .backgroundColor(Color.White)
+  }
+
+  @Builder
+  ScheduleWeekHeader() {
+    Row() {
+      Column() {
+        Text(this.weekMonthText().length > 0 ? this.weekMonthText().replace('月', '') : '')
+          .fontSize(17)
+          .fontColor('#333333')
+        Text('月')
+          .fontSize(17)
+          .fontColor('#333333')
+          .margin({ top: 2 })
+      }
+      .width(50)
+      .alignItems(HorizontalAlign.Center)
+
+      ForEach(WEEK_DAY_LABELS, (day: string, index: number) => {
+        Column() {
+          Text(day)
+            .fontSize(19)
+            .fontColor('#333333')
+          Text(this.weekDayText(index))
+            .fontSize(15)
+            .fontColor('#999999')
+            .margin({ top: 8 })
+        }
+        .layoutWeight(1)
+        .height(58)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      }, (day: string, index: number) => `${index}-${day}`)
+    }
+    .width('100%')
+    .height(60)
+    .border({ width: 1, color: '#EEEEEE' })
+    .backgroundColor(Color.White)
+  }
+
+  @Builder
+  ScheduleGrid() {
+    Scroll() {
+      Row() {
+        Column() {
+          ForEach([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], (section: number) => {
+            Column() {
+              Text(`${section}`)
+                .fontSize(18)
+                .fontColor('#333333')
+              Text(this.sectionStartTime(section))
+                .fontSize(11)
+                .fontColor('#999999')
+                .margin({ top: 3 })
+              Text(this.sectionEndTime(section))
+                .fontSize(11)
+                .fontColor('#999999')
+                .margin({ top: 1 })
+            }
+            .width(50)
+            .height(SCHEDULE_SECTION_HEIGHT)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+          }, (section: number) => `${section}`)
+        }
+        .width(50)
+
+        Row() {
+          ForEach([1, 2, 3, 4, 5, 6, 7], (day: number) => {
+            Column() {
+              ForEach([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], (section: number) => {
+                Stack() {
+                  Divider()
+                    .height(1)
+                    .color('#F0F0F0')
+                    .width('100%')
+                    .position({ x: 0, y: SCHEDULE_SECTION_HEIGHT - 1 })
+                  if (!this.hasCourseCovering(day, section)) {
+                    this.ScheduleCell(day, section)
+                  }
+                }
+                .width('100%')
+                .height(SCHEDULE_SECTION_HEIGHT)
+              }, (section: number) => `${day}-${section}`)
+            }
+            .layoutWeight(1)
+          }, (day: number) => `${day}`)
+        }
+        .layoutWeight(1)
+        .padding({ right: 6 })
+      }
+      .width('100%')
+    }
+    .layoutWeight(1)
+    .scrollBar(BarState.Off)
+    .edgeEffect(EdgeEffect.Spring)
+  }
+
+  @Builder
+  ScheduleCell(day: number, section: number) {
+    Column() {
+      if (this.courseAtStart(day, section).courseName.length > 0) {
+        this.ScheduleCourseCard(this.courseAtStart(day, section))
+      }
+    }
+    .width('100%')
+    .height(SCHEDULE_SECTION_HEIGHT)
+  }
+
+  @Builder
+  ScheduleCourseCard(item: CourseSchedule) {
+    Column() {
+      Text(this.courseBriefText(item))
+        .fontSize(12)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.courseFg(item))
+        .lineHeight(18)
+        .maxLines(this.courseDuration(item) <= 1 ? 2 : 5)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
+    .width('92%')
+    .height(this.courseDuration(item) * SCHEDULE_SECTION_HEIGHT - 8)
+    .padding({ left: 7, right: 5, top: 8, bottom: 6 })
+    .backgroundColor(this.courseBg(item))
+    .border({ width: 1, color: this.courseFg(item) })
+    .borderRadius(8)
+    .margin({ left: 3, right: 3, top: 4 })
+    .alignItems(HorizontalAlign.Start)
+    .onClick(() => {
+      this.openCourseDetail(item);
+    })
+  }
+
+  @Builder
+  CourseDetailOverlay() {
+    Stack() {
+      Column()
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#FFFFFFDD')
+        .onClick(() => {
+          this.closeCourseDetail();
+        })
+
+      Column() {
+        this.CourseDetailCard(this.selectedCourse, false)
+        if (this.selectedCourse.weekParity !== 'all') {
+          this.CourseDetailCard(this.selectedCourse, true)
+        }
+      }
+      .width('90%')
+      .position({ x: 20, y: 245 })
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
+  CourseDetailCard(item: CourseSchedule, parityCard: boolean) {
+    Column() {
+      Row() {
+        if (parityCard) {
+          Text('非本周')
+            .fontSize(14)
+            .fontColor(Color.White)
+            .backgroundColor('#222222')
+            .borderRadius(4)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .margin({ right: 8 })
+        }
+        Text(item.courseName.length > 0 ? item.courseName : '课程名称未录入')
+          .fontSize(20)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#111111')
+          .layoutWeight(1)
+        Text('编辑')
+          .fontSize(15)
+          .fontColor('#999999')
+          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+          .backgroundColor(Color.White)
+          .borderRadius(5)
+      }
+      .width('100%')
+
+      Text(this.courseWeekText(item))
+        .fontSize(17)
+        .fontColor('#333333')
+        .width('100%')
+        .margin({ top: 18 })
+      Text(`周${WEEK_DAY_LABELS[item.dayOfWeek - 1]} | 第${item.startSection}-${item.endSection}节 | ${this.courseTimeText(item)}`)
+        .fontSize(15)
+        .fontColor('#999999')
+        .width('100%')
+        .margin({ top: 12 })
+      Text(`教室：${item.classroom.length > 0 ? item.classroom : '未填写'}`)
+        .fontSize(15)
+        .fontColor('#999999')
+        .width('100%')
+        .margin({ top: 12 })
+      Text(`老师：${item.teacherName.length > 0 ? item.teacherName : '未填写'}`)
+        .fontSize(15)
+        .fontColor('#999999')
+        .width('100%')
+        .margin({ top: 12 })
+    }
+    .width('100%')
+    .padding(24)
+    .backgroundColor('#EEF3F6')
+    .borderRadius(14)
+    .margin({ bottom: 18 })
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  AddCourseContent() {
+    Column() {
+      Row() {
+        Text('<')
+          .fontSize(30)
+          .fontColor('#20242A')
+          .width(50)
+          .onClick(() => {
+            this.hideAddCourse();
+          })
+        Text('添加课程')
+          .fontSize(20)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#222222')
+          .layoutWeight(1)
+          .textAlign(TextAlign.Center)
+        Text('保存')
+          .fontSize(16)
+          .fontColor('#5A82D9')
+          .width(50)
+          .textAlign(TextAlign.End)
+          .onClick(() => {
+            this.saveManualCourse();
+          })
+      }
+      .width('100%')
+      .height(52)
+      .padding({ left: 18, right: 18 })
+      .border({ width: 1, color: '#EEEEEE' })
+
+      Scroll() {
+        Column() {
+          Row() {
+            Column() {
+              Text('当前学期为')
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#3D6FB8')
+              Text('返回课程表页面即可切换学期')
+                .fontSize(14)
+                .fontColor('#3D6FB8')
+                .margin({ top: 12 })
+            }
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+            Text(this.semesterTitle())
+              .fontSize(18)
+              .fontColor('#3D6FB8')
+          }
+          .width('100%')
+          .padding(20)
+          .backgroundColor('#F1F7FF')
+          .borderRadius(3)
+          .margin({ top: 8, bottom: 18 })
+
+          this.AddInputRow('课程名称', '请输入添加的课程名称', this.addCourseName, 1)
+          this.AddSelectRow('课程周期', `第${this.addStartWeek}-${this.addEndWeek}周`, 1)
+          this.AddSelectRow('课程节数', `周${WEEK_DAY_LABELS[this.addDayOfWeek - 1]} 第${this.addStartSection}-${this.addEndSection}节`, 2)
+          this.AddInputRow('教室地点', '请输入教室地点', this.addClassroom, 2)
+          this.AddInputRow('任课老师', '请输入任课老师', this.addTeacherName, 3)
+
+          Button('如果有多个上课时间，点此增加上课时间  +')
+            .width('100%')
+            .height(58)
+            .fontSize(17)
+            .fontColor('#5A82D9')
+            .backgroundColor('#EEF4FF')
+            .borderRadius(8)
+            .margin({ top: 34 })
+            .onClick(() => {
+              this.getUIContext().getPromptAction().showToast({ message: '当前版本先支持一个上课时间' });
+            })
+        }
+        .width('100%')
+        .padding({ left: 28, right: 28, bottom: 30 })
+      }
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Color.White)
+  }
+
+  @Builder
+  AddInputRow(label: string, placeholder: string, value: string, type: number) {
+    Row() {
+      Text(label)
+        .fontSize(19)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#222222')
+        .width(104)
+      TextInput({ placeholder: placeholder, text: value })
+        .layoutWeight(1)
+        .height(52)
+        .fontSize(16)
+        .textAlign(TextAlign.End)
+        .backgroundColor('#00000000')
+        .placeholderColor('#D0D0D0')
+        .onChange((val: string) => {
+          if (type === 1) {
+            this.addCourseName = val;
+          }
+          if (type === 2) {
+            this.addClassroom = val;
+          }
+          if (type === 3) {
+            this.addTeacherName = val;
+          }
+        })
+    }
+    .width('100%')
+    .height(70)
+    .border({ width: 1, color: '#EEEEEE' })
+  }
+
+  @Builder
+  AddSelectRow(label: string, value: string, type: number) {
+    Row() {
+      Text(label)
+        .fontSize(19)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#222222')
+        .width(104)
+      Blank()
+      Text(value)
+        .fontSize(17)
+        .fontColor(type === 2 ? '#E45A73' : '#666666')
+      Text('>')
+        .fontSize(24)
+        .fontColor('#BBBBBB')
+        .margin({ left: 10 })
+    }
+    .width('100%')
+    .height(70)
+    .border({ width: 1, color: '#EEEEEE' })
+    .onClick(() => {
+      if (type === 1) {
+        this.showAddStartWeekPicker();
+        setTimeout(() => {
+          this.showAddEndWeekPicker();
+        }, 400);
+      }
+      if (type === 2) {
+        this.showAddDayPicker();
+        setTimeout(() => {
+          this.showAddStartSectionPicker();
+        }, 400);
+        setTimeout(() => {
+          this.showAddEndSectionPicker();
+        }, 800);
+      }
+    })
   }
 
   @State searchKeyword: string = '';
@@ -909,7 +1575,7 @@ struct MainPage {
       this.aiScroller.scrollEdge(Edge.Bottom);
     }, 100);
 
-    const baseUrl: string = 'http://192.168.1.3:8000';
+    const baseUrl: string = 'http://192.168.3.22:8000';
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
     let fullContent: string = '';
@@ -1097,22 +1763,7 @@ struct MainPage {
                 .backgroundColor('#4A90D9')
             }
           }
-          .onClick(async () => {
-            try {
-              const uris: string[] = await ApiService.pickImages();
-              if (uris.length > 0) {
-                const url: string = await ApiService.uploadAvatar(uris[0]);
-                if (url.length > 0 && !url.startsWith('ERROR:')) {
-                  this.userInfo.avatar = url;
-                  const store: AppStore = AppStore.getInstance();
-                  store.userInfo = this.userInfo;
-                  this.getUIContext().getPromptAction().showToast({ message: '头像已更新' });
-                }
-              }
-            } catch (_err) {
-              this.getUIContext().getPromptAction().showToast({ message: '头像上传失败' });
-            }
-          })
+
           Column() {
             Text(this.userInfo.name)
               .fontSize(20)
@@ -1126,6 +1777,16 @@ struct MainPage {
           .margin({ left: 16 })
           .alignItems(HorizontalAlign.Start)
           Blank()
+          Button('编辑资料')
+            .height(34)
+            .fontSize(13)
+            .fontColor('#4A90D9')
+            .backgroundColor('#EBF3FC')
+            .borderRadius(17)
+            .padding({ left: 14, right: 14 })
+            .onClick(() => {
+              this.openEditProfilePage();
+            })
         }
         .width('100%')
         .padding({ left: 20, right: 20, top: 24, bottom: 24 })
@@ -1232,7 +1893,7 @@ struct MainPage {
         .width('100%')
         .backgroundColor(Color.White)
         .borderRadius(12)
-        .margin({ left: 16, right: 16, top: 16 })
+        .margin({ left: 16, right: 16, top: 0 })
 
         Column() {
           Row() {

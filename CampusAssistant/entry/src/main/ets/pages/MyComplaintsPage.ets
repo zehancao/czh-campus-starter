@@ -76,7 +76,7 @@ struct CCard {
 
 @CustomDialog
 struct ComplaintDlg {
-  private controller: CustomDialogController
+  private controller?: CustomDialogController
   private dName: string = ''
   private onSubmit?: (reason: string) => void
 
@@ -109,7 +109,7 @@ struct ComplaintDlg {
           .type(ButtonType.Capsule)
           .fontColor('#6B7280').backgroundColor('#F3F4F6')
           .layoutWeight(1).margin({ right: 8 })
-          .onClick(() => { this.controller.close() })
+          .onClick(() => { this.controller?.close() })
 
         Button('提交投诉')
           .type(ButtonType.Capsule)
@@ -121,7 +121,7 @@ struct ComplaintDlg {
             if (this.onSubmit !== undefined) {
               this.onSubmit(this.reason.trim())
             }
-            this.controller.close()
+            this.controller?.close()
           })
       }.width('100%').margin({ top: 16, bottom: 16 })
     }.width('100%').padding({ left: 20, right: 20 }).backgroundColor('#FFFFFF').borderRadius(16)
