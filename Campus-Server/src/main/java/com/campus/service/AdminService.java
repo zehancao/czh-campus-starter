@@ -48,6 +48,9 @@ public class AdminService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private LostFoundMapper lostFoundMapper;
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static final String[] SCHEDULE_COLORS = {
@@ -442,6 +445,21 @@ public class AdminService {
             product.setStatus(3);
             productMapper.updateById(product);
         }
+    }
+
+    public List<User> getAllUsers() {
+        return userMapper.selectList(
+                new LambdaQueryWrapper<User>().orderByDesc(User::getCreateTime));
+    }
+
+    public List<LostFound> getAllLostFound() {
+        return lostFoundMapper.selectList(
+                new LambdaQueryWrapper<LostFound>().orderByDesc(LostFound::getCreateTime));
+    }
+
+    public List<Product> getAllProducts() {
+        return productMapper.selectList(
+                new LambdaQueryWrapper<Product>().orderByDesc(Product::getCreateTime));
     }
 
     private List<ProductVO> toProductVOList(List<Product> list) {

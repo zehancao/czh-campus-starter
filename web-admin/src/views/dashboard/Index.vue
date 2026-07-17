@@ -57,7 +57,7 @@
       v-model:show="showUserModal"
       preset="card"
       title="全部注册用户列表"
-      style="width: 1500px"
+      style="width: 1900px; max-width: 95vw"
       :mask-closable="true"
     >
       <n-data-table
@@ -66,6 +66,7 @@
         :loading="userLoading"
         :bordered="false"
         :single-line="false"
+        :scroll-x="2000"
         striped
       />
       <template #footer>
@@ -80,7 +81,7 @@
       v-model:show="showLostFoundModal"
       preset="card"
       title="失物招领列表"
-      style="width: 1200px"
+      style="width: 1500px; max-width: 95vw"
       :mask-closable="true"
     >
       <n-data-table
@@ -89,6 +90,7 @@
         :loading="lostFoundLoading"
         :bordered="false"
         :single-line="false"
+        :scroll-x="1500"
         striped
       />
       <template #footer>
@@ -103,7 +105,7 @@
       v-model:show="showProductModal"
       preset="card"
       title="全部商品列表"
-      style="width: 1400px"
+      style="width: 1800px; max-width: 95vw"
       :mask-closable="true"
     >
       <n-data-table
@@ -112,6 +114,7 @@
         :loading="productLoading"
         :bordered="false"
         :single-line="false"
+        :scroll-x="1900"
         striped
       />
       <template #footer>

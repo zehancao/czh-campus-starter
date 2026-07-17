@@ -8,6 +8,9 @@ import com.campus.dto.ProductVO;
 import com.campus.dto.SemesterVO;
 import com.campus.dto.TimetableVO;
 import com.campus.entity.Announcement;
+import com.campus.entity.LostFound;
+import com.campus.entity.Product;
+import com.campus.entity.User;
 import com.campus.service.AdminService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -158,5 +161,20 @@ public class AdminController {
     public Result<Void> rejectProduct(@RequestParam Long productId) {
         adminService.rejectProduct(productId);
         return Result.ok();
+    }
+
+    @GetMapping("/user/list")
+    public Result<List<User>> getUserList() {
+        return Result.ok(adminService.getAllUsers());
+    }
+
+    @GetMapping("/lost-found/list")
+    public Result<List<LostFound>> getLostFoundList() {
+        return Result.ok(adminService.getAllLostFound());
+    }
+
+    @GetMapping("/product/list")
+    public Result<List<Product>> getProductList() {
+        return Result.ok(adminService.getAllProducts());
     }
 }
