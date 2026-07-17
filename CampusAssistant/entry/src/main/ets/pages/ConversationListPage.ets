@@ -1,7 +1,8 @@
 import { router } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
-import { Conversation } from '../model/Models';
+import { Conversation, ChatMessage } from '../model/Models';
+import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 
 @Entry
 @Component
@@ -13,30 +14,64 @@ struct ConversationListPage {
   @State private isLoading: boolean = true;
   @State private errorMsg: string = '';
   private hasLoadedOnce: boolean = false;
+  private wsCallback: MessageCallback | null = null;
+  private refreshTimer: number = -1;
 
   aboutToAppear(): void {
     const store: AppStore = AppStore.getInstance();
     this.isLoggedIn = store.isLoggedIn;
     if (this.isLoggedIn) {
+      this.registerWsCallback();
+      WebSocketService.getInstance().connect();
       this.loadData();
+      this.startPolling();
     } else {
       this.isLoading = false;
     }
   }
 
+  aboutToDisappear(): void {
+    if (this.wsCallback !== null) {
+      WebSocketService.getInstance().removeMessageCallback(this.wsCallback);
+      this.wsCallback = null;
+    }
+    this.stopPolling();
+  }
+
   onPageShow(): void {
     if (this.hasLoadedOnce && this.isLoggedIn) {
-      this.loadData();
+      this.loadData(false);
     }
   }
 
-  private async loadData(): Promise<void> {
-    this.isLoading = true;
-    this.errorMsg = '';
+  private startPolling(): void {
+    this.stopPolling();
+    this.refreshTimer = setInterval(() => {
+      if (this.isLoggedIn && WebSocketService.getInstance().connectionState !== 'connected') {
+        this.loadData(false);
+      }
+    }, 3000) as number;
+  }
+
+  private stopPolling(): void {
+    if (this.refreshTimer !== -1) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = -1;
+    }
+  }
+
+  private async loadData(showLoading: boolean = true): Promise<void> {
+    if (showLoading || !this.hasLoadedOnce) {
+      this.isLoading = true;
+    }
+    if (showLoading) {
+      this.errorMsg = '';
+    }
     const result = await ApiService.getConversations();
     if (result.code === 200 && result.data !== undefined) {
       this.conversations = ApiService.parseConversationList(result.data);
-    } else {
+      this.errorMsg = '';
+    } else if (showLoading) {
       this.errorMsg = result.msg || '会话加载失败';
     }
     const onlineResult = await ApiService.getOnlineUsers();
@@ -45,6 +80,123 @@ struct ConversationListPage {
     }
     this.hasLoadedOnce = true;
     this.isLoading = false;
+  }
+
+  private registerWsCallback(): void {
+    if (this.wsCallback !== null) {
+      return;
+    }
+    this.wsCallback = (msg: WsMessage) => {
+      this.handleWsMessage(msg);
+    };
+    WebSocketService.getInstance().onMessage(this.wsCallback);
+  }
+
+  private handleWsMessage(msg: WsMessage): void {
+    if (msg.type === 'user_status') {
+      const data: Record<string, Object> = msg.data as Record<string, Object>;
+      const uid: number = (data['userId'] as number) ?? 0;
+      const online: boolean = (data['online'] as boolean) ?? false;
+      this.updateOnlineUser(uid, online);
+      return;
+    }
+    if (msg.type === 'online_users_loaded') {
+      this.refreshOnlineUsersFromSocket();
+      return;
+    }
+    if (msg.type === 'connection_state') {
+      const data: Record<string, Object> = msg.data as Record<string, Object>;
+      const state: string = (data['state'] as string) ?? '';
+      if (state === 'connected') {
+        this.loadData(false);
+      }
+      return;
+    }
+    if (msg.type === 'message') {
+      const item: ChatMessage = this.parseWsChatMessage(msg.data);
+      this.updateConversationByMessage(item);
+      return;
+    }
+    if (msg.type === 'unread_update') {
+      this.loadData(false);
+    }
+  }
+
+  private parseWsChatMessage(data: Object): ChatMessage {
+    const obj: Record<string, Object> = data as Record<string, Object>;
+    const item: ChatMessage = new ChatMessage();
+    item.id = (obj['id'] as number) ?? 0;
+    item.conversationId = (obj['conversationId'] as number) ?? 0;
+    item.senderId = (obj['senderId'] as number) ?? 0;
+    item.content = (obj['content'] as string) ?? '';
+    item.msgType = (obj['msgType'] as string) ?? 'text';
+    item.createTime = (obj['createTime'] as string) ?? '';
+    item.isMine = item.senderId === AppStore.getInstance().userInfo.id;
+    return item;
+  }
+
+  private updateOnlineUser(userId: number, online: boolean): void {
+    if (userId <= 0) {
+      return;
+    }
+    const next: number[] = [];
+    let exists: boolean = false;
+    for (let i = 0; i < this.onlineUserIds.length; i++) {
+      if (this.onlineUserIds[i] === userId) {
+        exists = true;
+        if (online) {
+          next.push(this.onlineUserIds[i]);
+        }
+      } else {
+        next.push(this.onlineUserIds[i]);
+      }
+    }
+    if (online && !exists) {
+      next.push(userId);
+    }
+    this.onlineUserIds = next;
+  }
+
+  private refreshOnlineUsersFromSocket(): void {
+    const next: number[] = [];
+    for (let i = 0; i < this.conversations.length; i++) {
+      const userId: number = this.conversations[i].otherUserId;
+      if (WebSocketService.getInstance().isUserOnline(userId)) {
+        next.push(userId);
+      }
+    }
+    this.onlineUserIds = next;
+  }
+
+  private updateConversationByMessage(message: ChatMessage): void {
+    if (message.conversationId <= 0) {
+      return;
+    }
+    const next: Conversation[] = [];
+    let found: boolean = false;
+    for (let i = 0; i < this.conversations.length; i++) {
+      const source: Conversation = this.conversations[i];
+      if (source.id === message.conversationId) {
+        const updated: Conversation = new Conversation();
+        updated.id = source.id;
+        updated.otherUserId = source.otherUserId;
+        updated.otherUserName = source.otherUserName;
+        updated.otherUserAvatar = source.otherUserAvatar;
+        updated.lastMessage = message.content;
+        updated.lastTime = message.createTime;
+        updated.unreadCount = message.isMine ? source.unreadCount : source.unreadCount + 1;
+        updated.productId = source.productId;
+        next.unshift(updated);
+        found = true;
+      } else {
+        next.push(source);
+      }
+    }
+    if (found) {
+      this.conversations = next;
+    } else {
+      this.loadData(false);
+    }
   }
 
   private isOnline(userId: number): boolean {
@@ -224,7 +376,7 @@ struct ConversationListPage {
                     Divider().height(1).color('#F3F4F6').margin({ left: 78 })
                   }.width('100%')
                 }
-              }, (item: Conversation) => item.id.toString())
+              }, (item: Conversation) => `${item.id}-${item.lastTime}-${item.unreadCount}-${item.lastMessage}`)
             }
             .width('100%')
             .layoutWeight(1)

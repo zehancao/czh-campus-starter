@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { ChatMessage } from '../model/Models';
+import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 
 @Entry
 @Component
@@ -18,6 +19,10 @@ struct ChatPage {
   @State private isSending: boolean = false;
   @State private isOtherUserOnline: boolean = false;
   @State private errorMsg: string = '';
+  private wsCallback: MessageCallback | null = null;
+  private messageTimer: number = -1;
+  private onlineTimer: number = -1;
+  private messageScroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     const store: AppStore = AppStore.getInstance();
@@ -27,8 +32,124 @@ struct ChatPage {
       return;
     }
     this.resolveParams();
+    this.registerWsCallback();
+    WebSocketService.getInstance().connect();
     this.loadOnlineStatus();
     this.prepareConversation();
+    this.startPolling();
+  }
+
+  aboutToDisappear(): void {
+    if (this.wsCallback !== null) {
+      WebSocketService.getInstance().removeMessageCallback(this.wsCallback);
+      this.wsCallback = null;
+    }
+    this.stopPolling();
+  }
+
+  private startPolling(): void {
+    this.stopPolling();
+    this.messageTimer = setInterval(() => {
+      if (this.isLoggedIn && this.conversationId > 0 && WebSocketService.getInstance().connectionState !== 'connected') {
+        this.loadMessages(false);
+      }
+    }, 2000) as number;
+    this.onlineTimer = setInterval(() => {
+      if (this.isLoggedIn && this.otherUserId > 0 && WebSocketService.getInstance().connectionState !== 'connected') {
+        this.loadOnlineStatus();
+      }
+    }, 3000) as number;
+  }
+
+  private stopPolling(): void {
+    if (this.messageTimer !== -1) {
+      clearInterval(this.messageTimer);
+      this.messageTimer = -1;
+    }
+    if (this.onlineTimer !== -1) {
+      clearInterval(this.onlineTimer);
+      this.onlineTimer = -1;
+    }
+  }
+
+  private registerWsCallback(): void {
+    if (this.wsCallback !== null) {
+      return;
+    }
+    this.wsCallback = (msg: WsMessage) => {
+      this.handleWsMessage(msg);
+    };
+    WebSocketService.getInstance().onMessage(this.wsCallback);
+  }
+
+  private handleWsMessage(msg: WsMessage): void {
+    if (msg.type === 'user_status') {
+      const data: Record<string, Object> = msg.data as Record<string, Object>;
+      const uid: number = (data['userId'] as number) ?? 0;
+      if (uid === this.otherUserId) {
+        this.isOtherUserOnline = (data['online'] as boolean) ?? false;
+      }
+      return;
+    }
+    if (msg.type === 'online_users_loaded' || msg.type === 'connection_state') {
+      const online: boolean = WebSocketService.getInstance().isUserOnline(this.otherUserId);
+      if (online) {
+        this.isOtherUserOnline = true;
+      }
+      return;
+    }
+    if (msg.type === 'message') {
+      const item: ChatMessage = this.parseWsChatMessage(msg.data);
+      if (item.conversationId === this.conversationId && item.conversationId > 0) {
+        this.appendOrUpdateMessage(item);
+        WebSocketService.getInstance().sendMarkRead(this.conversationId);
+      }
+    }
+  }
+
+  private parseWsChatMessage(data: Object): ChatMessage {
+    const obj: Record<string, Object> = data as Record<string, Object>;
+    const item: ChatMessage = new ChatMessage();
+    item.id = (obj['id'] as number) ?? 0;
+    item.conversationId = (obj['conversationId'] as number) ?? 0;
+    item.senderId = (obj['senderId'] as number) ?? 0;
+    item.content = (obj['content'] as string) ?? '';
+    item.msgType = (obj['msgType'] as string) ?? 'text';
+    item.createTime = (obj['createTime'] as string) ?? '';
+    item.isMine = item.senderId === AppStore.getInstance().userInfo.id;
+    return item;
+  }
+
+  private appendOrUpdateMessage(item: ChatMessage): void {
+    const next: ChatMessage[] = [];
+    let exists: boolean = false;
+    for (let i = 0; i < this.messages.length; i++) {
+      if (this.messages[i].id === item.id && item.id > 0) {
+        next.push(item);
+        exists = true;
+      } else {
+        next.push(this.messages[i]);
+      }
+    }
+    if (!exists) {
+      next.push(item);
+    }
+    this.messages = next;
+    this.errorMsg = '';
+    this.isLoading = false;
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    if (this.messages.length === 0) {
+      return;
+    }
+    setTimeout(() => {
+      try {
+        this.messageScroller.scrollToIndex(this.messages.length - 1, true, ScrollAlign.END);
+      } catch (e) {
+      }
+    }, 50);
   }
 
   private getParamText(params: Record<string, Object>, key: string): string {
@@ -76,6 +197,10 @@ struct ChatPage {
   private async loadOnlineStatus(): Promise<void> {
     if (this.otherUserId <= 0) {
       this.isOtherUserOnline = false;
+      return;
+    }
+    if (WebSocketService.getInstance().isUserOnline(this.otherUserId)) {
+      this.isOtherUserOnline = true;
       return;
     }
     const result = await ApiService.getOnlineUsers();
@@ -137,17 +262,26 @@ struct ChatPage {
     }
   }
 
-  private async loadMessages(): Promise<void> {
+  private async loadMessages(showError: boolean = true): Promise<void> {
     if (this.conversationId <= 0) {
-      this.errorMsg = '会话不存在';
+      if (showError) {
+        this.errorMsg = '会话不存在';
+      }
       this.isLoading = false;
       return;
     }
     const result = await ApiService.getMessages(this.conversationId);
     if (result.code === 200 && result.data !== undefined) {
-      this.messages = ApiService.parseMessageList(result.data);
+      const list: ChatMessage[] = ApiService.parseMessageList(result.data);
+      const currentUserId: number = AppStore.getInstance().userInfo.id;
+      for (let i = 0; i < list.length; i++) {
+        list[i].isMine = list[i].senderId === currentUserId;
+      }
+      this.messages = list;
       this.errorMsg = '';
-    } else {
+      WebSocketService.getInstance().sendMarkRead(this.conversationId);
+      this.scrollToBottom();
+    } else if (showError) {
       this.errorMsg = result.msg || '消息加载失败';
     }
     this.isLoading = false;
@@ -163,6 +297,12 @@ struct ChatPage {
       return;
     }
     this.isSending = true;
+    if (WebSocketService.getInstance().connectionState === 'connected') {
+      this.inputText = '';
+      WebSocketService.getInstance().sendMessage(this.conversationId, content, 'text');
+      this.isSending = false;
+      return;
+    }
     const result = await ApiService.sendMessage(this.conversationId, content, 'text');
     if (result.code === 200) {
       this.inputText = '';
@@ -282,7 +422,7 @@ struct ChatPage {
             .onClick(() => { this.prepareConversation() })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else {
-        List() {
+        List({ scroller: this.messageScroller }) {
           if (this.messages.length === 0) {
             ListItem() {
               Column() {
