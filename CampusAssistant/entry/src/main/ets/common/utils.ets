@@ -65,3 +65,58 @@ export function periodToTime(periodNum: number, isStart: boolean): string {
   if (idx < 0 || idx >= TIMES.length) return ''
   return isStart ? TIMES[idx][0] : TIMES[idx][1]
 }
+
+export function parseDate(dateStr: string): Date | null {
+  if (dateStr.length < 10) {
+    return null
+  }
+  const parts: string[] = dateStr.split('-')
+  if (parts.length < 3) {
+    return null
+  }
+  const year: number = parseInt(parts[0])
+  const month: number = parseInt(parts[1])
+  const day: number = parseInt(parts[2])
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return null
+  }
+  return new Date(year, month - 1, day)
+}
+
+export function mondayOfWeek(date: Date): Date {
+  const monday: Date = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const day: number = monday.getDay()
+  const diff: number = day === 0 ? -6 : 1 - day
+  monday.setDate(monday.getDate() + diff)
+  return monday
+}
+
+export function calcSemesterWeek(startDateStr: string, weekCount: number, targetDate?: Date): number {
+  const start: Date | null = parseDate(startDateStr)
+  if (start === null) {
+    return 1
+  }
+  const startMonday: Date = mondayOfWeek(start)
+  const target: Date = targetDate === undefined ? new Date() : targetDate
+  const targetDay: Date = new Date(target.getFullYear(), target.getMonth(), target.getDate())
+  const diffMs: number = targetDay.getTime() - startMonday.getTime()
+  const diffDays: number = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const week: number = Math.floor(diffDays / 7) + 1
+  if (week < 1) {
+    return 1
+  }
+  if (week > weekCount) {
+    return weekCount
+  }
+  return week
+}
+
+export function semesterWeekDate(startDateStr: string, week: number, dayIndex: number): Date | null {
+  const start: Date | null = parseDate(startDateStr)
+  if (start === null) {
+    return null
+  }
+  const date: Date = mondayOfWeek(start)
+  date.setDate(date.getDate() + (week - 1) * 7 + dayIndex)
+  return date
+}

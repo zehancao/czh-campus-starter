@@ -7,6 +7,7 @@ import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { calcSemesterWeek, semesterWeekDate } from '../common/utils';
 
 const WEEK_DAY_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
 const SCHEDULE_CARD_BG: string[] = ['#EEF0FF', '#E9F6FF', '#FFF5D8', '#FDECF5', '#EAF8EA', '#FFF0E1', '#F2EDFF', '#EDF3F5'];
@@ -161,22 +162,7 @@ struct MainPage {
   }
 
   private calcCurrentWeek(startDateStr: string, weekCount: number): number {
-    if (startDateStr.length < 10) {
-      return 1;
-    }
-    const parts: string[] = startDateStr.split('-');
-    const start: Date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    const now: Date = new Date();
-    const diffMs: number = now.getTime() - start.getTime();
-    const diffDays: number = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const week: number = Math.floor(diffDays / 7) + 1;
-    if (week < 1) {
-      return 1;
-    }
-    if (week > weekCount) {
-      return weekCount;
-    }
-    return week;
+    return calcSemesterWeek(startDateStr, weekCount);
   }
 
   private async loadSchedule(): Promise<void> {
@@ -648,16 +634,20 @@ struct MainPage {
   }
 
   private weekDate(dayIndex: number): Date | null {
-    if (this.semesterStartDate.length < 10) {
-      return null;
+    const semesterDate: Date | null = semesterWeekDate(this.semesterStartDate, this.currentWeek, dayIndex);
+    if (semesterDate !== null) {
+      return semesterDate;
     }
-    const parts: string[] = this.semesterStartDate.split('-');
-    if (parts.length < 3) {
-      return null;
-    }
-    const date: Date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    date.setDate(date.getDate() + (this.currentWeek - 1) * 7 + dayIndex);
+    const today: Date = new Date();
+    const todayIndex: number = this.todayDayIndex();
+    const date: Date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    date.setDate(date.getDate() + (this.currentWeek - this.todayWeek) * 7 + dayIndex - todayIndex);
     return date;
+  }
+
+  private todayDayIndex(): number {
+    const day: number = new Date().getDay();
+    return day === 0 ? 6 : day - 1;
   }
 
   private weekMonthText(): string {
@@ -931,13 +921,15 @@ struct MainPage {
 
         if (this.currentWeek !== this.todayWeek) {
           Button('切回本周')
-            .height(48)
-            .fontSize(17)
+            .width(88)
+            .height(42)
+            .fontSize(15)
             .fontColor(Color.White)
             .backgroundColor('#FF6B4A')
-            .borderRadius(24)
-            .padding({ left: 24, right: 24 })
-            .position({ x: 292, y: 610 })
+            .borderRadius(21)
+            .padding({ left: 0, right: 0 })
+            .position({ x: '100%', y: 610 })
+            .translate({ x: -88, y: 0 })
             .onClick(() => {
               this.backToCurrentWeek();
             })

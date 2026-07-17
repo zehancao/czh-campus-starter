@@ -79,7 +79,7 @@ public class ClassroomService {
 
         List<EmptyRoomVO> result = new ArrayList<>();
         for (Classroom room : allRooms) {
-            if (!occupiedRooms.contains(room.getRoomNo())) {
+            if (!isRoomOccupied(room, occupiedRooms)) {
                 result.add(new EmptyRoomVO(
                         room.getId(),
                         room.getBuilding(),
@@ -92,6 +92,32 @@ public class ClassroomService {
             }
         }
         return result;
+    }
+
+    private boolean isRoomOccupied(Classroom room, List<String> occupiedRooms) {
+        for (String occupiedRoom : occupiedRooms) {
+            if (isSameRoom(room, occupiedRoom)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSameRoom(Classroom room, String occupiedRoom) {
+        String occupiedKey = normalizeRoomName(occupiedRoom);
+        if (occupiedKey.isEmpty()) {
+            return false;
+        }
+        String roomNoKey = normalizeRoomName(room.getRoomNo());
+        String fullRoomKey = normalizeRoomName(room.getBuilding() + room.getRoomNo());
+        return occupiedKey.equals(roomNoKey) || occupiedKey.equals(fullRoomKey);
+    }
+
+    private String normalizeRoomName(String roomName) {
+        if (roomName == null) {
+            return "";
+        }
+        return roomName.replaceAll("\\s+", "");
     }
 
     public List<ClassTimetable> getRoomSchedule(String classroom, Integer dayOfWeek) {

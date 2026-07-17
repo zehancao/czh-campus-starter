@@ -1,6 +1,7 @@
-import { ApiService } from '../service/ApiService';
-import { EmptyRoom } from '../model/Models';
+import { ApiResult, ApiService } from '../service/ApiService';
+import { EmptyRoom, Semester } from '../model/Models';
 import { Constants } from '../common/Constants';
+import { calcSemesterWeek } from '../common/utils';
 
 const DAY_LABELS: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 const WEEK_LABELS: string[] = [
@@ -23,9 +24,14 @@ struct EmptyRoomPage {
   @State private errorMessage: string = '';
 
   aboutToAppear(): void {
+    this.initPage();
+  }
+
+  private async initPage(): Promise<void> {
     this.selectedDayOfWeek = this.todayDayOfWeek();
-    this.loadBuildings();
-    this.searchRooms();
+    await this.loadCurrentWeek();
+    await this.loadBuildings();
+    await this.searchRooms();
   }
 
   private todayDayOfWeek(): number {
@@ -39,6 +45,19 @@ struct EmptyRoomPage {
     } catch (_err) {
       this.buildings = [];
     }
+  }
+
+  private async loadCurrentWeek(): Promise<void> {
+    try {
+      const result: ApiResult = await ApiService.getCurrentSemester();
+      if (result.code === 200 && result.data !== undefined) {
+        const semester: Semester = ApiService.parseSemester(result.data);
+        this.selectedWeek = calcSemesterWeek(semester.startDate, semester.weekCount);
+        return;
+      }
+    } catch (_err) {
+    }
+    this.selectedWeek = 1;
   }
 
   private sectionText(section: number): string {
