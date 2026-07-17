@@ -128,4 +128,12 @@ public class UserService {
             userMapper.updateById(user);
         }
     }
+
+    public void updateName(Long userId, String name) {
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setName(name);
+            userMapper.updateById(user);
+        }
+    }
 }

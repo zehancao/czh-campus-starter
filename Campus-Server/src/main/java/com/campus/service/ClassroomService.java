@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.campus.dto.EmptyRoomVO;
 import com.campus.entity.ClassTimetable;
 import com.campus.entity.Classroom;
+import com.campus.entity.Semester;
 import com.campus.mapper.ClassTimetableMapper;
 import com.campus.mapper.ClassroomMapper;
+import com.campus.mapper.SemesterMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,23 @@ public class ClassroomService {
 
     @Autowired
     private ClassTimetableMapper timetableMapper;
+
+    @Autowired
+    private SemesterMapper semesterMapper;
+
+    private Long getCurrentSemesterId() {
+        List<Semester> list = semesterMapper.selectList(
+                new QueryWrapper<Semester>().eq("is_current", 1).last("LIMIT 1"));
+        if (!list.isEmpty()) {
+            return list.get(0).getId();
+        }
+        list = semesterMapper.selectList(
+                new QueryWrapper<Semester>().orderByDesc("start_date").last("LIMIT 1"));
+        if (!list.isEmpty()) {
+            return list.get(0).getId();
+        }
+        return null;
+    }
 
     public List<String> getBuildings() {
         QueryWrapper<Classroom> wrapper = new QueryWrapper<>();
@@ -38,6 +57,10 @@ public class ClassroomService {
         List<Classroom> allRooms = classroomMapper.selectList(roomWrapper);
 
         QueryWrapper<ClassTimetable> ttWrapper = new QueryWrapper<>();
+        Long currentSemesterId = getCurrentSemesterId();
+        if (currentSemesterId != null) {
+            ttWrapper.eq("semester_id", currentSemesterId);
+        }
         ttWrapper.eq("day_of_week", dayOfWeek);
         ttWrapper.le("start_section", section);
         ttWrapper.ge("end_section", section);
@@ -56,8 +79,7 @@ public class ClassroomService {
 
         List<EmptyRoomVO> result = new ArrayList<>();
         for (Classroom room : allRooms) {
-            String fullName = room.getBuilding() + room.getRoomNo();
-            if (!occupiedRooms.contains(fullName)) {
+            if (!occupiedRooms.contains(room.getRoomNo())) {
                 result.add(new EmptyRoomVO(
                         room.getId(),
                         room.getBuilding(),
@@ -74,6 +96,10 @@ public class ClassroomService {
 
     public List<ClassTimetable> getRoomSchedule(String classroom, Integer dayOfWeek) {
         QueryWrapper<ClassTimetable> wrapper = new QueryWrapper<>();
+        Long currentSemesterId = getCurrentSemesterId();
+        if (currentSemesterId != null) {
+            wrapper.eq("semester_id", currentSemesterId);
+        }
         wrapper.eq("classroom", classroom);
         if (dayOfWeek != null) {
             wrapper.eq("day_of_week", dayOfWeek);

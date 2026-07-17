@@ -90,7 +90,7 @@ struct EditProfilePage {
     }
   }
 
-  private saveUserName(): void {
+  private async saveUserName(): Promise<void> {
     if (this.isSavingName) {
       return;
     }
@@ -101,10 +101,15 @@ struct EditProfilePage {
     }
     this.errorMsg = '';
     this.isSavingName = true;
-    this.userName = nextName;
-    this.updateLocalUser(nextName, this.avatar);
+    const result: ApiResult = await ApiService.updateName(nextName);
+    if (result.code === 200) {
+      this.userName = nextName;
+      this.updateLocalUser(nextName, this.avatar);
+      this.getUIContext().getPromptAction().showToast({ message: '用户名已保存' });
+    } else {
+      this.errorMsg = result.msg.length > 0 ? result.msg : '保存失败';
+    }
     this.isSavingName = false;
-    this.getUIContext().getPromptAction().showToast({ message: '用户名已保存' });
   }
 
   build() {

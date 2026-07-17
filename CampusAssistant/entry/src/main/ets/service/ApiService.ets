@@ -11,7 +11,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.1.3:8080';
+  static baseUrl: string = 'http://192.168.1.20:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -522,6 +522,13 @@ export class ApiService {
       'newPassword': newPassword,
     };
     return ApiService.request(http.RequestMethod.POST, '/api/user/change-password', body, true);
+  }
+
+  static async updateName(name: string): Promise<ApiResult> {
+    const body: Record<string, Object> = {
+      'name': name,
+    };
+    return ApiService.request(http.RequestMethod.POST, '/api/user/update-name', body, true);
   }
 
   static async uploadAvatar(uri: string): Promise<string> {    const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
