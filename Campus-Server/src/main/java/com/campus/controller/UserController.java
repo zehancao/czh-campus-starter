@@ -86,4 +86,15 @@ public class UserController {
         userService.updateAvatar(userId, url);
         return Result.ok(url);
     }
+
+    @PostMapping("/update-name")
+    public Result<Void> updateName(HttpServletRequest request, @RequestBody Map<String, String> body) {
+        Long userId = (Long) request.getAttribute("userId");
+        String name = body.get("name");
+        if (name == null || name.trim().isEmpty()) {
+            return Result.error(400, "用户名不能为空");
+        }
+        userService.updateName(userId, name.trim());
+        return Result.ok();
+    }
 }

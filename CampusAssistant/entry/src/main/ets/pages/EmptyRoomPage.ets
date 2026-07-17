@@ -96,10 +96,7 @@ struct EmptyRoomPage {
   }
 
   private roomTitle(room: EmptyRoom): string {
-    if (room.building.length > 0 && room.roomNo.startsWith(room.building)) {
-      return room.roomNo;
-    }
-    return `${room.building}${room.roomNo}`;
+    return room.roomNo;
   }
 
   private roomKey(room: EmptyRoom): string {

@@ -104,66 +104,81 @@ struct ProductDetailPage {
 
   private async loadDetail(): Promise<void> {
     this.isLoading = true;
-    const result = await ApiService.getProductDetail(this.productId);
-    if (result.code === 200 && result.data !== undefined) {
-      const obj: Record<string, Object> = result.data as Record<string, Object>;
-      const p: Product = new Product();
-      p.id = (obj['id'] as number) ?? 0;
-      p.sellerId = (obj['sellerId'] as number) ?? 0;
-      p.sellerName = (obj['sellerName'] as string) ?? '';
-      p.categoryId = (obj['categoryId'] as number) ?? 0;
-      p.categoryName = (obj['categoryName'] as string) ?? '';
-      p.title = (obj['title'] as string) ?? '';
-      p.description = (obj['description'] as string) ?? '';
-      p.price = (obj['price'] as number) ?? 0;
-      p.originalPrice = (obj['originalPrice'] as number) ?? 0;
-      p.conditionLevel = (obj['conditionLevel'] as number) ?? 1;
-      p.status = (obj['status'] as number) ?? 1;
-      p.viewCount = (obj['viewCount'] as number) ?? 0;
-      p.campusLocation = (obj['campusLocation'] as string) ?? '';
-      p.createTime = (obj['createTime'] as string) ?? '';
-      this.product = p;
+    try {
+      const result = await ApiService.getProductDetail(this.productId);
+      if (result.code === 200 && result.data !== undefined) {
+        const obj: Record<string, Object> = result.data as Record<string, Object>;
+        const p: Product = new Product();
+        p.id = (obj['id'] as number) ?? 0;
+        p.sellerId = (obj['sellerId'] as number) ?? 0;
+        p.sellerName = (obj['sellerName'] as string) ?? '';
+        p.categoryId = (obj['categoryId'] as number) ?? 0;
+        p.categoryName = (obj['categoryName'] as string) ?? '';
+        p.title = (obj['title'] as string) ?? '';
+        p.description = (obj['description'] as string) ?? '';
+        p.price = (obj['price'] as number) ?? 0;
+        p.originalPrice = (obj['originalPrice'] as number) ?? 0;
+        p.conditionLevel = (obj['conditionLevel'] as number) ?? 1;
+        p.status = (obj['status'] as number) ?? 1;
+        p.viewCount = (obj['viewCount'] as number) ?? 0;
+        p.campusLocation = (obj['campusLocation'] as string) ?? '';
+        p.createTime = (obj['createTime'] as string) ?? '';
+        this.product = p;
 
-      // 解析 sellerPhone
-      const phObj: Object = obj['sellerPhone'];
-      if (phObj !== null && phObj !== undefined) {
-        this.sellerPhoneText = phObj as string;
+        const phObj: Object = obj['sellerPhone'];
+        if (phObj !== null && phObj !== undefined) {
+          this.sellerPhoneText = phObj as string;
+        } else {
+          this.sellerPhoneText = '';
+        }
+
+        const imgObj: Object = obj['images'];
+        if (imgObj !== null && imgObj !== undefined) {
+          if (typeof imgObj === 'object') {
+            const arr: Object[] = imgObj as Object[];
+            const imgs: string[] = [];
+            for (let k = 0; k < arr.length; k++) {
+              const s: string = arr[k] as string;
+              if (s.length > 0) {
+                imgs.push(s);
+              }
+            }
+            this.parsedImages = imgs;
+          } else {
+            const raw: string = imgObj as string;
+            if (raw.length > 0) {
+              const c: string = raw.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
+              if (c.length > 0) {
+                this.parsedImages = c.split(',');
+              }
+            }
+          }
+        }
+
+        const tagObj: Object = obj['tags'];
+        if (tagObj !== null && tagObj !== undefined) {
+          const raw: string = tagObj as string;
+          if (raw.length > 0) {
+            const c: string = raw.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
+            if (c.length > 0) {
+              this.parsedTags = c.split(',');
+            }
+          }
+        }
+
+        if (this.isLoggedIn && p.id > 0) {
+          try {
+            const fav = await ApiService.checkFavorite(p.id);
+            if (fav.code === 200 && fav.data !== undefined) {
+              this.isFavorite = fav.data as boolean;
+            }
+          } catch (_err) {}
+        }
       } else {
-        this.sellerPhoneText = '';
+        this.errorMsg = result.msg.length > 0 ? result.msg : '加载失败';
       }
-
-      // 解析 images (JSON 字符串 → string[])
-      const imgObj: Object = obj['images'];
-      if (imgObj !== null && imgObj !== undefined) {
-        const raw: string = imgObj as string;
-        if (raw.length > 0) {
-          const c: string = raw.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
-          if (c.length > 0) {
-            this.parsedImages = c.split(',');
-          }
-        }
-      }
-
-      // 解析 tags
-      const tagObj: Object = obj['tags'];
-      if (tagObj !== null && tagObj !== undefined) {
-        const raw: string = tagObj as string;
-        if (raw.length > 0) {
-          const c: string = raw.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
-          if (c.length > 0) {
-            this.parsedTags = c.split(',');
-          }
-        }
-      }
-
-      if (this.isLoggedIn && p.id > 0) {
-        const fav = await ApiService.checkFavorite(p.id);
-        if (fav.code === 200 && fav.data !== undefined) {
-          this.isFavorite = fav.data as boolean;
-        }
-      }
-    } else {
-      this.errorMsg = result.msg || '加载失败';
+    } catch (_err) {
+      this.errorMsg = '网络错误，请检查网络连接';
     }
     this.isLoading = false;
   }

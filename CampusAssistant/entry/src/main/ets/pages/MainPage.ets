@@ -6,6 +6,7 @@ import { ApiService, ApiResult } from '../service/ApiService';
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
+import { BusinessError } from '@kit.BasicServicesKit';
 
 const WEEK_DAY_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
 const SCHEDULE_CARD_BG: string[] = ['#EEF0FF', '#E9F6FF', '#FFF5D8', '#FDECF5', '#EAF8EA', '#FFF0E1', '#F2EDFF', '#EDF3F5'];
@@ -26,6 +27,7 @@ struct MainPage {
   @State isRefreshing: boolean = false;
   @State currentWeek: number = 1;
   @State todayWeek: number = 1;
+  @State semesterId: number = 0;
   @State semesterWeekCount: number = 20;
   @State semesterName: string = '';
   @State semesterStartDate: string = '';
@@ -47,8 +49,14 @@ struct MainPage {
   @State aiMessages: AiMsg[] = [];
   @State aiInputText: string = '';
   @State aiIsLoading: boolean = false;
+  @State aiStreamingIndex: number = -1;
+  @State aiThinking: boolean = false;
+  @State aiStreamText: string = '';
   private aiScroller: Scroller = new Scroller();
   private textDecoder: util.TextDecoder = new util.TextDecoder('utf-8');
+  private aiHttpRequest: http.HttpRequest | null = null;
+  private aiPendingText: string = '';
+  private aiFlushTimer: number = -1;
 
   aboutToAppear(): void {
     const store: AppStore = AppStore.getInstance();
@@ -75,9 +83,10 @@ struct MainPage {
   onPageShow(): void {
     const store: AppStore = AppStore.getInstance();
     this.userInfo = store.userInfo;
+    this.loadSemester();
     this.loadProducts();
     this.loadMyActivities();
-    // 接收 AddCoursePage 返回的手动添课数据
+    this.loadUnreadCount();
     const hasPending = AppStorage.Get<boolean>('pending_hasManualCourse');
     if (hasPending === true) {
       AppStorage.Delete('pending_hasManualCourse');
@@ -102,6 +111,16 @@ struct MainPage {
   aboutToDisappear(): void {
     if (this.mainWsCallback !== null) {
       WebSocketService.getInstance().removeMessageCallback(this.mainWsCallback);
+    }
+    if (this.aiHttpRequest !== null) {
+      this.aiHttpRequest.off('dataReceive');
+      this.aiHttpRequest.off('dataEnd');
+      this.aiHttpRequest.destroy();
+      this.aiHttpRequest = null;
+    }
+    if (this.aiFlushTimer !== -1) {
+      clearInterval(this.aiFlushTimer);
+      this.aiFlushTimer = -1;
     }
   }
 
@@ -130,6 +149,7 @@ struct MainPage {
     const result: ApiResult = await ApiService.getCurrentSemester();
     if (result.code === 200 && result.data !== undefined) {
       const semester: Semester = ApiService.parseSemester(result.data);
+      this.semesterId = semester.id;
       this.semesterName = semester.name;
       this.semesterStartDate = semester.startDate;
       this.semesterWeekCount = semester.weekCount;
@@ -160,9 +180,14 @@ struct MainPage {
   }
 
   private async loadSchedule(): Promise<void> {
-    const result: ApiResult = await ApiService.getMySchedule(1);
-    if (result.code === 200 && result.data !== undefined) {
-      this.scheduleList = ApiService.parseScheduleList(result.data);
+    const sid: number = this.semesterId > 0 ? this.semesterId : 1;
+    const result: ApiResult = await ApiService.getMySchedule(sid);
+    if (result.code === 200) {
+      if (result.data !== undefined) {
+        this.scheduleList = ApiService.parseScheduleList(result.data);
+      } else {
+        this.scheduleList = [];
+      }
       this.updateScheduleGrid();
     }
   }
@@ -333,6 +358,9 @@ struct MainPage {
     .backgroundColor('#F5F6FA')
     .onChange((index: number) => {
       this.currentTab = index;
+      if (index === 1) {
+        this.loadSemester();
+      }
     })
   }
 
@@ -712,6 +740,9 @@ struct MainPage {
 
   private courseBriefText(item: CourseSchedule): string {
     const room: string = item.classroom.length > 0 ? item.classroom : '教室未填';
+    if (item.teacherName.length > 0) {
+      return `${item.courseName} @${room}\n${item.teacherName}`;
+    }
     return `${item.courseName} @${room}`;
   }
 
@@ -1564,30 +1595,44 @@ struct MainPage {
     this.aiMessages.push(userMsg);
     this.aiInputText = '';
     this.aiIsLoading = true;
+    this.aiStreamingIndex = this.aiMessages.length;
+    this.aiStreamText = '';
+    this.aiThinking = false;
 
     const aiMsg: AiMsg = new AiMsg();
     aiMsg.role = 'assistant';
     aiMsg.content = '';
     this.aiMessages.push(aiMsg);
-    const lastIndex: number = this.aiMessages.length - 1;
+    this.aiMessages = [...this.aiMessages];
 
     setTimeout(() => {
       this.aiScroller.scrollEdge(Edge.Bottom);
-    }, 100);
+    }, 50);
 
-    const baseUrl: string = 'http://192.168.3.22:8000';
+    const sIdx: number = this.aiStreamingIndex;
+
+    const baseUrl: string = 'http://10.0.2.2:8000';
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
-    let fullContent: string = '';
-    let buffer: string = '';
+    this.aiHttpRequest = req;
+    let sseBuffer: string = '';
+
+    this.aiPendingText = '';
+    this.aiFlushTimer = setInterval(() => {
+      if (this.aiPendingText.length > 0) {
+        this.aiStreamText += this.aiPendingText;
+        this.aiPendingText = '';
+        this.aiScroller.scrollEdge(Edge.Bottom);
+      }
+    }, 80);
 
     req.on('dataReceive', (data: ArrayBuffer) => {
       const chunk: string = this.textDecoder.decodeToString(new Uint8Array(data));
-      buffer += chunk;
-      const lines: string[] = buffer.split('\n');
-      buffer = lines[lines.length - 1];
+      sseBuffer += chunk;
+      const lines: string[] = sseBuffer.split('\n');
+      sseBuffer = '';
 
-      for (let i: number = 0; i < lines.length - 1; i++) {
+      for (let i: number = 0; i < lines.length; i++) {
         const line: string = lines[i].trim();
         if (line.length === 0) {
           continue;
@@ -1600,35 +1645,47 @@ struct MainPage {
           try {
             const parsed: Record<string, string> = JSON.parse(jsonStr) as Record<string, string>;
             if (parsed['error'] !== undefined) {
-              fullContent = 'AI 服务出错: ' + parsed['error'];
+              this.aiStreamText = 'AI 服务出错: ' + parsed['error'];
+              this.aiScroller.scrollEdge(Edge.Bottom);
+            } else if (parsed['status'] === 'thinking') {
+              this.aiThinking = true;
+              this.aiScroller.scrollEdge(Edge.Bottom);
             } else {
               const content: string = parsed['content'] ?? '';
               if (content.length > 0) {
-                fullContent += content;
+                this.aiThinking = false;
+                this.aiPendingText += content;
               }
             }
           } catch (_e) {
-            // skip
           }
+        } else if (!line.startsWith('data:')) {
+          sseBuffer = line;
         }
       }
-
-      aiMsg.content = fullContent;
-      this.aiMessages[lastIndex] = aiMsg;
-      setTimeout(() => {
-        this.aiScroller.scrollEdge(Edge.Bottom);
-      }, 50);
     });
 
     req.on('dataEnd', () => {
-      if (fullContent.length === 0) {
-        aiMsg.content = '抱歉，AI 服务未返回内容';
-        this.aiMessages[lastIndex] = aiMsg;
+      if (this.aiFlushTimer !== -1) {
+        clearInterval(this.aiFlushTimer);
+        this.aiFlushTimer = -1;
       }
+      if (this.aiPendingText.length > 0) {
+        this.aiStreamText += this.aiPendingText;
+        this.aiPendingText = '';
+      }
+      const finalText: string = this.aiStreamText.length > 0 ? this.aiStreamText : '抱歉，AI 服务未返回内容';
+      this.aiMessages[sIdx].content = finalText;
+      this.aiMessages = [...this.aiMessages];
+      this.aiStreamingIndex = -1;
       this.aiIsLoading = false;
+      this.aiThinking = false;
+      this.aiStreamText = '';
       req.off('dataReceive');
       req.off('dataEnd');
       req.destroy();
+      this.aiHttpRequest = null;
+      this.aiScroller.scrollEdge(Edge.Bottom);
     });
 
     req.requestInStream(url, {
@@ -1640,6 +1697,24 @@ struct MainPage {
       extraData: JSON.stringify({ 'question': text } as Record<string, string>),
       readTimeout: 120000,
       connectTimeout: 15000
+    }, (err: BusinessError, data: number) => {
+      if (err) {
+        if (this.aiFlushTimer !== -1) {
+          clearInterval(this.aiFlushTimer);
+          this.aiFlushTimer = -1;
+        }
+        this.aiMessages[sIdx].content = '网络错误，无法连接 AI 服务';
+        this.aiMessages = [...this.aiMessages];
+        this.aiStreamingIndex = -1;
+        this.aiIsLoading = false;
+        this.aiThinking = false;
+        this.aiStreamText = '';
+        this.aiPendingText = '';
+        req.off('dataReceive');
+        req.off('dataEnd');
+        req.destroy();
+        this.aiHttpRequest = null;
+      }
     });
   }
 
@@ -1673,17 +1748,37 @@ struct MainPage {
                 .constraintSize({ maxWidth: '75%' })
               } else {
                 Column() {
-                  if (msg.content.length === 0 && this.aiIsLoading) {
+                  if (this.aiThinking && index === this.aiStreamingIndex) {
                     Row({ space: 4 }) {
                       LoadingProgress()
                         .width(16)
                         .height(16)
                         .color('#4A90D9')
-                      Text('思考中...')
+                      Text('正在检索知识库...')
                         .fontSize(14)
                         .fontColor('#999999')
                     }
-                  } else {
+                  } else if (index === this.aiStreamingIndex && this.aiIsLoading) {
+                    if (this.aiStreamText.length > 0) {
+                      Text(this.cleanMarkdown(this.aiStreamText))
+                        .fontSize(15)
+                        .fontColor('#333333')
+                        .lineHeight(22)
+                      Text('▍')
+                        .fontSize(15)
+                        .fontColor('#4A90D9')
+                    } else {
+                      Row({ space: 4 }) {
+                        LoadingProgress()
+                          .width(16)
+                          .height(16)
+                          .color('#4A90D9')
+                        Text('思考中...')
+                          .fontSize(14)
+                          .fontColor('#999999')
+                      }
+                    }
+                  } else if (msg.content.length > 0) {
                     Text(this.cleanMarkdown(msg.content))
                       .fontSize(15)
                       .fontColor('#333333')
@@ -1999,7 +2094,7 @@ struct MainPage {
           .height(48)
           .padding({ left: 20, right: 20 })
           .onClick(() => {
-            this.getUIContext().getRouter().pushUrl({ url: 'pages/AiChatPage' });
+            this.currentTab = 3;
           })
 
           Divider().margin({ left: 20, right: 20 })
