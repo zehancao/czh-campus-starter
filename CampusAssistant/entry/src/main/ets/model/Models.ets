@@ -26,6 +26,7 @@ export class CourseSchedule {
   weekParity: string = 'all';
   teacherName: string = '';
   colorIndex: number = 0;
+  source: string = 'class';
 }
 
 export class Product {

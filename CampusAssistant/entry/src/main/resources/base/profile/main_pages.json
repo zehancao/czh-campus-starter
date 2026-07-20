@@ -23,6 +23,7 @@
     "pages/ClubActivityListPage",
     "pages/ClubActivityPublishPage",
     "pages/ClubActivityDetailPage",
-    "pages/MyComplaintsPage"
+    "pages/MyComplaintsPage",
+    "pages/SettingsPage"
   ]
 }

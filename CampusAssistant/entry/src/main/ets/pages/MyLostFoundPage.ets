@@ -4,9 +4,10 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const STATUS_OPTIONS: string[] = ['进行中', '已找到/已归还'];
-const STATUS_COLORS: string[] = ['#F59E0B', '#10B981'];
+const STATUS_COLORS: string[] = [Theme.warning, Theme.success];
 
 @Component
 struct MyLFItemCard {
@@ -22,10 +23,10 @@ struct MyLFItemCard {
           Text(this.itemData.type === 1 ? '🔍' : '📢')
             .fontSize(28)
           Text(this.itemData.type === 1 ? '寻物' : '招领')
-            .fontSize(11).fontColor('#FF6B35').margin({ top: 2 })
+            .fontSize(11).fontColor(Theme.secondary).margin({ top: 2 })
         }
         .width(56).height(56)
-        .backgroundColor('#FFF3ED')
+        .backgroundColor(Theme.secondaryLight)
         .borderRadius(10)
         .justifyContent(FlexAlign.Center)
 
@@ -46,7 +47,7 @@ struct MyLFItemCard {
 
           if (this.itemData.description.length > 0) {
             Text(this.itemData.description)
-              .fontSize(13).fontColor('#6B7280')
+              .fontSize(13).fontColor(Theme.textSecondary)
               .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
               .width('100%')
               .margin({ top: 4 })
@@ -55,12 +56,12 @@ struct MyLFItemCard {
           Row() {
             if (this.itemData.category.length > 0) {
               Text(this.itemData.category)
-                .fontSize(11).fontColor('#9CA3AF').backgroundColor('#F3F4F6')
+                .fontSize(11).fontColor(Theme.textTertiary).backgroundColor(Theme.bgPage)
                 .borderRadius(4).padding({ left: 6, right: 6, top: 1, bottom: 1 })
             }
             if (this.itemData.locationDesc.length > 0) {
               Text(this.itemData.locationDesc)
-                .fontSize(11).fontColor('#9CA3AF')
+                .fontSize(11).fontColor(Theme.textTertiary)
                 .margin({ left: 6 })
             }
             Blank()
@@ -74,18 +75,18 @@ struct MyLFItemCard {
       }
       .width('100%')
 
-      Divider().height(1).color('#F3F4F6').width('100%').margin({ top: 8, bottom: 8 })
+      Divider().height(1).color(Theme.divider).width('100%').margin({ top: 8, bottom: 8 })
 
       Row() {
         Text(this.itemData.createTime.replace('T', ' ').substring(0, 16))
-          .fontSize(11).fontColor('#9CA3AF')
+          .fontSize(11).fontColor(Theme.textTertiary)
 
         Blank()
 
         Button('标记已找到')
           .type(ButtonType.Capsule)
-          .fontSize(12).fontColor('#10B981')
-          .backgroundColor('#ECFDF5')
+          .fontSize(12).fontColor(Theme.success)
+          .backgroundColor(Theme.successLight)
           .height(28)
           .margin({ right: 8 })
           .onClick(() => {
@@ -96,8 +97,8 @@ struct MyLFItemCard {
 
         Button('删除')
           .type(ButtonType.Capsule)
-          .fontSize(12).fontColor('#EF4444')
-          .backgroundColor('#FEF2F2')
+          .fontSize(12).fontColor(Theme.danger)
+          .backgroundColor(Theme.dangerLight)
           .height(28)
           .onClick(() => {
             if (this.onDelete !== undefined) {
@@ -181,7 +182,7 @@ struct MyLostFoundPage {
       primaryButton: { value: '取消', action: () => {} },
       confirm: {
         value: '标记完成',
-        fontColor: '#10B981',
+        fontColor: Theme.success,
         action: async () => {
           const result = await ApiService.deleteLostFound(item.id);
           if (result.code === 200) {
@@ -211,7 +212,7 @@ struct MyLostFoundPage {
       primaryButton: { value: '取消', action: () => {} },
       confirm: {
         value: '删除',
-        fontColor: '#EF4444',
+        fontColor: Theme.danger,
         action: async () => {
           const result = await ApiService.deleteLostFound(item.id);
           if (result.code === 200) {
@@ -249,14 +250,14 @@ struct MyLostFoundPage {
     Column() {
       Row() {
         Text('‹ 返回')
-          .fontSize(16).fontColor('#6B7280')
+          .fontSize(16).fontColor(Theme.textSecondary)
           .onClick(() => { router.back() })
         Blank()
         Text('我的失物招领')
           .fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
         Text('发布')
-          .fontSize(16).fontColor('#FF6B35')
+          .fontSize(16).fontColor(Theme.secondary)
           .onClick(() => { this.goToPublish() })
       }
       .width('100%')
@@ -267,9 +268,9 @@ struct MyLostFoundPage {
         Column() {
           Text('🔒').fontSize(48)
           Text('请先登录')
-            .fontSize(16).fontColor('#6B7280').margin({ top: 12 })
+            .fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
           Button('去登录')
-            .type(ButtonType.Capsule).backgroundColor('#FF6B35').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
         }
@@ -277,7 +278,7 @@ struct MyLostFoundPage {
         .justifyContent(FlexAlign.Center)
       } else if (this.isLoading) {
         Column() {
-          LoadingProgress().color('#FF6B35').width(36).height(36)
+          LoadingProgress().color(Theme.secondary).width(36).height(36)
         }
         .width('100%').layoutWeight(1)
         .justifyContent(FlexAlign.Center)
@@ -286,11 +287,11 @@ struct MyLostFoundPage {
           Column() {
             Text('📋').fontSize(56)
             Text('还没有发布过失物招领')
-              .fontSize(15).fontColor('#6B7280').margin({ top: 8 })
+              .fontSize(15).fontColor(Theme.textSecondary).margin({ top: 8 })
             Text('点击右上角发布信息')
-              .fontSize(13).fontColor('#9CA3AF').margin({ top: 4 })
+              .fontSize(13).fontColor(Theme.textTertiary).margin({ top: 4 })
             Button('去发布')
-              .type(ButtonType.Capsule).backgroundColor('#FF6B35').fontColor('#FFFFFF')
+              .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
               .margin({ top: 20 })
               .onClick(() => { this.goToPublish() })
           }
@@ -319,6 +320,6 @@ struct MyLostFoundPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 }

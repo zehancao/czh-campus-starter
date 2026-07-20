@@ -1,5 +1,7 @@
 ﻿import { ApiService, ApiResult } from '../service/ApiService';
 import { ClubActivityItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Entry
 @Component
@@ -122,28 +124,28 @@ struct ClubActivityDetailPage {
 
   private statusColor(status: number): string {
     if (status === 1) {
-      return '#2E7D32';
+      return Theme.success;
     }
     if (status === 2) {
-      return '#E67E22';
+      return Theme.warning;
     }
     if (status === 3) {
-      return '#999999';
+      return Theme.textTertiary;
     }
-    return '#666666';
+    return Theme.textSecondary;
   }
 
   private statusBg(status: number): string {
     if (status === 1) {
-      return '#EAF6ED';
+      return Theme.successLight;
     }
     if (status === 2) {
-      return '#FFF3E5';
+      return Theme.warningLight;
     }
     if (status === 3) {
-      return '#EEEEEE';
+      return Theme.border;
     }
-    return '#F3F3F3';
+    return Theme.divider;
   }
 
   private formatTime(time: string): string {
@@ -215,36 +217,17 @@ struct ClubActivityDetailPage {
 
   build() {
     Column() {
-      Row() {
-        Text('<')
-          .fontSize(24)
-          .fontColor('#333333')
-          .width(40)
-          .height(40)
-          .textAlign(TextAlign.Center)
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Text('活动详情')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#222222')
-        Blank()
-      }
-      .width('100%')
-      .height(58)
-      .padding({ left: 8, right: 16 })
-      .backgroundColor(Color.White)
+      NavHeader({ title: '活动详情' })
 
       if (this.isLoading && this.activity.id === 0) {
         Column() {
           LoadingProgress()
             .width(32)
             .height(32)
-            .color('#4A90D9')
+            .color(Theme.primary)
           Text('正在加载详情')
             .fontSize(14)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 12 })
         }
         .width('100%')
@@ -254,12 +237,12 @@ struct ClubActivityDetailPage {
         Column() {
           Text(this.errorMessage)
             .fontSize(15)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
           Button('重新加载')
             .height(36)
             .fontSize(14)
             .fontColor(Color.White)
-            .backgroundColor('#4A90D9')
+            .backgroundColor(Theme.primary)
             .borderRadius(18)
             .margin({ top: 16 })
             .onClick(() => {
@@ -276,9 +259,9 @@ struct ClubActivityDetailPage {
               Row() {
                 Text(this.activity.club)
                   .fontSize(13)
-                  .fontColor('#4A90D9')
+                  .fontColor(Theme.primary)
                   .padding({ left: 9, right: 9, top: 4, bottom: 4 })
-                  .backgroundColor('#EBF3FC')
+                  .backgroundColor(Theme.primaryLight)
                   .borderRadius(4)
                 Blank()
                 Text(this.statusText(this.activity.status))
@@ -293,25 +276,26 @@ struct ClubActivityDetailPage {
               Text(this.activity.title)
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#222222')
+                .fontColor(Theme.textPrimary)
                 .lineHeight(32)
                 .width('100%')
                 .margin({ top: 14 })
 
-              Text(this.activity.description.length > 0 ? this.activity.description : '发布者暂未填写活动介绍')
+              Text(this.activity.description.length > 0 ? this.activity.description : '发布者暂未填写活动介绍，快来报名吧！')
                 .fontSize(15)
-                .fontColor('#666666')
+                .fontColor(Theme.textSecondary)
                 .lineHeight(23)
                 .width('100%')
                 .margin({ top: 12 })
             }
             .width('100%')
             .padding(18)
-            .backgroundColor(Color.White)
+            .backgroundColor(Theme.bgCard)
             .borderRadius(10)
+            .shadow(ShadowStyle.sm)
 
             Column() {
-              this.InfoRow('社团', this.activity.club)
+              this.InfoRow('类型', this.activity.club)
               Divider().margin({ left: 16 })
               this.InfoRow('地点', this.activity.venue)
               Divider().margin({ left: 16 })
@@ -322,20 +306,21 @@ struct ClubActivityDetailPage {
               this.InfoRow('发布人', this.activity.userName.length > 0 ? this.activity.userName : '未知')
             }
             .width('100%')
-            .backgroundColor(Color.White)
+            .backgroundColor(Theme.bgCard)
             .borderRadius(10)
             .margin({ top: 12 })
+            .shadow(ShadowStyle.sm)
 
             Column() {
               Row() {
                 Text('报名人数')
                   .fontSize(16)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor('#333333')
+                  .fontColor(Theme.textPrimary)
                 Blank()
                 Text(`${this.activity.currentParticipants}/${this.activity.maxParticipants}`)
                   .fontSize(15)
-                  .fontColor('#4A90D9')
+                  .fontColor(Theme.primary)
                   .fontWeight(FontWeight.Medium)
               }
               .width('100%')
@@ -343,8 +328,8 @@ struct ClubActivityDetailPage {
               Progress({ value: this.joinPercent(), total: 100, type: ProgressType.Linear })
                 .width('100%')
                 .height(8)
-                .color('#4A90D9')
-                .backgroundColor('#E8ECF2')
+                .color(Theme.primary)
+                .backgroundColor(Theme.border)
                 .margin({ top: 12 })
 
               if (this.activity.participantNames.length > 0) {
@@ -352,9 +337,9 @@ struct ClubActivityDetailPage {
                   ForEach(this.activity.participantNames, (name: string, index: number) => {
                     Text(name)
                       .fontSize(13)
-                      .fontColor('#555555')
+                      .fontColor(Theme.textSecondary)
                       .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-                      .backgroundColor('#F0F2F5')
+                      .backgroundColor(Theme.bgInput)
                       .borderRadius(14)
                       .margin({ right: 8, top: 8 })
                   }, (name: string, index: number) => `${index}-${name}`)
@@ -364,16 +349,17 @@ struct ClubActivityDetailPage {
               } else {
                 Text('暂无报名同学')
                   .fontSize(13)
-                  .fontColor('#999999')
+                  .fontColor(Theme.textTertiary)
                   .margin({ top: 12 })
                   .width('100%')
               }
             }
             .width('100%')
             .padding(18)
-            .backgroundColor(Color.White)
+            .backgroundColor(Theme.bgCard)
             .borderRadius(10)
             .margin({ top: 12 })
+            .shadow(ShadowStyle.md)
 
             Blank().height(88)
           }
@@ -391,8 +377,8 @@ struct ClubActivityDetailPage {
               .width('100%')
               .height(46)
               .fontSize(16)
-              .fontColor(this.canCancel() ? '#E74C3C' : '#999999')
-              .backgroundColor(this.canCancel() ? '#FDEDEC' : '#EEEEEE')
+              .fontColor(this.canCancel() ? Theme.danger : Theme.textTertiary)
+              .backgroundColor(this.canCancel() ? Theme.dangerLight : Theme.border)
               .borderRadius(23)
               .enabled(this.canCancel() && !this.isSubmitting)
               .onClick(() => {
@@ -404,7 +390,7 @@ struct ClubActivityDetailPage {
               .height(46)
               .fontSize(16)
               .fontColor(Color.White)
-              .backgroundColor(this.canRegister() ? '#4A90D9' : '#CCCCCC')
+              .backgroundColor(this.canRegister() ? Theme.primary : Theme.textDisabled)
               .borderRadius(23)
               .enabled(this.canRegister() && !this.isSubmitting)
               .onClick(() => {
@@ -414,12 +400,12 @@ struct ClubActivityDetailPage {
         }
         .width('100%')
         .padding({ left: 18, right: 18, top: 10, bottom: 24 })
-        .backgroundColor(Color.White)
+        .backgroundColor(Theme.bgCard)
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -427,11 +413,11 @@ struct ClubActivityDetailPage {
     Row() {
       Text(label)
         .fontSize(14)
-        .fontColor('#888888')
+        .fontColor(Theme.textSecondary)
         .width(70)
       Text(value)
         .fontSize(14)
-        .fontColor('#333333')
+        .fontColor(Theme.textPrimary)
         .layoutWeight(1)
         .textAlign(TextAlign.End)
         .maxLines(2)
@@ -442,4 +428,3 @@ struct ClubActivityDetailPage {
     .padding({ left: 16, right: 16, top: 10, bottom: 10 })
   }
 }
-

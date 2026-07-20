@@ -16,10 +16,11 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { Product } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const CONDITION_LABELS: string[] = ['', '全新', '几乎全新', '有使用痕迹'];
 const STATUS_LABELS: string[] = ['', '在售', '已售', '下架'];
-const STATUS_COLORS: string[] = ['#FFFFFF', '#10B981', '#6B7280', '#EF4444'];
+const STATUS_COLORS: string[] = [Theme.bgCard, Theme.success, Theme.textSecondary, Theme.danger];
 
 @Entry
 @Component
@@ -251,17 +252,17 @@ struct ProductDetailPage {
     Column() {
       if (this.isLoading) {
         Column() {
-          LoadingProgress().color('#FF6B35').width(48).height(48)
-          Text('加载中…').fontSize(14).fontColor('#9CA3AF').margin({ top: 12 })
+          LoadingProgress().color(Theme.secondary).width(48).height(48)
+          Text('加载中…').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 12 })
         }
         .width('100%').height('100%')
         .justifyContent(FlexAlign.Center)
       } else if (this.errorMsg.length > 0) {
         Column() {
           Text('😕').fontSize(48)
-          Text(this.errorMsg).fontSize(16).fontColor('#6B7280').margin({ top: 12 })
+          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
           Button('重试')
-            .type(ButtonType.Capsule).backgroundColor('#FF6B35').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => {
               this.errorMsg = '';
@@ -298,10 +299,10 @@ struct ProductDetailPage {
             } else {
               Column() {
                 Text('📷').fontSize(64)
-                Text('暂无图片').fontSize(14).fontColor('#9CA3AF').margin({ top: 8 })
+                Text('暂无图片').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 8 })
               }
               .width('100%').height(360)
-              .backgroundColor('#F3F4F6')
+          .backgroundColor(Theme.bgPage)
               .justifyContent(FlexAlign.Center)
             }
 
@@ -318,10 +319,10 @@ struct ProductDetailPage {
 
               Row() {
                 Text('¥' + this.product.price.toFixed(2))
-                  .fontSize(28).fontWeight(FontWeight.Bold).fontColor('#FF6B35')
+                  .fontSize(28).fontWeight(FontWeight.Bold).fontColor(Theme.secondary)
                 if (this.product.originalPrice > 0) {
                   Text('¥' + this.product.originalPrice.toFixed(2))
-                    .fontSize(14).fontColor('#9CA3AF')
+                    .fontSize(14).fontColor(Theme.textTertiary)
                     .decoration({ type: TextDecorationType.LineThrough })
                     .margin({ left: 8 })
                 }
@@ -335,14 +336,14 @@ struct ProductDetailPage {
                   .backgroundColor(STATUS_COLORS[Math.max(0, Math.min(this.product.status, 3))])
                   .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
                 Text(CONDITION_LABELS[Math.max(0, Math.min(this.product.conditionLevel, 3))])
-                  .fontSize(12).fontColor('#FF6B35')
-                  .backgroundColor('#FFF3ED')
+                  .fontSize(12).fontColor(Theme.secondary)
+                  .backgroundColor(Theme.secondaryLight)
                   .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
                   .margin({ left: 8 })
                 if (this.product.categoryName.length > 0) {
                   Text(this.product.categoryName)
-                    .fontSize(12).fontColor('#6B7280')
-                    .backgroundColor('#F3F4F6')
+                    .fontSize(12).fontColor(Theme.textSecondary)
+                    .backgroundColor(Theme.bgPage)
                     .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
                     .margin({ left: 8 })
                 }
@@ -352,16 +353,16 @@ struct ProductDetailPage {
             }
             .width('100%').padding(16).backgroundColor('#FFFFFF')
 
-            Divider().height(8).color('#F3F4F6').width('100%')
+            Divider().height(8).color(Theme.bgPage).width('100%')
 
             // ══════ 卖家信息 + 电话 ══════
             Row() {
               Column() {
                 Text(this.product.sellerName).fontSize(16).fontWeight(FontWeight.Medium)
-                Text('卖家').fontSize(12).fontColor('#9CA3AF').margin({ top: 2 })
+                Text('卖家').fontSize(12).fontColor(Theme.textTertiary).margin({ top: 2 })
                 if (this.sellerPhoneText.length > 0) {
                   Text('📞 ' + this.sellerPhoneText)
-                    .fontSize(13).fontColor('#FF6B35')
+                    .fontSize(13).fontColor(Theme.secondary)
                     .margin({ top: 4 })
                 }
               }
@@ -369,24 +370,24 @@ struct ProductDetailPage {
               .margin({ right: 20 })
 
               if (this.product.campusLocation.length > 0) {
-                Divider().vertical(true).height(30).color('#E5E7EB')
+                Divider().vertical(true).height(30).color(Theme.border)
                 Column() {
-                  Text('交易地点').fontSize(12).fontColor('#9CA3AF')
-                  Text(this.product.campusLocation).fontSize(14).fontColor('#374151').margin({ top: 2 })
+                  Text('交易地点').fontSize(12).fontColor(Theme.textTertiary)
+                  Text(this.product.campusLocation).fontSize(14).fontColor(Theme.textPrimary).margin({ top: 2 })
                 }
                 .alignItems(HorizontalAlign.Center).margin({ left: 16 })
               }
               Blank()
               Column() {
-                Text('浏览量').fontSize(12).fontColor('#9CA3AF')
+                Text('浏览量').fontSize(12).fontColor(Theme.textTertiary)
                 Text(this.product.viewCount.toString())
-                  .fontSize(16).fontWeight(FontWeight.Medium).fontColor('#374151').margin({ top: 2 })
+                  .fontSize(16).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).margin({ top: 2 })
               }
               .alignItems(HorizontalAlign.Center)
             }
             .width('100%').padding(16).backgroundColor('#FFFFFF')
 
-            Divider().height(8).color('#F3F4F6').width('100%')
+            Divider().height(8).color(Theme.bgPage).width('100%')
 
             // ══════ 商品描述 ══════
             Column() {
@@ -396,11 +397,11 @@ struct ProductDetailPage {
               }
               .width('100%')
               Text(this.product.description.length > 0 ? this.product.description : '暂无描述')
-                .fontSize(14).fontColor('#4B5563').width('100%').margin({ top: 8 })
+                .fontSize(14).fontColor(Theme.textSecondary).width('100%').margin({ top: 8 })
             }
             .width('100%').padding(16).backgroundColor('#FFFFFF')
 
-            Divider().height(8).color('#F3F4F6').width('100%')
+            Divider().height(8).color(Theme.bgPage).width('100%')
 
             // ══════ 标签 ══════
             if (this.parsedTags.length > 0) {
@@ -413,9 +414,9 @@ struct ProductDetailPage {
                 Flex({ wrap: FlexWrap.Wrap }) {
                   ForEach(this.parsedTags, (tag: string) => {
                     Text(tag)
-                      .fontSize(12).fontColor('#FF6B35')
-                      .backgroundColor('#FFF3ED')
-                      .border({ width: 1, color: '#FF6B35' })
+                      .fontSize(12).fontColor(Theme.secondary)
+                      .backgroundColor(Theme.secondaryLight)
+                      .border({ width: 1, color: Theme.secondary })
                       .borderRadius(12)
                       .padding({ left: 10, right: 10, top: 3, bottom: 3 })
                       .margin({ right: 8, bottom: 4 })
@@ -425,14 +426,14 @@ struct ProductDetailPage {
                 .width('100%')
               }
               .width('100%').padding(16).backgroundColor('#FFFFFF')
-              Divider().height(8).color('#F3F4F6').width('100%')
+              Divider().height(8).color(Theme.bgPage).width('100%')
             }
 
             // ══════ 时间信息 ══════
             Column() {
               Row() {
-                Text('发布时间').fontSize(14).fontColor('#9CA3AF').width(80)
-                Text(this.formatTime(this.product.createTime)).fontSize(14).fontColor('#374151')
+                Text('发布时间').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                Text(this.formatTime(this.product.createTime)).fontSize(14).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%').padding({ top: 4, bottom: 4 })
@@ -449,7 +450,7 @@ struct ProductDetailPage {
             Text(this.isFavorite ? '❤️' : '🤍').fontSize(22)
           }
           .width(48).height(48)
-          .backgroundColor(this.isFavorite ? '#FFF3ED' : '#F3F4F6')
+          .backgroundColor(this.isFavorite ? Theme.secondaryLight : Theme.bgPage)
           .borderRadius(24)
           .justifyContent(FlexAlign.Center)
           .onClick(() => { this.toggleFavorite() })
@@ -458,7 +459,7 @@ struct ProductDetailPage {
             Text('⚠️').fontSize(20)
           }
           .width(48).height(48)
-          .backgroundColor('#F3F4F6')
+          .backgroundColor(Theme.bgPage)
           .borderRadius(24)
           .margin({ left: 10 })
           .justifyContent(FlexAlign.Center)
@@ -468,7 +469,7 @@ struct ProductDetailPage {
 
           Button('联系卖家')
             .type(ButtonType.Capsule)
-            .backgroundColor('#FF6B35')
+            .backgroundColor(Theme.secondary)
             .fontColor('#FFFFFF')
             .borderRadius(22)
             .height(44)
@@ -478,11 +479,11 @@ struct ProductDetailPage {
         .width('100%').height(64)
         .padding({ left: 16, right: 16 })
         .backgroundColor('#FFFFFF')
-        .shadow({ radius: 4, color: '#0000001A', offsetY: -2 })
+        .shadow(ShadowStyle.sm)
       }
     }
     .width('100%').height('100%')
-    .backgroundColor('#F9FAFB')
+    .backgroundColor(Theme.bgInput)
   }
 
   private formatTime(timeStr: string): string {

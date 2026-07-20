@@ -5,6 +5,8 @@
 
 import { router } from '@kit.ArkUI'
 import { ApiService, ApiResult } from '../service/ApiService'
+import { Theme, ShadowStyle } from '../common/Theme'
+import { NavHeader } from '../common/NavHeader'
 
 @Entry
 @Component
@@ -89,26 +91,12 @@ struct PasswordChangePage {
 
   build() {
     Column() {
-      // 顶部导航栏
-      Row() {
-        Image($r('app.media.ic_back'))
-          .width(24).height(24)
-          .onClick(() => { router.back() })
-        Text('修改密码')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .margin({ left: 8 })
-        Blank()
-      }
-      .width('100%')
-      .height(56)
-      .padding({ left: 16, right: 16 })
-      .backgroundColor(Color.White)
+      NavHeader({ title: '修改密码' })
 
       // 步骤指示器
       Row() {
         this.StepDot(1, this.step >= 0, '验证身份')
-        Row().width(48).height(2).backgroundColor(this.step >= 1 ? '#4A90D9' : '#D9D9D9')
+        Row().width(48).height(2).backgroundColor(this.step >= 1 ? Theme.primary : Theme.textDisabled)
         this.StepDot(2, this.step >= 1, '设置新密码')
       }
       .width('100%')
@@ -126,20 +114,21 @@ struct PasswordChangePage {
       }
       .width('90%')
       .padding(20)
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
       .borderRadius(12)
+      .shadow(ShadowStyle.sm)
 
       // 错误提示
       if (this.errorMsg.length > 0) {
         Text(this.errorMsg)
           .fontSize(13)
-          .fontColor('#E74C3C')
+          .fontColor(Theme.danger)
           .width('90%')
           .margin({ top: 12 })
       }
     }
     .width('100%').height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -148,13 +137,13 @@ struct PasswordChangePage {
       Text(`${num}`)
         .width(28).height(28)
         .borderRadius(14)
-        .backgroundColor(active ? '#4A90D9' : '#D9D9D9')
+        .backgroundColor(active ? Theme.primary : Theme.textDisabled)
         .fontColor(Color.White)
         .fontSize(14)
         .textAlign(TextAlign.Center)
       Text(label)
         .fontSize(11)
-        .fontColor(active ? '#4A90D9' : '#999999')
+        .fontColor(active ? Theme.primary : Theme.textTertiary)
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Center)
@@ -164,7 +153,7 @@ struct PasswordChangePage {
   Step1Content() {
     Text('请输入原密码以验证身份')
       .fontSize(15)
-      .fontColor('#555555')
+      .fontColor(Theme.textSecondary)
       .width('100%')
       .margin({ bottom: 20 })
 
@@ -172,9 +161,9 @@ struct PasswordChangePage {
       .type(InputType.Password)
       .height(48)
       .fontSize(16)
-      .fontColor('#333333')
-      .placeholderColor('#B8B8B8')
-      .backgroundColor('#F5F6FA')
+      .fontColor(Theme.textPrimary)
+      .placeholderColor(Theme.textDisabled)
+      .backgroundColor(Theme.bgInput)
       .borderRadius(8)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
@@ -187,7 +176,7 @@ struct PasswordChangePage {
       .height(44)
       .fontSize(16)
       .fontColor(Color.White)
-      .backgroundColor('#4A90D9')
+      .backgroundColor(Theme.primary)
       .borderRadius(22)
       .margin({ top: 20 })
       .enabled(!this.isLoading)
@@ -198,7 +187,7 @@ struct PasswordChangePage {
   Step2Content() {
     Text('请设置新密码（至少6位）')
       .fontSize(15)
-      .fontColor('#555555')
+      .fontColor(Theme.textSecondary)
       .width('100%')
       .margin({ bottom: 20 })
 
@@ -206,9 +195,9 @@ struct PasswordChangePage {
       .type(InputType.Password)
       .height(48)
       .fontSize(16)
-      .fontColor('#333333')
-      .placeholderColor('#B8B8B8')
-      .backgroundColor('#F5F6FA')
+      .fontColor(Theme.textPrimary)
+      .placeholderColor(Theme.textDisabled)
+      .backgroundColor(Theme.bgInput)
       .borderRadius(8)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
@@ -220,9 +209,9 @@ struct PasswordChangePage {
       .type(InputType.Password)
       .height(48)
       .fontSize(16)
-      .fontColor('#333333')
-      .placeholderColor('#B8B8B8')
-      .backgroundColor('#F5F6FA')
+      .fontColor(Theme.textPrimary)
+      .placeholderColor(Theme.textDisabled)
+      .backgroundColor(Theme.bgInput)
       .borderRadius(8)
       .padding({ left: 14, right: 14 })
       .margin({ top: 12 })
@@ -236,7 +225,7 @@ struct PasswordChangePage {
       .height(44)
       .fontSize(16)
       .fontColor(Color.White)
-      .backgroundColor('#4A90D9')
+      .backgroundColor(Theme.primary)
       .borderRadius(22)
       .margin({ top: 20 })
       .enabled(!this.isLoading)
@@ -246,9 +235,9 @@ struct PasswordChangePage {
       .width('100%')
       .height(44)
       .fontSize(16)
-      .fontColor('#4A90D9')
+      .fontColor(Theme.primary)
       .backgroundColor(Color.Transparent)
-      .border({ width: 1, color: '#4A90D9' })
+      .border({ width: 1, color: Theme.primary })
       .borderRadius(22)
       .margin({ top: 10 })
       .onClick(() => {

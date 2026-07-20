@@ -6,6 +6,15 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  mail:
+    host: smtp.mail.me.com
+    port: 587
+    username: caozehan007@icloud.com
+    password: rsrn-scup-tbkd-pxaz
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/campusdb2?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000
     username: root
@@ -29,3 +38,6 @@ jwt:
 
 file:
   upload-dir: /Users/caozehan/Campus-Server/uploads
+
+feedback:
+  email: caozehan007@icloud.com

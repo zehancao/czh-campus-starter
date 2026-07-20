@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI'
 import { promptAction } from '@kit.ArkUI'
 import { ApiService } from '../service/ApiService'
 import { AppStore } from '../service/AppStore'
+import { Theme, ShadowStyle } from '../common/Theme'
 
 const STATUS: string[] = ['待处理', '已处理']
 
@@ -23,17 +24,17 @@ struct CreditCard {
   build() {
     Row() {
       Column() {
-        Text('信用分').fontSize(13).fontColor('#FFFFFF').opacity(0.85)
-        Text(this.score.toString()).fontSize(36).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
-        Text(this.score >= 85 ? '可发布商品' : '信用分不足').fontSize(12).fontColor('#FFFFFF').opacity(0.9).margin({ top: 2 })
+        Text('信用分').fontSize(13).fontColor(Theme.textWhite).opacity(0.85)
+        Text(this.score.toString()).fontSize(36).fontWeight(FontWeight.Bold).fontColor(Theme.textWhite)
+        Text(this.score >= 85 ? '可发布商品' : '信用分不足').fontSize(12).fontColor(Theme.textWhite).opacity(0.9).margin({ top: 2 })
       }.alignItems(HorizontalAlign.Center).layoutWeight(1)
-      Divider().vertical(true).height(50).color('#FFFFFF').opacity(0.25)
+      Divider().vertical(true).height(50).color(Theme.textWhite).opacity(0.25)
       Column() {
-        Text('信用等级').fontSize(13).fontColor('#FFFFFF').opacity(0.85)
-        Text(this.getLevel()).fontSize(22).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
+        Text('信用等级').fontSize(13).fontColor(Theme.textWhite).opacity(0.85)
+        Text(this.getLevel()).fontSize(22).fontWeight(FontWeight.Bold).fontColor(Theme.textWhite)
       }.alignItems(HorizontalAlign.Center).layoutWeight(1)
     }.width('100%').height(110)
-    .backgroundColor(this.score >= 90 ? '#10B981' : this.score >= 80 ? '#F59E0B' : '#EF4444')
+    .backgroundColor(this.score >= 90 ? Theme.success : this.score >= 80 ? Theme.warning : Theme.danger)
     .borderRadius(16)
   }
   getLevel(): string { return this.score >= 90 ? '优秀' : this.score >= 80 ? '良好' : this.score >= 70 ? '一般' : '较差' }
@@ -51,23 +52,23 @@ struct CCard {
     Column() {
       Row() {
         Text(this.isMy ? '⚖️' : '👤').fontSize(22).width(40).height(40).textAlign(TextAlign.Center)
-          .backgroundColor(this.isMy ? '#FFF3ED' : '#FEF2F2').borderRadius(20)
+          .backgroundColor(this.isMy ? Theme.secondaryLight : Theme.dangerLight).borderRadius(20)
         Column() {
           Row() {
             Text(this.who).fontSize(15).fontWeight(FontWeight.Medium)
             Blank()
             Text(STATUS[Math.max(0, Math.min(this.stat, 1))]).fontSize(11)
-              .fontColor(this.stat === 0 ? '#F59E0B' : '#10B981')
-              .backgroundColor(this.stat === 0 ? '#FEF3C7' : '#ECFDF5')
+              .fontColor(this.stat === 0 ? Theme.warning : Theme.success)
+              .backgroundColor(this.stat === 0 ? Theme.warningLight : Theme.successLight)
               .borderRadius(4).padding({ left: 7, right: 7, top: 2, bottom: 2 })
           }.width('100%')
-          Text(this.isMy ? '被投诉人' : '投诉人').fontSize(11).fontColor('#9CA3AF').margin({ top: 2 })
+          Text(this.isMy ? '被投诉人' : '投诉人').fontSize(11).fontColor(Theme.textTertiary).margin({ top: 2 })
         }.layoutWeight(1).margin({ left: 10 })
       }.width('100%')
-      Divider().height(1).color('#F3F4F6').margin({ top: 10, bottom: 10 })
-      Text(this.why).fontSize(13).fontColor('#374151').width('100%').maxLines(5).textOverflow({ overflow: TextOverflow.Ellipsis })
-      Row() { Blank(); Text(this.fmt(this.when)).fontSize(11).fontColor('#9CA3AF') }.width('100%').margin({ top: 6 })
-    }.width('100%').padding(14).backgroundColor('#FFFFFF').borderRadius(12).margin({ bottom: 10 })
+      Divider().height(1).color(Theme.divider).margin({ top: 10, bottom: 10 })
+      Text(this.why).fontSize(13).fontColor(Theme.textPrimary).width('100%').maxLines(5).textOverflow({ overflow: TextOverflow.Ellipsis })
+      Row() { Blank(); Text(this.fmt(this.when)).fontSize(11).fontColor(Theme.textTertiary) }.width('100%').margin({ top: 6 })
+    }.width('100%').padding(14).backgroundColor(Theme.bgCard).borderRadius(12).margin({ bottom: 10 })
   }
   fmt(s: string): string {
     if (!s) return ''; const t = s.replace('T', ' '); return t.length > 16 ? t.substring(0, 16) : t
@@ -90,7 +91,7 @@ struct ComplaintDlg {
 
       if (this.dName.length > 0) {
         Text('被投诉用户：' + this.dName)
-          .fontSize(14).fontColor('#6B7280')
+          .fontSize(14).fontColor(Theme.textSecondary)
           .margin({ top: 8 })
       }
 
@@ -99,7 +100,7 @@ struct ComplaintDlg {
         text: this.reason
       })
         .width('100%').height(120)
-        .fontSize(14).backgroundColor('#F9FAFB')
+        .fontSize(14).backgroundColor(Theme.bgInput)
         .borderRadius(8).padding(12)
         .margin({ top: 12 })
         .onChange((val: string) => { this.reason = val })
@@ -107,14 +108,14 @@ struct ComplaintDlg {
       Row() {
         Button('取消')
           .type(ButtonType.Capsule)
-          .fontColor('#6B7280').backgroundColor('#F3F4F6')
+          .fontColor(Theme.textSecondary).backgroundColor(Theme.bgInput)
           .layoutWeight(1).margin({ right: 8 })
           .onClick(() => { this.controller?.close() })
 
         Button('提交投诉')
           .type(ButtonType.Capsule)
-          .backgroundColor(this.reason.trim().length >= 2 ? '#EF4444' : '#D1D5DB')
-          .fontColor('#FFFFFF')
+          .backgroundColor(this.reason.trim().length >= 2 ? Theme.danger : Theme.textDisabled)
+          .fontColor(Theme.textWhite)
           .layoutWeight(1).margin({ left: 8 })
           .enabled(this.reason.trim().length >= 2)
           .onClick(() => {
@@ -124,7 +125,7 @@ struct ComplaintDlg {
             this.controller?.close()
           })
       }.width('100%').margin({ top: 16, bottom: 16 })
-    }.width('100%').padding({ left: 20, right: 20 }).backgroundColor('#FFFFFF').borderRadius(16)
+    }.width('100%').padding({ left: 20, right: 20 }).backgroundColor(Theme.bgCard).borderRadius(16)
   }
 }
 
@@ -219,11 +220,11 @@ struct MyComplaintsPage {
 
   build() {
     Column() {
-      // 顶部导航栏
+      // 顶部导航栏 - custom header with count, keep it
       Row() {
         Text('‹ 返回')
           .fontSize(16)
-          .fontColor('#6B7280')
+          .fontColor(Theme.textSecondary)
           .onClick(() => {
             router.back()
           })
@@ -231,18 +232,19 @@ struct MyComplaintsPage {
         Text('投诉与信用')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.textPrimary)
         Blank()
         if (this.myItems.length + this.agItems.length > 0) {
           Text('共' + (this.myItems.length + this.agItems.length) + '条')
             .fontSize(13)
-            .fontColor('#9CA3AF')
+            .fontColor(Theme.textTertiary)
         } else {
           Blank().width(48)
         }
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(Theme.bgCard)
 
       if (!AppStore.getInstance().isLoggedIn) {
         Column() {
@@ -250,12 +252,12 @@ struct MyComplaintsPage {
             .fontSize(56)
           Text('请先登录')
             .fontSize(16)
-            .fontColor('#6B7280')
+            .fontColor(Theme.textSecondary)
             .margin({ top: 12 })
           Button('去登录')
             .type(ButtonType.Capsule)
-            .backgroundColor('#FF6B35')
-            .fontColor('#FFFFFF')
+            .backgroundColor(Theme.secondary)
+            .fontColor(Theme.textWhite)
             .margin({ top: 20 })
             .onClick(() => {
               router.pushUrl({ url: 'pages/LoginPage' })
@@ -267,7 +269,7 @@ struct MyComplaintsPage {
       } else if (this.loading) {
         Column() {
           LoadingProgress()
-            .color('#FF6B35')
+            .color(Theme.secondary)
             .width(40)
             .height(40)
         }
@@ -287,7 +289,7 @@ struct MyComplaintsPage {
                 .fontSize(14)
               Text('每次有效投诉，被投诉人信用分 -5')
                 .fontSize(12)
-                .fontColor('#9CA3AF')
+                .fontColor(Theme.textTertiary)
                 .margin({ left: 4 })
             }
             .width('100%')
@@ -299,10 +301,11 @@ struct MyComplaintsPage {
                 Text('📝 投诉内容')
                   .fontSize(16)
                   .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
                 Blank()
                 Text(this.myItems.length + '条')
                   .fontSize(12)
-                  .fontColor('#9CA3AF')
+                  .fontColor(Theme.textTertiary)
               }
               .width('100%')
               .padding({ left: 16, right: 16, top: 14, bottom: 8 })
@@ -311,11 +314,11 @@ struct MyComplaintsPage {
                 Column() {
                   Text('暂无投诉记录')
                     .fontSize(14)
-                    .fontColor('#9CA3AF')
+                    .fontColor(Theme.textTertiary)
                 }
                 .width('100%')
                 .padding({ top: 18, bottom: 18 })
-                .backgroundColor('#FFFFFF')
+                .backgroundColor(Theme.bgCard)
                 .borderRadius(12)
               } else {
                 ForEach(this.myItems, (item: CItem) => {
@@ -330,9 +333,9 @@ struct MyComplaintsPage {
               }
             }
             .width('100%')
-            .backgroundColor('#FFFFFF')
+            .backgroundColor(Theme.bgCard)
             .borderRadius(16)
-            .shadow({ radius: 8, color: '#00000008', offsetX: 0, offsetY: 2 })
+            .shadow(ShadowStyle.md)
 
             // 自己的被投诉记录卡片组
             Column() {
@@ -340,10 +343,11 @@ struct MyComplaintsPage {
                 Text('📋 自己的被投诉记录')
                   .fontSize(16)
                   .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
                 Blank()
                 Text(this.agItems.length + '条')
                   .fontSize(12)
-                  .fontColor('#9CA3AF')
+                  .fontColor(Theme.textTertiary)
               }
               .width('100%')
               .padding({ left: 16, right: 16, top: 14, bottom: 8 })
@@ -352,11 +356,11 @@ struct MyComplaintsPage {
                 Column() {
                   Text('没有被投诉记录')
                     .fontSize(14)
-                    .fontColor('#9CA3AF')
+                    .fontColor(Theme.textTertiary)
                 }
                 .width('100%')
                 .padding({ top: 18, bottom: 18 })
-                .backgroundColor('#FFFFFF')
+                .backgroundColor(Theme.bgCard)
                 .borderRadius(12)
               } else {
                 ForEach(this.agItems, (item: CItem) => {
@@ -371,9 +375,9 @@ struct MyComplaintsPage {
               }
             }
             .width('100%')
-            .backgroundColor('#FFFFFF')
+            .backgroundColor(Theme.bgCard)
             .borderRadius(16)
-            .shadow({ radius: 8, color: '#00000008', offsetX: 0, offsetY: 2 })
+            .shadow(ShadowStyle.md)
             .margin({ top: 12 })
 
             Blank().height(24)
@@ -390,7 +394,7 @@ struct MyComplaintsPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F7F8FA')
+    .backgroundColor(Theme.bgPage)
     .justifyContent(FlexAlign.Start)
     .alignItems(HorizontalAlign.Start)
   }

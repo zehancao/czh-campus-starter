@@ -26,7 +26,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String uri = request.getRequestURI();
-        boolean isWhitelisted = uri.startsWith("/api/user/login") || uri.startsWith("/api/user/register") || uri.startsWith("/api/public/") || uri.startsWith("/uploads/") || uri.startsWith("/api/classroom/") || uri.startsWith("/ws/") || uri.equals("/api/product/list") || uri.equals("/api/lost-found/list") || uri.equals("/api/lost-found/detail") || (uri.startsWith("/api/product/") && !uri.equals("/api/product/publish") && !uri.equals("/api/product/upload-image") && !uri.equals("/api/product/my-products") && !uri.equals("/api/product/update-status") && !uri.equals("/api/product/delete"));
+        boolean isWhitelisted = uri.startsWith("/api/user/login") || uri.startsWith("/api/user/register") || uri.startsWith("/api/public/") || uri.startsWith("/uploads/") || uri.startsWith("/api/classroom/") || uri.startsWith("/ws/") || uri.startsWith("/api/feedback/") || uri.equals("/api/product/list") || uri.equals("/api/lost-found/list") || uri.equals("/api/lost-found/detail") || (uri.startsWith("/api/product/") && !uri.equals("/api/product/publish") && !uri.equals("/api/product/upload-image") && !uri.equals("/api/product/my-products") && !uri.equals("/api/product/update-status") && !uri.equals("/api/product/delete"));
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {

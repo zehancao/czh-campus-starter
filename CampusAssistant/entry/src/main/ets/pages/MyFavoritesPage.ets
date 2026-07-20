@@ -21,10 +21,11 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { FavoriteItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 /** 状态映射 */
 const STATUS_LABELS: string[] = ['', '在售', '已售', '下架'];
-const STATUS_COLORS: string[] = ['#FFFFFF', '#10B981', '#6B7280', '#EF4444'];
+const STATUS_COLORS: string[] = [Theme.bgCard, Theme.success, Theme.textSecondary, Theme.danger];
 
 // ─────────────────────────────────────────────
 //  组件：收藏卡片
@@ -51,7 +52,7 @@ struct FavoriteCard {
         }
         .width(96)
         .height(96)
-        .backgroundColor('#F3F4F6')
+        .backgroundColor(Theme.bgPage)
         .borderRadius(10)
         .justifyContent(FlexAlign.Center)
       }
@@ -70,14 +71,14 @@ struct FavoriteCard {
           Text(`¥${this.item.productPrice.toFixed(2)}`)
             .fontSize(17)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#FF6B35')
+            .fontColor(Theme.secondary)
         }
         .width('100%')
 
         // 卖家
         Text(this.item.sellerName)
           .fontSize(13)
-          .fontColor('#6B7280')
+          .fontColor(Theme.textSecondary)
           .width('100%')
           .margin({ top: 6 })
 
@@ -94,8 +95,8 @@ struct FavoriteCard {
           Button('取消收藏')
             .type(ButtonType.Capsule)
             .fontSize(11)
-            .fontColor('#EF4444')
-            .backgroundColor('#FEF2F2')
+            .fontColor(Theme.danger)
+            .backgroundColor(Theme.dangerLight)
             .height(28)
             .padding({ left: 10, right: 10 })
             .onClick(() => {
@@ -195,7 +196,7 @@ struct MyFavoritesPage {
       Row() {
         Text('‹ 返回')
           .fontSize(16)
-          .fontColor('#6B7280')
+          .fontColor(Theme.textSecondary)
           .onClick(() => { router.back() })
 
         Blank()
@@ -209,8 +210,8 @@ struct MyFavoritesPage {
         if (this.favorites.length > 0) {
           Text(`${this.favorites.length}`)
             .fontSize(13)
-            .fontColor('#9CA3AF')
-            .backgroundColor('#F3F4F6')
+            .fontColor(Theme.textTertiary)
+            .backgroundColor(Theme.bgPage)
             .borderRadius(10)
             .padding({ left: 8, right: 8, top: 2, bottom: 2 })
         } else {
@@ -229,11 +230,11 @@ struct MyFavoritesPage {
             .fontSize(56)
           Text('请先登录查看收藏')
             .fontSize(16)
-            .fontColor('#6B7280')
+            .fontColor(Theme.textSecondary)
             .margin({ top: 12 })
           Button('去登录')
             .type(ButtonType.Capsule)
-            .backgroundColor('#FF6B35')
+            .backgroundColor(Theme.secondary)
             .fontColor('#FFFFFF')
             .margin({ top: 24 })
             .onClick(() => {
@@ -248,7 +249,7 @@ struct MyFavoritesPage {
         // ── 加载中 ──
         Column() {
           LoadingProgress()
-            .color('#FF6B35')
+            .color(Theme.secondary)
             .width(40)
             .height(40)
         }
@@ -263,16 +264,16 @@ struct MyFavoritesPage {
             .fontSize(64)
           Text('还没有收藏商品')
             .fontSize(17)
-            .fontColor('#374151')
+            .fontColor(Theme.textPrimary)
             .fontWeight(FontWeight.Medium)
             .margin({ top: 16 })
           Text('在商品详情页点击❤即可收藏')
             .fontSize(13)
-            .fontColor('#9CA3AF')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 6 })
           Button('去交易')
             .type(ButtonType.Capsule)
-            .backgroundColor('#FF6B35')
+            .backgroundColor(Theme.secondary)
             .fontColor('#FFFFFF')
             .margin({ top: 28 })
             .onClick(() => {
@@ -291,11 +292,11 @@ struct MyFavoritesPage {
             Row() {
               Text(`共 ${this.favorites.length} 件收藏`)
                 .fontSize(13)
-                .fontColor('#6B7280')
+                .fontColor(Theme.textSecondary)
               Blank()
               if (this.isRefreshing) {
                 LoadingProgress()
-                  .color('#FF6B35')
+                  .color(Theme.secondary)
                   .width(14)
                   .height(14)
               }
@@ -323,6 +324,6 @@ struct MyFavoritesPage {
       }
     }
     .width('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 }

@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { ProductCategory } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const CONDITION_OPTIONS: string[] = ['全新', '几乎全新', '轻微使用痕迹', '明显使用痕迹', '成色一般'];
 const LOCATION_OPTIONS: string[] = ['一食堂', '二食堂', '图书馆', '宿舍区', '教学楼', '操场', '快递站', '校门口'];
@@ -157,13 +158,13 @@ struct PublishPage {
   build() {
     Column() {
       Row() {
-        Text('取消').fontSize(16).fontColor('#6B7280').onClick(() => { router.back() })
+        Text('取消').fontSize(16).fontColor(Theme.textSecondary).onClick(() => { router.back() })
         Blank()
-        Text('发布商品').fontSize(18).fontWeight(FontWeight.Bold).fontColor('#111827')
+        Text('发布商品').fontSize(18).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
         Blank()
         Text(this.isSubmitting ? '提交中' : '发布')
           .fontSize(16)
-          .fontColor(this.canSubmitNow() ? '#2563EB' : '#9CA3AF')
+          .fontColor(this.canSubmitNow() ? Theme.primary : Theme.textTertiary)
           .onClick(() => { this.submitPublish() })
       }
       .width('100%')
@@ -172,16 +173,16 @@ struct PublishPage {
 
       if (this.isLoading) {
         Column() {
-          LoadingProgress().width(40).height(40).color('#2563EB')
-          Text('加载发布信息中').fontSize(14).fontColor('#6B7280').margin({ top: 12 })
+          LoadingProgress().width(40).height(40).color(Theme.primary)
+          Text('加载发布信息中').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 12 })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (!this.isLoggedIn) {
         Column() {
-          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#111827')
-          Text('登录后才可以发布二手商品').fontSize(14).fontColor('#6B7280').margin({ top: 8 })
+          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
+          Text('登录后才可以发布二手商品').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
           Button('去登录')
             .type(ButtonType.Capsule)
-            .backgroundColor('#2563EB')
+            .backgroundColor(Theme.primary)
             .fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
@@ -190,7 +191,7 @@ struct PublishPage {
         Scroll() {
           Column() {
             Column() {
-              Text('商品图片').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#111827').width('100%')
+              Text('商品图片').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).width('100%')
               Scroll() {
                 Row() {
                   ForEach(this.imageUrlList, (url: string, index: number) => {
@@ -206,14 +207,14 @@ struct PublishPage {
                   }, (url: string) => url)
                   Button() {
                     Column() {
-                      Text(this.isUploading ? '上传中' : '+').fontSize(this.isUploading ? 14 : 28).fontColor('#2563EB')
-                      Text(this.imageUrlList.length + '/5').fontSize(12).fontColor('#6B7280').margin({ top: 2 })
+                      Text(this.isUploading ? '上传中' : '+').fontSize(this.isUploading ? 14 : 28).fontColor(Theme.primary)
+                      Text(this.imageUrlList.length + '/5').fontSize(12).fontColor(Theme.textSecondary).margin({ top: 2 })
                     }.width(82).height(82).justifyContent(FlexAlign.Center)
                   }
                   .type(ButtonType.Normal)
                   .width(82).height(82)
                   .borderRadius(8)
-                  .backgroundColor('#EFF6FF')
+                  .backgroundColor(Theme.primaryLight)
                   .margin({ top: 10 })
                   .onClick(() => { this.pickImagesFromAlbum() })
                 }
@@ -222,13 +223,13 @@ struct PublishPage {
             .width('100%').padding(16).backgroundColor('#FFFFFF')
 
             Column() {
-              Text('商品分类').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#111827').width('100%')
+              Text('商品分类').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).width('100%')
               Flex({ wrap: FlexWrap.Wrap }) {
                 ForEach(this.categories, (item: ProductCategory, index: number) => {
                   Text(item.name)
                     .fontSize(13)
-                    .fontColor(this.selectedCategoryIndex === index ? '#FFFFFF' : '#374151')
-                    .backgroundColor(this.selectedCategoryIndex === index ? '#2563EB' : '#F3F4F6')
+                    .fontColor(this.selectedCategoryIndex === index ? '#FFFFFF' : Theme.textPrimary)
+                    .backgroundColor(this.selectedCategoryIndex === index ? Theme.primary : Theme.bgPage)
                     .borderRadius(14)
                     .padding({ left: 12, right: 12, top: 6, bottom: 6 })
                     .margin({ right: 8, top: 10 })
@@ -240,30 +241,30 @@ struct PublishPage {
 
             Column() {
               TextInput({ placeholder: '商品标题，例如：二手高数教材', text: this.titleInput })
-                .height(46).fontSize(15).backgroundColor('#F9FAFB').borderRadius(8)
+                .height(46).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(8)
                 .onChange((value: string) => { this.titleInput = value })
               Row() {
                 TextInput({ placeholder: '售价', text: this.priceInput })
-                  .height(46).fontSize(15).backgroundColor('#F9FAFB').borderRadius(8)
+                  .height(46).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(8)
                   .layoutWeight(1).onChange((value: string) => { this.priceInput = value })
                 TextInput({ placeholder: '原价，可不填', text: this.originalPriceInput })
-                  .height(46).fontSize(15).backgroundColor('#F9FAFB').borderRadius(8)
+                  .height(46).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(8)
                   .layoutWeight(1).margin({ left: 10 }).onChange((value: string) => { this.originalPriceInput = value })
               }.width('100%').margin({ top: 10 })
               TextArea({ placeholder: '描述商品状态、购买时间、配件、交易说明等', text: this.descInput })
-                .height(132).fontSize(15).backgroundColor('#F9FAFB').borderRadius(8)
+                .height(132).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(8)
                 .margin({ top: 10 }).onChange((value: string) => { this.descInput = value })
             }
             .width('100%').padding(16).backgroundColor('#FFFFFF').margin({ top: 8 })
 
             Column() {
-              Text('成色').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#111827').width('100%')
+              Text('成色').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).width('100%')
               Flex({ wrap: FlexWrap.Wrap }) {
                 ForEach(CONDITION_OPTIONS, (name: string, index: number) => {
                   Text(name)
                     .fontSize(13)
-                    .fontColor(this.selectedConditionIndex === index ? '#FFFFFF' : '#374151')
-                    .backgroundColor(this.selectedConditionIndex === index ? '#059669' : '#F3F4F6')
+                    .fontColor(this.selectedConditionIndex === index ? '#FFFFFF' : Theme.textPrimary)
+                    .backgroundColor(this.selectedConditionIndex === index ? Theme.success : Theme.bgPage)
                     .borderRadius(14)
                     .padding({ left: 12, right: 12, top: 6, bottom: 6 })
                     .margin({ right: 8, top: 10 })
@@ -274,13 +275,13 @@ struct PublishPage {
             .width('100%').padding(16).backgroundColor('#FFFFFF').margin({ top: 8 })
 
             Column() {
-              Text('交易地点').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#111827').width('100%')
+              Text('交易地点').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).width('100%')
               Flex({ wrap: FlexWrap.Wrap }) {
                 ForEach(LOCATION_OPTIONS, (name: string, index: number) => {
                   Text(name)
                     .fontSize(13)
-                    .fontColor(this.selectedLocationIndex === index && this.locationInput.length === 0 ? '#FFFFFF' : '#374151')
-                    .backgroundColor(this.selectedLocationIndex === index && this.locationInput.length === 0 ? '#7C3AED' : '#F3F4F6')
+                    .fontColor(this.selectedLocationIndex === index && this.locationInput.length === 0 ? '#FFFFFF' : Theme.textPrimary)
+                    .backgroundColor(this.selectedLocationIndex === index && this.locationInput.length === 0 ? Theme.primary : Theme.bgPage)
                     .borderRadius(14)
                     .padding({ left: 12, right: 12, top: 6, bottom: 6 })
                     .margin({ right: 8, top: 10 })
@@ -291,16 +292,16 @@ struct PublishPage {
                 }, (name: string) => name)
               }.width('100%')
               TextInput({ placeholder: '也可以手动输入具体地点', text: this.locationInput })
-                .height(44).fontSize(14).backgroundColor('#F9FAFB').borderRadius(8)
+                .height(44).fontSize(14).backgroundColor(Theme.bgInput).borderRadius(8)
                 .margin({ top: 12 }).onChange((value: string) => { this.locationInput = value })
             }
             .width('100%').padding(16).backgroundColor('#FFFFFF').margin({ top: 8, bottom: 20 })
           }.width('100%')
-        }.layoutWeight(1).backgroundColor('#F3F4F6')
+        }        .layoutWeight(1).backgroundColor(Theme.bgPage)
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 }

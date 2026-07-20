@@ -11,6 +11,7 @@ public class ScheduleVO {
     private Integer endWeek;
     private String weekParity;
     private String teacherName;
+    private String source;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -32,4 +33,6 @@ public class ScheduleVO {
     public void setWeekParity(String weekParity) { this.weekParity = weekParity; }
     public String getTeacherName() { return teacherName; }
     public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
 }

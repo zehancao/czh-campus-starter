@@ -2,6 +2,8 @@ import { ApiService, ApiResult } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { UserInfo } from '../model/Models';
 import { router } from '@kit.ArkUI';
+import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Entry
 @Component
@@ -114,30 +116,8 @@ struct EditProfilePage {
 
   build() {
     Column() {
-      // 顶部导航栏
-      Row() {
-        Text('<')
-          .fontSize(26)
-          .fontColor('#333333')
-          .width(44)
-          .height(44)
-          .textAlign(TextAlign.Center)
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Text('编辑资料')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#1A1A1A')
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-        // 右侧占位，保持标题居中
-        Row().width(44)
-      }
-      .width('100%')
-      .height(56)
-      .padding({ left: 4, right: 4 })
-      .backgroundColor(Color.White)
+      // 顶部导航栏 - replaced with NavHeader
+      NavHeader({ title: '编辑资料' })
 
       Scroll() {
         Column() {
@@ -158,7 +138,7 @@ struct EditProfilePage {
                   .width(88)
                   .height(88)
                   .borderRadius(44)
-                  .backgroundColor('#4A90D9')
+                  .backgroundColor(Theme.primary)
               }
               // 相机角标
               Column() {
@@ -181,19 +161,20 @@ struct EditProfilePage {
             Text(this.isUploading ? '上传中...' : this.userName)
               .fontSize(16)
               .fontWeight(FontWeight.Medium)
-              .fontColor(this.isUploading ? '#4A90D9' : '#1A1A1A')
+              .fontColor(this.isUploading ? Theme.primary : Theme.textPrimary)
               .margin({ top: 12 })
 
             Text(this.isUploading ? '' : '点击头像可更换')
               .fontSize(12)
-              .fontColor('#AAAAAA')
+              .fontColor(Theme.textTertiary)
               .margin({ top: 4 })
           }
           .width('100%')
           .padding({ top: 32, bottom: 28 })
-          .backgroundColor(Color.White)
+          .backgroundColor(Theme.bgCard)
           .alignItems(HorizontalAlign.Center)
           .borderRadius(12)
+          .shadow(ShadowStyle.sm)
 
           // 设置项卡片：用户名 + 修改密码
           Column() {
@@ -201,14 +182,14 @@ struct EditProfilePage {
             Row() {
               Text('用户名')
                 .fontSize(15)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
                 .width(76)
               TextInput({ placeholder: '请输入用户名', text: this.userName })
                 .layoutWeight(1)
                 .height(44)
                 .fontSize(15)
-                .fontColor('#1A1A1A')
-                .placeholderColor('#CCCCCC')
+                .fontColor(Theme.textPrimary)
+                .placeholderColor(Theme.textDisabled)
                 .textAlign(TextAlign.End)
                 .backgroundColor(Color.Transparent)
                 .padding({ left: 8, right: 0 })
@@ -226,17 +207,17 @@ struct EditProfilePage {
               .width('100%')
               .height(0.5)
               .margin({ left: 16 })
-              .backgroundColor('#F0F0F0')
+              .backgroundColor(Theme.border)
 
             // 修改密码行
             Row() {
               Text('修改密码')
                 .fontSize(15)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
               Blank()
               Text('›')
                 .fontSize(22)
-                .fontColor('#C0C0C0')
+                .fontColor(Theme.textDisabled)
             }
             .width('100%')
             .height(56)
@@ -246,15 +227,16 @@ struct EditProfilePage {
             })
           }
           .width('100%')
-          .backgroundColor(Color.White)
+          .backgroundColor(Theme.bgCard)
           .borderRadius(12)
           .margin({ top: 14 })
+          .shadow(ShadowStyle.sm)
 
           // 错误提示
           if (this.errorMsg.length > 0) {
             Text(this.errorMsg)
               .fontSize(13)
-              .fontColor('#E74C3C')
+              .fontColor(Theme.danger)
               .width('100%')
               .textAlign(TextAlign.Center)
               .margin({ top: 12 })
@@ -266,7 +248,7 @@ struct EditProfilePage {
             .height(48)
             .fontSize(16)
             .fontColor(Color.White)
-            .backgroundColor('#4A90D9')
+            .backgroundColor(Theme.primary)
             .borderRadius(24)
             .margin({ top: 28 })
             .enabled(!this.isSavingName)
@@ -282,6 +264,6 @@ struct EditProfilePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 }

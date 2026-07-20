@@ -5,9 +5,10 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const STATUS_LABELS: string[] = ['进行中', '已找到/已归还'];
-const STATUS_COLORS: string[] = ['#F59E0B', '#10B981'];
+const STATUS_COLORS: string[] = [Theme.warning, Theme.success];
 
 function splitImageString(imagesStr: string): string[] {
   if (imagesStr === null || imagesStr === undefined || imagesStr.length === 0) {
@@ -28,10 +29,10 @@ struct ImagePreview {
   build() {
     if (this.images.length === 0) {
       Column() {
-        Text('📷 暂无图片').fontSize(32).fontColor('#D1D5DB')
+        Text('📷 暂无图片').fontSize(32).fontColor(Theme.textDisabled)
       }
       .width('100%').height(280)
-      .backgroundColor('#F9FAFB')
+      .backgroundColor(Theme.bgInput)
       .justifyContent(FlexAlign.Center)
     } else {
       Stack() {
@@ -151,7 +152,7 @@ struct LostFoundDetailPage {
       },
       confirm: {
         value: '删除',
-        fontColor: '#EF4444',
+        fontColor: Theme.danger,
         action: () => {
           this.doDelete();
         }
@@ -191,7 +192,7 @@ struct LostFoundDetailPage {
     Column() {
       Row() {
         Text('‹ 返回')
-          .fontSize(16).fontColor('#6B7280')
+          .fontSize(16).fontColor(Theme.textSecondary)
           .onClick(() => { router.back() })
         Blank()
         Text(this.itemData.type === 1 ? '寻物信息' : '招领信息')
@@ -199,7 +200,7 @@ struct LostFoundDetailPage {
         Blank()
         if (this.isMyPost && !this.isLoading) {
           Text('删除')
-            .fontSize(15).fontColor('#EF4444')
+            .fontSize(15).fontColor(Theme.danger)
             .onClick(() => { this.deletePost() })
         }
       }
@@ -209,16 +210,16 @@ struct LostFoundDetailPage {
 
       if (this.isLoading) {
         Column() {
-          LoadingProgress().color('#FF6B35').width(36).height(36)
+          LoadingProgress().color(Theme.secondary).width(36).height(36)
         }
         .width('100%').layoutWeight(1)
         .justifyContent(FlexAlign.Center)
       } else if (this.errorMsg.length > 0) {
         Column() {
           Text('😕').fontSize(48)
-          Text(this.errorMsg).fontSize(16).fontColor('#6B7280').margin({ top: 12 })
+          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
           Button('重试')
-            .type(ButtonType.Capsule).backgroundColor('#FF6B35').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { this.loadDetail() })
         }
@@ -231,8 +232,8 @@ struct LostFoundDetailPage {
 
             Row() {
               Text(this.itemData.type === 1 ? '🔍 寻物' : '📢 招领')
-                .fontSize(14).fontColor('#FF6B35')
-                .backgroundColor('#FFF3ED')
+                .fontSize(14).fontColor(Theme.secondary)
+                .backgroundColor(Theme.secondaryLight)
                 .borderRadius(6)
                 .padding({ left: 10, right: 10, top: 4, bottom: 4 })
               Blank()
@@ -252,12 +253,12 @@ struct LostFoundDetailPage {
               .padding({ left: 16, right: 16 })
               .margin({ top: 8 })
 
-            Divider().height(8).color('#F3F4F6').width('100%').margin({ top: 12 })
+            Divider().height(8).color(Theme.bgPage).width('100%').margin({ top: 12 })
             Column() {
               if (this.itemData.category.length > 0) {
                 Row() {
-                  Text('物品分类').fontSize(14).fontColor('#9CA3AF').width(80)
-                  Text(this.itemData.category).fontSize(14).fontColor('#374151')
+                  Text('物品分类').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                  Text(this.itemData.category).fontSize(14).fontColor(Theme.textPrimary)
                   Blank()
                 }
                 .width('100%')
@@ -266,8 +267,8 @@ struct LostFoundDetailPage {
 
               if (this.itemData.locationDesc.length > 0) {
                 Row() {
-                  Text('地    点').fontSize(14).fontColor('#9CA3AF').width(80)
-                  Text(this.itemData.locationDesc).fontSize(14).fontColor('#374151')
+                  Text('地    点').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                  Text(this.itemData.locationDesc).fontSize(14).fontColor(Theme.textPrimary)
                   Blank()
                 }
                 .width('100%')
@@ -275,30 +276,30 @@ struct LostFoundDetailPage {
               }
 
               Row() {
-                Text('发布者').fontSize(14).fontColor('#9CA3AF').width(80)
-                Text(this.itemData.userName).fontSize(14).fontColor('#374151')
+                Text('发布者').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                Text(this.itemData.userName).fontSize(14).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
               .padding({ top: 6, bottom: 6 })
 
               Row() {
-                Text('发布时间').fontSize(14).fontColor('#9CA3AF').width(80)
-                Text(this.formatTime(this.itemData.createTime)).fontSize(14).fontColor('#374151')
+                Text('发布时间').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                Text(this.formatTime(this.itemData.createTime)).fontSize(14).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
               .padding({ top: 6, bottom: 6 })
 
-              Divider().height(1).color('#E5E7EB').width('100%').margin({ top: 6, bottom: 6 })
+              Divider().height(1).color(Theme.border).width('100%').margin({ top: 6, bottom: 6 })
 
               Row() {
-                Text('详细描述').fontSize(14).fontWeight(FontWeight.Medium).fontColor('#374151')
+                Text('详细描述').fontSize(14).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
               Text(this.itemData.description.length > 0 ? this.itemData.description : '暂无描述')
-                .fontSize(14).fontColor('#6B7280')
+                .fontSize(14).fontColor(Theme.textSecondary)
                 .width('100%')
                 .margin({ top: 6 })
             }
@@ -306,7 +307,7 @@ struct LostFoundDetailPage {
             .padding(16)
             .backgroundColor('#FFFFFF')
 
-            Divider().height(8).color('#F3F4F6').width('100%')
+            Divider().height(8).color(Theme.bgPage).width('100%')
 
             if (this.itemData.contactPhone.length > 0) {
               Column() {
@@ -318,7 +319,7 @@ struct LostFoundDetailPage {
                 Row() {
                   Text('📞').fontSize(20)
                   Text(this.itemData.contactPhone)
-                    .fontSize(16).fontColor('#FF6B35')
+                    .fontSize(16).fontColor(Theme.secondary)
                     .margin({ left: 8 })
                   Blank()
                 }
@@ -330,7 +331,7 @@ struct LostFoundDetailPage {
               .backgroundColor('#FFFFFF')
             }
 
-            Divider().height(16).color('#F3F4F6').width('100%')
+            Divider().height(16).color(Theme.bgPage).width('100%')
           }
         }
         .layoutWeight(1)
@@ -339,7 +340,7 @@ struct LostFoundDetailPage {
         Row() {
           Button('📞 联系 ' + (this.itemData.userName.length > 0 ? this.itemData.userName : '发布者'))
             .type(ButtonType.Capsule)
-            .backgroundColor('#FF6B35')
+            .backgroundColor(Theme.secondary)
             .fontColor('#FFFFFF')
             .borderRadius(22)
             .height(44)
@@ -350,12 +351,12 @@ struct LostFoundDetailPage {
         .width('100%')
         .height(64)
         .backgroundColor('#FFFFFF')
-        .shadow({ radius: 4, color: '#0000001A', offsetY: -2 })
+        .shadow(ShadowStyle.sm)
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 
   private formatTime(timeStr: string): string {

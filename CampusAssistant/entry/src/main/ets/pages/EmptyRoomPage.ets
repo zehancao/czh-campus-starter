@@ -2,6 +2,8 @@ import { ApiResult, ApiService } from '../service/ApiService';
 import { EmptyRoom, Semester } from '../model/Models';
 import { Constants } from '../common/Constants';
 import { calcSemesterWeek } from '../common/utils';
+import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const DAY_LABELS: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 const WEEK_LABELS: string[] = [
@@ -331,26 +333,7 @@ struct EmptyRoomPage {
 
   build() {
     Column() {
-      Row() {
-        Text('<')
-          .fontSize(24)
-          .fontColor('#333333')
-          .width(40)
-          .height(40)
-          .textAlign(TextAlign.Center)
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Text('空教室查询')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#222222')
-        Blank()
-      }
-      .width('100%')
-      .height(58)
-      .padding({ left: 8, right: 16 })
-      .backgroundColor(Color.White)
+      NavHeader({ title: '空教室查询' })
 
       Column() {
         Row({ space: 10 }) {
@@ -377,7 +360,7 @@ struct EmptyRoomPage {
           .height(44)
           .fontSize(16)
           .fontColor(Color.White)
-          .backgroundColor('#4A90D9')
+          .backgroundColor(Theme.primary)
           .borderRadius(22)
           .enabled(!this.isLoading)
           .margin({ top: 14 })
@@ -387,12 +370,13 @@ struct EmptyRoomPage {
       }
       .width('100%')
       .padding(16)
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
+      .shadow(ShadowStyle.sm)
 
       if (this.errorMessage.length > 0) {
         Text(this.errorMessage)
           .fontSize(13)
-          .fontColor('#E74C3C')
+          .fontColor(Theme.danger)
           .width('100%')
           .padding({ left: 16, right: 16, top: 10 })
       }
@@ -400,11 +384,11 @@ struct EmptyRoomPage {
       Row() {
         Text(this.hasSearched ? `共 ${this.rooms.length} 间空教室` : '请选择条件后查询')
           .fontSize(13)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
         Blank()
         Text(`${this.selectedDayText()} · ${this.sectionRangeText()}`)
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 14, bottom: 8 })
@@ -414,10 +398,10 @@ struct EmptyRoomPage {
           LoadingProgress()
             .width(32)
             .height(32)
-            .color('#4A90D9')
+            .color(Theme.primary)
           Text('正在查询空教室')
             .fontSize(14)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 12 })
         }
         .width('100%')
@@ -427,10 +411,10 @@ struct EmptyRoomPage {
         Column() {
           Text(this.hasSearched ? '当前条件下没有空教室' : '请选择条件后查询')
             .fontSize(16)
-            .fontColor('#666666')
+            .fontColor(Theme.textSecondary)
           Text(this.hasSearched ? '可以换一个教学楼、周次或节次再试' : '教学楼和周次可以不选')
             .fontSize(13)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 8 })
         }
         .width('100%')
@@ -452,7 +436,7 @@ struct EmptyRoomPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -460,18 +444,18 @@ struct EmptyRoomPage {
     Column() {
       Text(label)
         .fontSize(12)
-        .fontColor('#999999')
+        .fontColor(Theme.textTertiary)
         .width('100%')
       Row() {
         Text(this.filterValueText(type))
           .fontSize(14)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
         Text('>')
           .fontSize(13)
-          .fontColor('#CCCCCC')
+          .fontColor(Theme.textDisabled)
           .margin({ left: 6 })
       }
       .width('100%')
@@ -480,7 +464,7 @@ struct EmptyRoomPage {
     .layoutWeight(1)
     .height(62)
     .padding({ left: 12, right: 12, top: 9, bottom: 8 })
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgInput)
     .borderRadius(10)
     .onClick(() => {
       if (type === 1) {
@@ -509,10 +493,10 @@ struct EmptyRoomPage {
           Text(this.roomTitle(room))
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#222222')
+            .fontColor(Theme.textPrimary)
           Text(room.type.length > 0 ? room.type : '普通教室')
             .fontSize(13)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 4 })
         }
         .layoutWeight(1)
@@ -520,9 +504,9 @@ struct EmptyRoomPage {
 
         Text('看课表')
           .fontSize(13)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
           .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-          .backgroundColor('#EBF3FC')
+          .backgroundColor(Theme.primaryLight)
           .borderRadius(14)
       }
       .width('100%')
@@ -537,8 +521,9 @@ struct EmptyRoomPage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(Color.White)
+    .backgroundColor(Theme.bgCard)
     .borderRadius(10)
+    .shadow(ShadowStyle.sm)
     .onClick(() => {
       this.goSchedule(room);
     })
@@ -548,9 +533,9 @@ struct EmptyRoomPage {
   Tag(text: string) {
     Text(text)
       .fontSize(12)
-      .fontColor('#666666')
+      .fontColor(Theme.textSecondary)
       .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-      .backgroundColor('#F0F2F5')
+      .backgroundColor(Theme.bgInput)
       .borderRadius(4)
   }
 }

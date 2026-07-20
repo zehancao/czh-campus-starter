@@ -1,33 +1,86 @@
 ﻿import { ApiService, ApiResult } from '../service/ApiService';
+import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Entry
 @Component
 struct ClubActivityPublishPage {
-  @State selectedClub: string = '篮球';
+  @State selectedClub: string = '';
+  @State customClub: string = '';
   @State title: string = '';
   @State description: string = '';
   @State venue: string = '';
   @State activityTime: string = '';
-  @State selectedDate: Date = new Date();
-  @State selectedTime: Date = new Date();
   @State maxParticipants: number = 20;
   @State isSubmitting: boolean = false;
-  private clubOptions: string[] = ['篮球', '排球', '足球', '羽毛球', '乒乓球'];
+  @State selectedYear: number = 2026;
+  @State selectedMonth: number = 1;
+  @State selectedDay: number = 1;
+  @State selectedHour: number = 19;
+  @State selectedMinute: number = 0;
+  private clubOptions: string[] = ['篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐', '其他'];
+
+  private yearRange: string[] = [];
+  private monthRange: string[] = [];
+  private hourRange: string[] = [];
+  private minuteRange: string[] = [];
 
   aboutToAppear(): void {
-    if (this.activityTime.length === 0) {
-      const defaultDate: Date = this.defaultActivityDate();
-      this.selectedDate = defaultDate;
-      this.selectedTime = defaultDate;
-      this.syncActivityTime();
-    }
+    const now: Date = new Date();
+    this.selectedYear = now.getFullYear();
+    this.selectedMonth = now.getMonth() + 1;
+    this.selectedDay = now.getDate();
+    this.selectedHour = 19;
+    this.selectedMinute = 0;
+    this.buildRanges();
+    this.syncActivityTime();
   }
 
-  private defaultActivityDate(): Date {
-    const date: Date = new Date();
-    date.setDate(date.getDate() + 1);
-    date.setHours(19, 0, 0, 0);
-    return date;
+  private buildRanges(): void {
+    const currentYear: number = new Date().getFullYear();
+    const years: string[] = [];
+    for (let y: number = currentYear; y <= currentYear + 3; y++) {
+      years.push(`${y}年`);
+    }
+    this.yearRange = years;
+
+    const months: string[] = [];
+    for (let m: number = 1; m <= 12; m++) {
+      months.push(`${m}月`);
+    }
+    this.monthRange = months;
+
+    const hours: string[] = [];
+    for (let h: number = 0; h <= 23; h++) {
+      hours.push(`${h < 10 ? '0' : ''}${h}时`);
+    }
+    this.hourRange = hours;
+
+    const minutes: string[] = [];
+    for (let mi: number = 0; mi <= 59; mi++) {
+      minutes.push(`${mi < 10 ? '0' : ''}${mi}分`);
+    }
+    this.minuteRange = minutes;
+  }
+
+  private daysInMonth(year: number, month: number): number {
+    return new Date(year, month, 0).getDate();
+  }
+
+  private dayRange(): string[] {
+    const max: number = this.daysInMonth(this.selectedYear, this.selectedMonth);
+    const days: string[] = [];
+    for (let d: number = 1; d <= max; d++) {
+      days.push(`${d}日`);
+    }
+    return days;
+  }
+
+  private clampDay(): void {
+    const max: number = this.daysInMonth(this.selectedYear, this.selectedMonth);
+    if (this.selectedDay > max) {
+      this.selectedDay = max;
+    }
   }
 
   private pad2(value: number): string {
@@ -35,38 +88,29 @@ struct ClubActivityPublishPage {
   }
 
   private syncActivityTime(): void {
-    const date: Date = new Date(this.selectedDate.getTime());
-    date.setHours(this.selectedTime.getHours(), this.selectedTime.getMinutes(), 0, 0);
-    this.activityTime = this.formatIsoDate(date);
+    this.activityTime = `${this.selectedYear}-${this.pad2(this.selectedMonth)}-${this.pad2(this.selectedDay)}T${this.pad2(this.selectedHour)}:${this.pad2(this.selectedMinute)}:00`;
   }
 
-  private formatIsoDate(date: Date): string {
-    return `${date.getFullYear()}-${this.pad2(date.getMonth() + 1)}-${this.pad2(date.getDate())}T${this.pad2(date.getHours())}:${this.pad2(date.getMinutes())}:00`;
+  private formatDisplay(): string {
+    return `${this.selectedYear}-${this.pad2(this.selectedMonth)}-${this.pad2(this.selectedDay)} ${this.pad2(this.selectedHour)}:${this.pad2(this.selectedMinute)}`;
   }
 
-  private formatDisplayDate(date: Date): string {
-    return `${date.getFullYear()}-${this.pad2(date.getMonth() + 1)}-${this.pad2(date.getDate())} ${this.pad2(date.getHours())}:${this.pad2(date.getMinutes())}`;
-  }
-
-  private activityDate(): Date {
-    const date: Date = new Date(this.selectedDate.getTime());
-    date.setHours(this.selectedTime.getHours(), this.selectedTime.getMinutes(), 0, 0);
-    return date;
-  }
-
-  private deadlineDate(): Date {
-    const date: Date = this.activityDate();
-    date.setHours(date.getHours() - 1);
-    return date;
+  private deadlineDisplay(): string {
+    const d: Date = new Date(this.selectedYear, this.selectedMonth - 1, this.selectedDay, this.selectedHour, this.selectedMinute, 0, 0);
+    d.setHours(d.getHours() - 1);
+    return `${d.getFullYear()}-${this.pad2(d.getMonth() + 1)}-${this.pad2(d.getDate())} ${this.pad2(d.getHours())}:${this.pad2(d.getMinutes())}`;
   }
 
   private isDeadlineInFuture(): boolean {
-    return this.deadlineDate().getTime() > new Date().getTime();
+    const deadline: Date = new Date(this.selectedYear, this.selectedMonth - 1, this.selectedDay, this.selectedHour, this.selectedMinute, 0, 0);
+    deadline.setHours(deadline.getHours() - 1);
+    return deadline.getTime() > new Date().getTime();
   }
 
   private validateForm(): boolean {
-    if (this.selectedClub.length === 0) {
-      this.showToast('请选择社团');
+    const club: string = this.selectedClub === '其他' ? this.customClub.trim() : this.selectedClub;
+    if (club.length === 0) {
+      this.showToast('请选择或输入活动类型');
       return false;
     }
     if (this.title.trim().length === 0) {
@@ -105,8 +149,9 @@ struct ClubActivityPublishPage {
       return;
     }
     this.isSubmitting = true;
+    const club: string = this.selectedClub === '其他' ? this.customClub.trim() : this.selectedClub;
     const params: Record<string, Object> = {
-      'club': this.selectedClub,
+      'club': club,
       'title': this.title.trim(),
       'description': this.description.trim(),
       'venue': this.venue.trim(),
@@ -137,43 +182,24 @@ struct ClubActivityPublishPage {
 
   build() {
     Column() {
-      Row() {
-        Text('<')
-          .fontSize(24)
-          .fontColor('#333333')
-          .width(40)
-          .height(40)
-          .textAlign(TextAlign.Center)
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Text('发布活动')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#222222')
-        Blank()
-      }
-      .width('100%')
-      .height(58)
-      .padding({ left: 8, right: 16 })
-      .backgroundColor(Color.White)
+      NavHeader({ title: '发布活动' })
 
       Scroll() {
         Column() {
           Column() {
-            Text('社团类型')
+            Text('活动类型')
               .fontSize(15)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
               .width('100%')
               .margin({ bottom: 12 })
             Flex({ wrap: FlexWrap.Wrap }) {
               ForEach(this.clubOptions, (club: string) => {
                 Text(club)
                   .fontSize(14)
-                  .fontColor(this.selectedClub === club ? Color.White : '#666666')
+                  .fontColor(this.selectedClub === club ? Color.White : Theme.textSecondary)
                   .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-                  .backgroundColor(this.selectedClub === club ? '#4A90D9' : '#F0F2F5')
+                  .backgroundColor(this.selectedClub === club ? Theme.primary : Theme.bgInput)
                   .borderRadius(18)
                   .margin({ right: 10, bottom: 10 })
                   .onClick(() => {
@@ -182,18 +208,32 @@ struct ClubActivityPublishPage {
               }, (club: string) => club)
             }
             .width('100%')
+
+            if (this.selectedClub === '其他') {
+              TextInput({ placeholder: '请输入活动类型，如：摄影、骑行…', text: this.customClub })
+                .height(46)
+                .fontSize(15)
+                .backgroundColor(Theme.bgInput)
+                .borderRadius(8)
+                .padding({ left: 12, right: 12 })
+                .margin({ top: 8 })
+                .onChange((value: string) => {
+                  this.customClub = value;
+                })
+            }
           }
           .width('100%')
           .padding(16)
-          .backgroundColor(Color.White)
+          .backgroundColor(Theme.bgCard)
           .borderRadius(10)
+          .shadow(ShadowStyle.sm)
 
           Column() {
             this.FieldLabel('活动标题')
-            TextInput({ placeholder: '例如：周五篮球友谊赛', text: this.title })
+            TextInput({ placeholder: '例如：周五剧本杀组局', text: this.title })
               .height(46)
               .fontSize(15)
-              .backgroundColor('#F7F8FA')
+              .backgroundColor(Theme.bgInput)
               .borderRadius(8)
               .padding({ left: 12, right: 12 })
               .onChange((value: string) => {
@@ -201,60 +241,84 @@ struct ClubActivityPublishPage {
               })
 
             this.FieldLabel('活动地点')
-            TextInput({ placeholder: '例如：篮球场A区', text: this.venue })
+            TextInput({ placeholder: '例如：教学楼A201', text: this.venue })
               .height(46)
               .fontSize(15)
-              .backgroundColor('#F7F8FA')
+              .backgroundColor(Theme.bgInput)
               .borderRadius(8)
               .padding({ left: 12, right: 12 })
               .onChange((value: string) => {
                 this.venue = value;
               })
 
-            this.FieldLabel('活动时间')
-            Column() {
-              DatePicker({
-                start: new Date(2026, 0, 1),
-                end: new Date(2035, 11, 31),
-                selected: this.selectedDate
-              })
-                .width('100%')
-                .height(160)
-                .onChange((value) => {
-                  const year: number = value.year ?? this.selectedDate.getFullYear();
-                  const month: number = value.month ?? (this.selectedDate.getMonth() + 1);
-                  const day: number = value.day ?? this.selectedDate.getDate();
-                  const nextDate: Date = new Date(year, month - 1, day, this.selectedTime.getHours(), this.selectedTime.getMinutes(), 0, 0);
-                  this.selectedDate = nextDate;
+            this.FieldLabel('活动日期')
+            Row() {
+              TextPicker({ range: this.yearRange, selected: this.selectedYear - new Date().getFullYear() })
+                .width('35%')
+                .height(140)
+                .onChange((value: string | string[], index: number | number[]) => {
+                  const i: number = index as number;
+                  this.selectedYear = new Date().getFullYear() + i;
+                  this.clampDay();
                   this.syncActivityTime();
                 })
 
-              Divider().margin({ top: 8, bottom: 8 })
+              TextPicker({ range: this.monthRange, selected: this.selectedMonth - 1 })
+                .width('30%')
+                .height(140)
+                .onChange((value: string | string[], index: number | number[]) => {
+                  const i: number = index as number;
+                  this.selectedMonth = i + 1;
+                  this.clampDay();
+                  this.syncActivityTime();
+                })
 
-              TimePicker({ selected: this.selectedTime })
-                .useMilitaryTime(true)
-                .width('100%')
-                .height(160)
-                .onChange((value) => {
-                  const nextTime: Date = new Date(this.selectedTime.getTime());
-                  nextTime.setHours(value.hour, value.minute, 0, 0);
-                  this.selectedTime = nextTime;
+              TextPicker({ range: this.dayRange(), selected: this.selectedDay - 1 })
+                .width('30%')
+                .height(140)
+                .onChange((value: string | string[], index: number | number[]) => {
+                  const i: number = index as number;
+                  this.selectedDay = i + 1;
                   this.syncActivityTime();
                 })
             }
             .width('100%')
-            .padding({ left: 8, right: 8, top: 8, bottom: 8 })
-            .backgroundColor('#F7F8FA')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(10)
+
+            this.FieldLabel('活动时间')
+            Row() {
+              TextPicker({ range: this.hourRange, selected: this.selectedHour })
+                .width('50%')
+                .height(140)
+                .onChange((value: string | string[], index: number | number[]) => {
+                  const i: number = index as number;
+                  this.selectedHour = i;
+                  this.syncActivityTime();
+                })
+
+              TextPicker({ range: this.minuteRange, selected: this.selectedMinute })
+                .width('50%')
+                .height(140)
+                .onChange((value: string | string[], index: number | number[]) => {
+                  const i: number = index as number;
+                  this.selectedMinute = i;
+                  this.syncActivityTime();
+                })
+            }
+            .width('100%')
+            .backgroundColor(Theme.bgInput)
+            .borderRadius(10)
+            .margin({ top: 8 })
 
             Row() {
               Text('活动时间')
                 .fontSize(13)
-                .fontColor('#888888')
+                .fontColor(Theme.textSecondary)
               Blank()
-              Text(this.formatDisplayDate(this.activityDate()))
+              Text(this.formatDisplay())
                 .fontSize(13)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
             }
             .width('100%')
             .margin({ top: 10 })
@@ -262,11 +326,11 @@ struct ClubActivityPublishPage {
             Row() {
               Text('报名截止')
                 .fontSize(13)
-                .fontColor('#888888')
+                .fontColor(Theme.textSecondary)
               Blank()
-              Text(this.formatDisplayDate(this.deadlineDate()))
+              Text(this.deadlineDisplay())
                 .fontSize(13)
-                .fontColor('#D35400')
+                .fontColor(Theme.warning)
             }
             .width('100%')
             .margin({ top: 6 })
@@ -277,8 +341,8 @@ struct ClubActivityPublishPage {
                 .width(42)
                 .height(38)
                 .fontSize(20)
-                .fontColor('#4A90D9')
-                .backgroundColor('#EBF3FC')
+                .fontColor(Theme.primary)
+                .backgroundColor(Theme.primaryLight)
                 .borderRadius(8)
                 .onClick(() => {
                   this.decreaseParticipants();
@@ -286,7 +350,7 @@ struct ClubActivityPublishPage {
               Text(`${this.maxParticipants}`)
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
                 .textAlign(TextAlign.Center)
                 .layoutWeight(1)
               Button('+')
@@ -294,7 +358,7 @@ struct ClubActivityPublishPage {
                 .height(38)
                 .fontSize(20)
                 .fontColor(Color.White)
-                .backgroundColor('#4A90D9')
+                .backgroundColor(Theme.primary)
                 .borderRadius(8)
                 .onClick(() => {
                   this.increaseParticipants();
@@ -303,14 +367,14 @@ struct ClubActivityPublishPage {
             .width('100%')
             .height(46)
             .padding({ left: 4, right: 4 })
-            .backgroundColor('#F7F8FA')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
 
             this.FieldLabel('活动介绍')
             TextArea({ placeholder: '说明活动规则、集合方式、适合人群等', text: this.description })
               .height(130)
               .fontSize(15)
-              .backgroundColor('#F7F8FA')
+              .backgroundColor(Theme.bgInput)
               .borderRadius(8)
               .padding({ left: 12, right: 12, top: 10, bottom: 10 })
               .onChange((value: string) => {
@@ -319,9 +383,10 @@ struct ClubActivityPublishPage {
           }
           .width('100%')
           .padding(16)
-          .backgroundColor(Color.White)
+          .backgroundColor(Theme.bgCard)
           .borderRadius(10)
           .margin({ top: 12 })
+          .shadow(ShadowStyle.sm)
 
           Blank().height(88)
         }
@@ -332,12 +397,12 @@ struct ClubActivityPublishPage {
       .scrollBar(BarState.Off)
 
       Row() {
-        Button(this.isSubmitting ? '发布中' : '发布活动')
+        Button(this.isSubmitting ? '发布中' : '发布组局')
           .width('100%')
           .height(46)
           .fontSize(16)
           .fontColor(Color.White)
-          .backgroundColor(this.isSubmitting ? '#A8C7E8' : '#4A90D9')
+          .backgroundColor(this.isSubmitting ? Theme.primaryLight : Theme.primary)
           .borderRadius(23)
           .enabled(!this.isSubmitting)
           .onClick(() => {
@@ -346,11 +411,11 @@ struct ClubActivityPublishPage {
       }
       .width('100%')
       .padding({ left: 18, right: 18, top: 10, bottom: 24 })
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -358,7 +423,7 @@ struct ClubActivityPublishPage {
     Text(label)
       .fontSize(15)
       .fontWeight(FontWeight.Medium)
-      .fontColor('#333333')
+      .fontColor(Theme.textPrimary)
       .width('100%')
       .margin({ top: 16, bottom: 8 })
   }

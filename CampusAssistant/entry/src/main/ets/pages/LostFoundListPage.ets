@@ -1,6 +1,7 @@
 import { router } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { LostFoundItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const TYPE_TABS: string[] = ['全部', '寻物', '招领'];
 const STATUS_LABELS: string[] = ['进行中', '已找到'];
@@ -16,10 +17,10 @@ struct LFListCard {
         Text(this.itemData.type === 1 ? '🔍' : '📢')
           .fontSize(28)
         Text(this.itemData.type === 1 ? '寻物' : '招领')
-          .fontSize(11).fontColor('#FF6B35').margin({ top: 2 })
+          .fontSize(11).fontColor(Theme.secondary).margin({ top: 2 })
       }
       .width(60).height(60)
-      .backgroundColor('#FFF3ED')
+        .backgroundColor(Theme.secondaryLight)
       .borderRadius(10)
       .justifyContent(FlexAlign.Center)
 
@@ -31,15 +32,15 @@ struct LFListCard {
             .layoutWeight(1)
           Text(STATUS_LABELS[Math.max(0, Math.min(this.itemData.status - 1, 1))])
             .fontSize(11)
-            .fontColor(this.itemData.status === 1 ? '#F59E0B' : '#10B981')
-            .backgroundColor(this.itemData.status === 1 ? '#FEF3C7' : '#ECFDF5')
+              .fontColor(this.itemData.status === 1 ? Theme.warning : Theme.success)
+              .backgroundColor(this.itemData.status === 1 ? Theme.warningLight : Theme.successLight)
             .borderRadius(4)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
         }
         .width('100%')
 
         Text(this.itemData.description)
-          .fontSize(13).fontColor('#6B7280')
+          .fontSize(13).fontColor(Theme.textSecondary)
           .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
           .margin({ top: 4 })
@@ -47,22 +48,22 @@ struct LFListCard {
         Row() {
           if (this.itemData.category.length > 0) {
             Text(this.itemData.category)
-              .fontSize(11).fontColor('#9CA3AF').backgroundColor('#F3F4F6')
+              .fontSize(11).fontColor(Theme.textTertiary).backgroundColor(Theme.bgPage)
               .borderRadius(4).padding({ left: 6, right: 6, top: 1, bottom: 1 })
           }
           if (this.itemData.locationDesc.length > 0) {
             Text(this.itemData.locationDesc)
-              .fontSize(11).fontColor('#9CA3AF').backgroundColor('#F3F4F6')
+              .fontSize(11).fontColor(Theme.textTertiary).backgroundColor(Theme.bgPage)
               .borderRadius(4).padding({ left: 6, right: 6, top: 1, bottom: 1 })
               .margin({ left: 6 })
           }
           Blank()
           Text(this.itemData.userName)
-            .fontSize(11).fontColor('#9CA3AF')
+            .fontSize(11).fontColor(Theme.textTertiary)
           Text(' | ')
-            .fontSize(11).fontColor('#D1D5DB')
+            .fontSize(11).fontColor(Theme.textDisabled)
           Text(this.formatTime(this.itemData.createTime))
-            .fontSize(11).fontColor('#9CA3AF')
+            .fontSize(11).fontColor(Theme.textTertiary)
         }
         .width('100%')
         .margin({ top: 6 })
@@ -76,6 +77,7 @@ struct LFListCard {
     .backgroundColor('#FFFFFF')
     .borderRadius(12)
     .margin({ bottom: 8 })
+    .shadow(ShadowStyle.sm)
     .onClick(() => {
       if (this.onTapCallback !== undefined) {
         this.onTapCallback();
@@ -155,14 +157,14 @@ struct LostFoundListPage {
     Column() {
       Row() {
         Text('‹ 返回')
-          .fontSize(16).fontColor('#6B7280')
+          .fontSize(16).fontColor(Theme.textSecondary)
           .onClick(() => { router.back() })
         Blank()
         Text('失物招领')
           .fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
         Text('发布')
-          .fontSize(16).fontColor('#FF6B35')
+          .fontSize(16).fontColor(Theme.secondary)
           .onClick(() => { this.goToPublish() })
       }
       .width('100%')
@@ -174,7 +176,7 @@ struct LostFoundListPage {
           .width('85%')
           .height(36)
           .fontSize(14)
-          .backgroundColor('#F3F4F6')
+          .backgroundColor(Theme.bgInput)
           .borderRadius(18)
           .padding({ left: 16 })
           .onChange((val: string) => { this.keywordValue = val })
@@ -190,12 +192,12 @@ struct LostFoundListPage {
           Column() {
             Text(tab)
               .fontSize(15)
-              .fontColor(this.activeTab === index ? '#FF6B35' : '#6B7280')
+              .fontColor(this.activeTab === index ? Theme.secondary : Theme.textSecondary)
               .fontWeight(this.activeTab === index ? FontWeight.Medium : FontWeight.Regular)
             Divider()
               .height(2)
               .width(24)
-              .color(this.activeTab === index ? '#FF6B35' : 'transparent')
+              .color(this.activeTab === index ? Theme.secondary : 'transparent')
               .borderRadius(1)
               .margin({ top: 4 })
           }
@@ -208,13 +210,13 @@ struct LostFoundListPage {
       .width('100%')
       .backgroundColor('#FFFFFF')
 
-      Divider().height(1).color('#E5E7EB')
+      Divider().height(1).color(Theme.border)
 
       Scroll() {
         Column() {
           Row() {
             Text('共 ' + this.items.length + ' 条')
-              .fontSize(12).fontColor('#9CA3AF')
+              .fontSize(12).fontColor(Theme.textTertiary)
             Blank()
           }
           .width('100%')
@@ -231,13 +233,13 @@ struct LostFoundListPage {
             Column() {
               Text('🕊️').fontSize(56)
               Text(this.keywordValue.length > 0 ? '没有找到相关结果' : '暂无失物招领信息')
-                .fontSize(15).fontColor('#6B7280').margin({ top: 8 })
+                .fontSize(15).fontColor(Theme.textSecondary).margin({ top: 8 })
               if (this.keywordValue.length > 0) {
                 Text('试试其他关键词')
-                  .fontSize(13).fontColor('#9CA3AF').margin({ top: 4 })
+                  .fontSize(13).fontColor(Theme.textTertiary).margin({ top: 4 })
               } else {
                 Text('点击右上角"发布"发布失物或招领信息')
-                  .fontSize(13).fontColor('#9CA3AF').margin({ top: 4 })
+                  .fontSize(13).fontColor(Theme.textTertiary).margin({ top: 4 })
               }
             }
             .width('100%')
@@ -246,13 +248,13 @@ struct LostFoundListPage {
           }
         }
         .width('100%')
-        .padding({ left: 12, right: 12, bottom: 20 })
+        .padding({ left: 12, right: 12, top: 4, bottom: 20 })
       }
-
-      Blank()
+      .layoutWeight(1)
+      .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 }

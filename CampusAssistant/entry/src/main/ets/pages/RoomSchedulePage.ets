@@ -1,6 +1,7 @@
 import { ApiService } from '../service/ApiService';
 import { CourseSchedule } from '../model/Models';
 import { Constants } from '../common/Constants';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const ROOM_DAY_LABELS: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
@@ -123,10 +124,11 @@ struct RoomSchedulePage {
 
   build() {
     Column() {
+      // Keep custom header - has special elements (classroom title + day picker)
       Row() {
         Text('<')
           .fontSize(24)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
           .width(40)
           .height(40)
           .textAlign(TextAlign.Center)
@@ -137,19 +139,19 @@ struct RoomSchedulePage {
           Text(this.classroom.length > 0 ? this.classroom : '教室课表')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#222222')
+            .fontColor(Theme.textPrimary)
           Text('教室课表')
             .fontSize(12)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 2 })
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
         Text(this.dayText())
           .fontSize(14)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
           .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .backgroundColor('#EBF3FC')
+          .backgroundColor(Theme.primaryLight)
           .borderRadius(15)
           .onClick(() => {
             this.showDayPicker();
@@ -158,36 +160,37 @@ struct RoomSchedulePage {
       .width('100%')
       .height(64)
       .padding({ left: 8, right: 16 })
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
 
       Column() {
         Row() {
           Text(this.dayText())
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#222222')
+            .fontColor(Theme.textPrimary)
           Blank()
           Text(`共 ${this.schedules.length} 节课`)
             .fontSize(13)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
         }
         .width('100%')
 
         Text('点击右上角星期可切换查看其它日期')
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .width('100%')
           .margin({ top: 6 })
       }
       .width('100%')
       .padding(16)
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
       .margin({ top: 10 })
+      .shadow(ShadowStyle.sm)
 
       if (this.errorMessage.length > 0) {
         Text(this.errorMessage)
           .fontSize(13)
-          .fontColor('#E74C3C')
+          .fontColor(Theme.danger)
           .width('100%')
           .padding({ left: 16, right: 16, top: 10 })
       }
@@ -197,10 +200,10 @@ struct RoomSchedulePage {
           LoadingProgress()
             .width(32)
             .height(32)
-            .color('#4A90D9')
+            .color(Theme.primary)
           Text('正在加载教室课表')
             .fontSize(14)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 12 })
         }
         .width('100%')
@@ -210,10 +213,10 @@ struct RoomSchedulePage {
         Column() {
           Text('这一天没有课程安排')
             .fontSize(16)
-            .fontColor('#666666')
+            .fontColor(Theme.textSecondary)
           Text('该教室当天可以灵活使用')
             .fontSize(13)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 8 })
         }
         .width('100%')
@@ -235,7 +238,7 @@ struct RoomSchedulePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -244,11 +247,11 @@ struct RoomSchedulePage {
       Column() {
         Text(this.sectionRangeText(item))
           .fontSize(14)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
           .fontWeight(FontWeight.Medium)
         Text(this.timeRangeText(item))
           .fontSize(11)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .margin({ top: 5 })
       }
       .width(78)
@@ -258,7 +261,7 @@ struct RoomSchedulePage {
         Text(item.courseName.length > 0 ? item.courseName : '课程名称未录入')
           .fontSize(17)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#222222')
+          .fontColor(Theme.textPrimary)
           .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
@@ -266,10 +269,10 @@ struct RoomSchedulePage {
         Row() {
           Text(this.teacherText(item))
             .fontSize(13)
-            .fontColor('#666666')
+            .fontColor(Theme.textSecondary)
           Text(this.weekText(item))
             .fontSize(13)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ left: 12 })
         }
         .width('100%')
@@ -281,7 +284,8 @@ struct RoomSchedulePage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(Color.White)
+    .backgroundColor(Theme.bgCard)
     .borderRadius(10)
+    .shadow(ShadowStyle.sm)
   }
 }

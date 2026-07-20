@@ -1,5 +1,6 @@
 import { AppStore } from '../service/AppStore';
 import { ApiService, ApiResult } from '../service/ApiService';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 @Entry
 @Component
@@ -13,15 +14,15 @@ struct LoginPage {
     Column() {
       Blank().height(80)
 
-      Text('智能校园助手')
+      Text('校园π')
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#333333')
+        .fontColor(Theme.textPrimary)
         .margin({ bottom: 8 })
 
-      Text('Campus Assistant')
+      Text('Campus π')
         .fontSize(14)
-        .fontColor('#999999')
+        .fontColor(Theme.textTertiary)
         .margin({ bottom: 60 })
 
       Column() {
@@ -29,10 +30,11 @@ struct LoginPage {
           .type(InputType.Normal)
           .height(48)
           .fontSize(16)
-          .placeholderColor('#CCCCCC')
-          .backgroundColor('#F5F5F5')
+          .placeholderColor(Theme.textDisabled)
+          .backgroundColor(Theme.bgInput)
           .borderRadius(8)
           .padding({ left: 16, right: 16 })
+          .shadow(ShadowStyle.sm)
           .onChange((value: string) => {
             this.studentId = value;
             this.errorMsg = '';
@@ -44,10 +46,11 @@ struct LoginPage {
           .type(InputType.Password)
           .height(48)
           .fontSize(16)
-          .placeholderColor('#CCCCCC')
-          .backgroundColor('#F5F5F5')
+          .placeholderColor(Theme.textDisabled)
+          .backgroundColor(Theme.bgInput)
           .borderRadius(8)
           .padding({ left: 16, right: 16 })
+          .shadow(ShadowStyle.sm)
           .onChange((value: string) => {
             this.password = value;
             this.errorMsg = '';
@@ -58,7 +61,7 @@ struct LoginPage {
       if (this.errorMsg.length > 0) {
         Text(this.errorMsg)
           .fontSize(12)
-          .fontColor('#FF4444')
+          .fontColor(Theme.danger)
           .margin({ top: 12 })
       }
 
@@ -69,7 +72,7 @@ struct LoginPage {
         .height(48)
         .fontSize(18)
         .fontColor(Color.White)
-        .backgroundColor('#4A90D9')
+        .backgroundColor(Theme.primary)
         .borderRadius(24)
         .enabled(!this.isLoading)
         .onClick(() => {
@@ -81,10 +84,10 @@ struct LoginPage {
       Row() {
         Text('还没有账号？')
           .fontSize(14)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
         Text('立即注册')
           .fontSize(14)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
           .fontWeight(FontWeight.Medium)
           .onClick(() => {
             this.getUIContext().getRouter().pushUrl({ url: 'pages/RegisterPage' });
@@ -93,7 +96,7 @@ struct LoginPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(Theme.bgCard)
   }
 
   private async handleLogin(): Promise<void> {

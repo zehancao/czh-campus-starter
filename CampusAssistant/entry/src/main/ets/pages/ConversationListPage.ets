@@ -3,6 +3,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { Conversation, ChatMessage } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 @Entry
 @Component
@@ -278,11 +279,11 @@ struct ConversationListPage {
             .fontSize(20).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
             .width(48).height(48).borderRadius(24)
             .textAlign(TextAlign.Center)
-            .backgroundColor('#2563EB')
+            .backgroundColor(Theme.primary)
           if (this.isOnline(item.otherUserId)) {
             Text('')
               .width(11).height(11).borderRadius(6)
-              .backgroundColor('#22C55E')
+              .backgroundColor(Theme.success)
               .border({ width: 2, color: '#FFFFFF' })
           }
         }.width(50).height(50)
@@ -290,22 +291,22 @@ struct ConversationListPage {
         Column() {
           Row() {
             Text(item.otherUserName.length > 0 ? item.otherUserName : '用户')
-              .fontSize(16).fontWeight(FontWeight.Medium).fontColor('#111827')
+              .fontSize(16).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
               .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
             Text(this.formatTime(item.lastTime))
-              .fontSize(12).fontColor('#9CA3AF')
+              .fontSize(12).fontColor(Theme.textTertiary)
           }.width('100%')
           Row() {
             Text(this.previewText(item))
-              .fontSize(14).fontColor(item.unreadCount > 0 ? '#374151' : '#9CA3AF')
+              .fontSize(14).fontColor(item.unreadCount > 0 ? Theme.textPrimary : Theme.textTertiary)
               .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
             if (item.unreadCount > 0) {
               Text(item.unreadCount > 99 ? '99+' : item.unreadCount.toString())
                 .fontSize(11).fontColor('#FFFFFF').textAlign(TextAlign.Center)
                 .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-                .borderRadius(10).backgroundColor('#EF4444')
+                .borderRadius(10).backgroundColor(Theme.danger)
                 .margin({ left: 8 })
             }
           }.width('100%').margin({ top: 6 })
@@ -321,10 +322,10 @@ struct ConversationListPage {
   build() {
     Column() {
       Row() {
-        Text('‹').fontSize(28).fontColor('#374151').width(34).onClick(() => { router.back() })
-        Text('会话').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#111827')
+        Text('‹').fontSize(28).fontColor(Theme.textPrimary).width(34).onClick(() => { router.back() })
+        Text('会话').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
         Blank()
-        Text('刷新').fontSize(14).fontColor('#2563EB').onClick(() => { this.loadData() })
+        Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => { this.loadData() })
       }
       .width('100%')
       .padding({ left: 12, right: 16, top: 12, bottom: 10 })
@@ -332,37 +333,37 @@ struct ConversationListPage {
 
       if (!this.isLoggedIn) {
         Column() {
-          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#111827')
-          Text('登录后可以查看买卖双方的会话').fontSize(14).fontColor('#6B7280').margin({ top: 8 })
+          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
+          Text('登录后可以查看买卖双方的会话').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
           Button('去登录')
-            .type(ButtonType.Capsule).backgroundColor('#2563EB').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (this.isLoading) {
         Column() {
-          LoadingProgress().width(40).height(40).color('#2563EB')
-          Text('正在加载会话').fontSize(14).fontColor('#6B7280').margin({ top: 12 })
+          LoadingProgress().width(40).height(40).color(Theme.primary)
+          Text('正在加载会话').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 12 })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (this.errorMsg.length > 0) {
         Column() {
-          Text(this.errorMsg).fontSize(16).fontColor('#6B7280')
+          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary)
           Button('重试')
-            .type(ButtonType.Capsule).backgroundColor('#2563EB').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
             .margin({ top: 18 })
             .onClick(() => { this.loadData() })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else {
         Column() {
           TextInput({ placeholder: '搜索联系人或消息', text: this.keyword })
-            .height(40).fontSize(14).backgroundColor('#F3F4F6').borderRadius(20)
+            .height(40).fontSize(14).backgroundColor(Theme.bgInput).borderRadius(20)
             .margin({ left: 16, right: 16, top: 12, bottom: 12 })
             .onChange((value: string) => { this.keyword = value })
 
           if (this.conversations.length === 0) {
             Column() {
-              Text('暂无会话').fontSize(18).fontWeight(FontWeight.Medium).fontColor('#111827')
-              Text('从商品详情页联系卖家后，会话会显示在这里').fontSize(14).fontColor('#6B7280').margin({ top: 8 })
+              Text('暂无会话').fontSize(18).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
+              Text('从商品详情页联系卖家后，会话会显示在这里').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
             }
             .width('100%')
             .padding({ top: 40, left: 16, right: 16 })
@@ -373,7 +374,7 @@ struct ConversationListPage {
                 ListItem() {
                   Column() {
                     this.ConversationCell(item)
-                    Divider().height(1).color('#F3F4F6').margin({ left: 78 })
+                    Divider().height(1).color(Theme.divider).margin({ left: 78 })
                   }.width('100%')
                 }
               }, (item: Conversation) => `${item.id}-${item.lastTime}-${item.unreadCount}-${item.lastMessage}`)

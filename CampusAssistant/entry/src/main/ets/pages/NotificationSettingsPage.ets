@@ -3,6 +3,8 @@
  */
 
 import { router } from '@kit.ArkUI'
+import { Theme, ShadowStyle } from '../common/Theme'
+import { NavHeader } from '../common/NavHeader'
 
 @Entry
 @Component
@@ -15,12 +17,7 @@ struct NotificationSettingsPage {
 
   build() {
     Column() {
-      Row() {
-        Image($r('app.media.ic_back')).width(24).height(24)
-          .onClick(() => { router.back() })
-        Text('消息通知').fontSize(18).fontWeight(FontWeight.Medium).margin({ left: 8 })
-      }
-      .width('100%').padding(16)
+      NavHeader({ title: '通知设置' })
 
       Column() {
         this.ToggleItem('教务通知推送', this.academicPush, (v: boolean) => { this.academicPush = v })
@@ -28,7 +25,8 @@ struct NotificationSettingsPage {
         this.ToggleItem('系统通知推送', this.systemPush, (v: boolean) => { this.systemPush = v })
       }
       .width('90%').padding(12)
-      .backgroundColor(Color.White).borderRadius(12).margin({ top: 12 })
+      .backgroundColor(Theme.bgCard).borderRadius(12).margin({ top: 12 })
+      .shadow(ShadowStyle.sm)
 
       Column() {
         this.ToggleItem('免打扰', this.doNotDisturb, (v: boolean) => { this.doNotDisturb = v })
@@ -45,10 +43,11 @@ struct NotificationSettingsPage {
         }
       }
       .width('90%').padding(12)
-      .backgroundColor(Color.White).borderRadius(12).margin({ top: 12 })
+      .backgroundColor(Theme.bgCard).borderRadius(12).margin({ top: 12 })
+      .shadow(ShadowStyle.sm)
     }
     .width('100%').height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder ToggleItem(label: string, value: boolean, onChange: (v: boolean) => void) {
@@ -62,6 +61,6 @@ struct NotificationSettingsPage {
   }
 
   @Builder Divider() {
-    Row().width('100%').height(0.5).backgroundColor('#F0F0F0')
+    Row().width('100%').height(0.5).backgroundColor(Theme.border)
   }
 }

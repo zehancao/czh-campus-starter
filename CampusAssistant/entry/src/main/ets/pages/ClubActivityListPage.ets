@@ -1,5 +1,6 @@
 ﻿import { ApiService, ApiResult } from '../service/ApiService';
 import { ClubActivityItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 @Entry
 @Component
@@ -11,8 +12,8 @@ struct ClubActivityListPage {
   @State isRefreshing: boolean = false;
   @State isLoading: boolean = false;
   @State errorMessage: string = '';
-  private clubOptions: string[] = ['', '篮球', '排球', '足球', '羽毛球', '乒乓球'];
-  private clubLabels: string[] = ['全部', '篮球', '排球', '足球', '羽毛球', '乒乓球'];
+  private clubOptions: string[] = ['', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
+  private clubLabels: string[] = ['全部', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
   private statusValues: number[] = [0, 1, 2, 3];
   private statusLabels: string[] = ['全部', '报名中', '已满', '已结束'];
 
@@ -96,28 +97,28 @@ struct ClubActivityListPage {
 
   private statusColor(status: number): string {
     if (status === 1) {
-      return '#2E7D32';
+      return Theme.success;
     }
     if (status === 2) {
-      return '#E67E22';
+      return Theme.warning;
     }
     if (status === 3) {
-      return '#999999';
+      return Theme.textTertiary;
     }
-    return '#666666';
+    return Theme.textSecondary;
   }
 
   private statusBg(status: number): string {
     if (status === 1) {
-      return '#EAF6ED';
+      return Theme.successLight;
     }
     if (status === 2) {
-      return '#FFF3E5';
+      return Theme.warningLight;
     }
     if (status === 3) {
-      return '#EEEEEE';
+      return Theme.border;
     }
-    return '#F3F3F3';
+    return Theme.divider;
   }
 
   private formatTime(time: string): string {
@@ -161,16 +162,16 @@ struct ClubActivityListPage {
   build() {
     Column() {
       Row() {
-        Text('社团活动')
+        Text('校园活动')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#222222')
+          .fontColor(Theme.textPrimary)
         Blank()
-        Button('发布')
+        Button('组局')
           .height(36)
           .fontSize(14)
           .fontColor(Color.White)
-          .backgroundColor('#4A90D9')
+          .backgroundColor(Theme.primary)
           .borderRadius(18)
           .padding({ left: 16, right: 16 })
           .onClick(() => {
@@ -179,14 +180,14 @@ struct ClubActivityListPage {
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 18, bottom: 12 })
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
 
       Row({ space: 10 }) {
         Button('活动广场')
           .height(34)
           .fontSize(13)
-          .fontColor(!this.showMine ? Color.White : '#666666')
-          .backgroundColor(!this.showMine ? '#4A90D9' : '#F0F2F5')
+          .fontColor(!this.showMine ? Color.White : Theme.textSecondary)
+          .backgroundColor(!this.showMine ? Theme.primary : Theme.bgInput)
           .borderRadius(17)
           .onClick(() => {
             this.showMine = false;
@@ -195,8 +196,8 @@ struct ClubActivityListPage {
         Button('我的报名')
           .height(34)
           .fontSize(13)
-          .fontColor(this.showMine ? Color.White : '#666666')
-          .backgroundColor(this.showMine ? '#4A90D9' : '#F0F2F5')
+          .fontColor(this.showMine ? Color.White : Theme.textSecondary)
+          .backgroundColor(this.showMine ? Theme.primary : Theme.bgInput)
           .borderRadius(17)
           .onClick(() => {
             this.showMine = true;
@@ -205,7 +206,7 @@ struct ClubActivityListPage {
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-      .backgroundColor(Color.White)
+      .backgroundColor(Theme.bgCard)
 
       if (!this.showMine) {
         Scroll() {
@@ -213,9 +214,9 @@ struct ClubActivityListPage {
             ForEach(this.clubOptions, (club: string, index: number) => {
               Text(this.clubLabels[index])
                 .fontSize(13)
-                .fontColor(this.selectedClub === club ? Color.White : '#666666')
+                .fontColor(this.selectedClub === club ? Color.White : Theme.textSecondary)
                 .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-                .backgroundColor(this.selectedClub === club ? '#4A90D9' : '#F0F2F5')
+                .backgroundColor(this.selectedClub === club ? Theme.primary : Theme.bgInput)
                 .borderRadius(15)
                 .onClick(() => {
                   this.selectedClub = club;
@@ -229,16 +230,16 @@ struct ClubActivityListPage {
         .scrollBar(BarState.Off)
         .width('100%')
         .height(44)
-        .backgroundColor(Color.White)
+        .backgroundColor(Theme.bgCard)
 
         Scroll() {
           Row({ space: 8 }) {
             ForEach(this.statusValues, (status: number, index: number) => {
               Text(this.statusLabels[index])
                 .fontSize(13)
-                .fontColor(this.selectedStatus === status ? Color.White : '#666666')
+                .fontColor(this.selectedStatus === status ? Color.White : Theme.textSecondary)
                 .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-                .backgroundColor(this.selectedStatus === status ? '#3B7A57' : '#F0F2F5')
+                .backgroundColor(this.selectedStatus === status ? Theme.success : Theme.bgInput)
                 .borderRadius(15)
                 .onClick(() => {
                   this.selectedStatus = status;
@@ -252,7 +253,7 @@ struct ClubActivityListPage {
         .scrollBar(BarState.Off)
         .width('100%')
         .height(44)
-        .backgroundColor(Color.White)
+        .backgroundColor(Theme.bgCard)
       }
 
       Refresh({ refreshing: $$this.isRefreshing }) {
@@ -261,10 +262,10 @@ struct ClubActivityListPage {
             LoadingProgress()
               .width(32)
               .height(32)
-              .color('#4A90D9')
+              .color(Theme.primary)
             Text('正在加载活动')
               .fontSize(14)
-              .fontColor('#999999')
+              .fontColor(Theme.textTertiary)
               .margin({ top: 12 })
           }
           .width('100%')
@@ -274,12 +275,12 @@ struct ClubActivityListPage {
           Column() {
             Text(this.errorMessage.length > 0 ? this.errorMessage : (this.showMine ? '还没有报名活动' : '暂无社团活动'))
               .fontSize(15)
-              .fontColor('#999999')
+              .fontColor(Theme.textTertiary)
             Button('刷新')
               .height(36)
               .fontSize(14)
               .fontColor(Color.White)
-              .backgroundColor('#4A90D9')
+              .backgroundColor(Theme.primary)
               .borderRadius(18)
               .margin({ top: 16 })
               .onClick(() => {
@@ -310,7 +311,7 @@ struct ClubActivityListPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -319,9 +320,9 @@ struct ClubActivityListPage {
       Row() {
         Text(item.club)
           .fontSize(12)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
           .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-          .backgroundColor('#EBF3FC')
+          .backgroundColor(Theme.primaryLight)
           .borderRadius(4)
         Blank()
         Text(this.statusText(item.status))
@@ -336,7 +337,7 @@ struct ClubActivityListPage {
       Text(item.title)
         .fontSize(17)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#222222')
+        .fontColor(Theme.textPrimary)
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .width('100%')
@@ -344,7 +345,7 @@ struct ClubActivityListPage {
 
       Text(item.description.length > 0 ? item.description : '发布者暂未填写活动介绍')
         .fontSize(13)
-        .fontColor('#777777')
+        .fontColor(Theme.textSecondary)
         .lineHeight(19)
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -354,11 +355,11 @@ struct ClubActivityListPage {
       Row() {
         Text('地点')
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .width(42)
         Text(item.venue)
           .fontSize(13)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
@@ -369,11 +370,11 @@ struct ClubActivityListPage {
       Row() {
         Text('时间')
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .width(42)
         Text(this.formatTime(item.activityTime))
           .fontSize(13)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
           .layoutWeight(1)
       }
       .width('100%')
@@ -382,11 +383,11 @@ struct ClubActivityListPage {
       Row() {
         Text('截止')
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .width(42)
         Text(this.deadlineTime(item.activityTime))
           .fontSize(13)
-          .fontColor('#D35400')
+          .fontColor(Theme.warning)
           .layoutWeight(1)
       }
       .width('100%')
@@ -395,26 +396,26 @@ struct ClubActivityListPage {
       Row() {
         Text('人数')
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .width(42)
         Text(`${item.currentParticipants}/${item.maxParticipants}`)
           .fontSize(13)
-          .fontColor(item.currentParticipants >= item.maxParticipants ? '#E67E22' : '#333333')
+          .fontColor(item.currentParticipants >= item.maxParticipants ? Theme.warning : Theme.textPrimary)
           .layoutWeight(1)
         Text('查看详情')
           .fontSize(13)
-          .fontColor('#4A90D9')
+          .fontColor(Theme.primary)
       }
       .width('100%')
       .margin({ top: 7 })
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(Color.White)
+    .backgroundColor(Theme.bgCard)
     .borderRadius(10)
+    .shadow(ShadowStyle.sm)
     .onClick(() => {
       this.goDetail(item);
     })
   }
 }
-

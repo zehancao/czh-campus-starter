@@ -1,6 +1,8 @@
 import { ApiService, ApiResult } from '../service/ApiService';
 import { PickerOption } from '../model/Models';
 import { Constants } from '../common/Constants';
+import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Component
 struct SelectField {
@@ -12,15 +14,15 @@ struct SelectField {
     Row() {
       Text(this.value.length > 0 ? this.value : `请选择${this.label}`)
         .fontSize(16)
-        .fontColor(this.value.length > 0 ? '#333333' : '#CCCCCC')
+        .fontColor(this.value.length > 0 ? Theme.textPrimary : Theme.textDisabled)
       Blank()
       Text('>')
         .fontSize(14)
-        .fontColor('#CCCCCC')
+        .fontColor(Theme.textDisabled)
     }
     .width('100%')
     .height(48)
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.bgInput)
     .borderRadius(8)
     .padding({ left: 16, right: 16 })
     .margin({ top: 12 })
@@ -64,20 +66,7 @@ struct RegisterPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹')
-          .fontSize(28)
-          .fontColor('#333333')
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Text('注册账号')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .margin({ left: 8 })
-      }
-      .width('100%')
-      .padding(16)
+      NavHeader({ title: '注册账号' })
 
       Scroll() {
         Column() {
@@ -85,9 +74,10 @@ struct RegisterPage {
             .type(InputType.Number)
             .height(48)
             .fontSize(16)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
             .padding({ left: 16, right: 16 })
+            .shadow(ShadowStyle.sm)
             .onChange((value: string) => {
               this.studentId = value;
               this.errorMsg = '';
@@ -96,10 +86,11 @@ struct RegisterPage {
           TextInput({ placeholder: '请输入姓名', text: this.name })
             .height(48)
             .fontSize(16)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
             .padding({ left: 16, right: 16 })
             .margin({ top: 12 })
+            .shadow(ShadowStyle.sm)
             .onChange((value: string) => {
               this.name = value;
               this.errorMsg = '';
@@ -109,10 +100,11 @@ struct RegisterPage {
             .type(InputType.Password)
             .height(48)
             .fontSize(16)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
             .padding({ left: 16, right: 16 })
             .margin({ top: 12 })
+            .shadow(ShadowStyle.sm)
             .onChange((value: string) => {
               this.password = value;
               this.errorMsg = '';
@@ -122,10 +114,11 @@ struct RegisterPage {
             .type(InputType.Password)
             .height(48)
             .fontSize(16)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
             .padding({ left: 16, right: 16 })
             .margin({ top: 12 })
+            .shadow(ShadowStyle.sm)
             .onChange((value: string) => {
               this.confirmPassword = value;
               this.errorMsg = '';
@@ -135,10 +128,11 @@ struct RegisterPage {
             .type(InputType.PhoneNumber)
             .height(48)
             .fontSize(16)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(Theme.bgInput)
             .borderRadius(8)
             .padding({ left: 16, right: 16 })
             .margin({ top: 12 })
+            .shadow(ShadowStyle.sm)
             .onChange((value: string) => {
               this.phone = value;
               this.errorMsg = '';
@@ -153,7 +147,7 @@ struct RegisterPage {
           if (this.errorMsg.length > 0) {
             Text(this.errorMsg)
               .fontSize(12)
-              .fontColor('#FF4444')
+              .fontColor(Theme.danger)
               .margin({ top: 12 })
           }
 
@@ -162,7 +156,7 @@ struct RegisterPage {
             .height(48)
             .fontSize(18)
             .fontColor(Color.White)
-            .backgroundColor('#4A90D9')
+            .backgroundColor(Theme.primary)
             .borderRadius(24)
             .enabled(!this.isLoading)
             .margin({ top: 24, bottom: 24 })
@@ -177,7 +171,7 @@ struct RegisterPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(Theme.bgCard)
   }
 
   private async loadGrades(): Promise<void> {

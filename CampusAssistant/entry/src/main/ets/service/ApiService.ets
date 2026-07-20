@@ -11,7 +11,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.1.20:8080';
+  static baseUrl: string = 'http://172.18.23.152:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -97,6 +97,15 @@ export class ApiService {
 
   static async getCurrentSemester(): Promise<ApiResult> {
     return await ApiService.request(http.RequestMethod.GET, '/api/schedule/current-semester', undefined, true);
+  }
+
+  static async addPersonalCourse(params: Record<string, Object>): Promise<ApiResult> {
+    return await ApiService.request(http.RequestMethod.POST, '/api/schedule/add-personal', params, true);
+  }
+
+  static async deletePersonalCourse(id: number): Promise<ApiResult> {
+    const body: Record<string, Object> = { 'id': id } as Record<string, Object>;
+    return await ApiService.request(http.RequestMethod.POST, '/api/schedule/delete-personal', body, true);
   }
 
   static parseSemester(data: Object): Semester {
@@ -231,6 +240,7 @@ export class ApiService {
       item.endWeek = (obj['endWeek'] as number) ?? 16;
       item.weekParity = (obj['weekParity'] as string) ?? 'all';
       item.teacherName = (obj['teacherName'] as string) ?? '';
+      item.source = (obj['source'] as string) ?? 'class';
       item.colorIndex = i % 10;
       list.push(item);
     }
@@ -334,6 +344,35 @@ export class ApiService {
 
   static async getMyProducts(): Promise<ApiResult> {
     return await ApiService.request(http.RequestMethod.GET, '/api/product/my-products', undefined, true);
+  }
+
+  static parseProductList(data: Object): Product[] {
+    const arr: Object[] = data as Object[];
+    const list: Product[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: Product = new Product();
+      item.id = (obj['id'] as number) ?? 0;
+      item.sellerId = (obj['sellerId'] as number) ?? 0;
+      item.sellerName = (obj['sellerName'] as string) ?? '';
+      item.categoryId = (obj['categoryId'] as number) ?? 0;
+      item.categoryName = (obj['categoryName'] as string) ?? '';
+      item.title = (obj['title'] as string) ?? '';
+      item.description = (obj['description'] as string) ?? '';
+      item.price = (obj['price'] as number) ?? 0;
+      item.originalPrice = (obj['originalPrice'] as number) ?? 0;
+      item.conditionLevel = (obj['conditionLevel'] as number) ?? 1;
+      item.status = (obj['status'] as number) ?? 1;
+      item.viewCount = (obj['viewCount'] as number) ?? 0;
+      item.campusLocation = (obj['campusLocation'] as string) ?? '';
+      item.createTime = (obj['createTime'] as string) ?? '';
+      const imagesObj: Object = obj['images'];
+      if (imagesObj !== null && imagesObj !== undefined) {
+        item.images = imagesObj as string[];
+      }
+      list.push(item);
+    }
+    return list;
   }
 
   static async updateProductStatus(productId: number, status: number): Promise<ApiResult> {
@@ -615,5 +654,14 @@ export class ApiService {
 
   static async getOnlineUsers(): Promise<ApiResult> {
     return ApiService.request(http.RequestMethod.GET, '/api/chat/online-users', undefined, true);
+  }
+
+  static async submitFeedback(userName: string, contact: string, content: string): Promise<ApiResult> {
+    const body: Record<string, string> = {
+      'userName': userName,
+      'contact': contact,
+      'content': content
+    };
+    return ApiService.request(http.RequestMethod.POST, '/api/feedback/submit', body, false);
   }
 }

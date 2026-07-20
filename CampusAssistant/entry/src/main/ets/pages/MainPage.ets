@@ -3,6 +3,7 @@ import { UserInfo, CourseSchedule, Product, Announcement, Semester, ProductCateg
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
+import { Theme, ShadowStyle } from '../common/Theme';
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
@@ -10,8 +11,6 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { calcSemesterWeek, semesterWeekDate } from '../common/utils';
 
 const WEEK_DAY_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
-const SCHEDULE_CARD_BG: string[] = ['#EEF0FF', '#E9F6FF', '#FFF5D8', '#FDECF5', '#EAF8EA', '#FFF0E1', '#F2EDFF', '#EDF3F5'];
-const SCHEDULE_CARD_FG: string[] = ['#6A63B6', '#2F8DB8', '#C69212', '#C85796', '#36A957', '#CB7A1B', '#7B61C8', '#7A8A92'];
 const SCHEDULE_SECTION_HEIGHT: number = 66;
 
 @Entry
@@ -88,25 +87,6 @@ struct MainPage {
     this.loadProducts();
     this.loadMyActivities();
     this.loadUnreadCount();
-    const hasPending = AppStorage.Get<boolean>('pending_hasManualCourse');
-    if (hasPending === true) {
-      AppStorage.Delete('pending_hasManualCourse');
-      const item: CourseSchedule = new CourseSchedule();
-      item.id = Date.now();
-      item.courseName = AppStorage.Get<string>('pending_courseName') ?? '';
-      item.classroom = AppStorage.Get<string>('pending_classroom') ?? '';
-      item.teacherName = AppStorage.Get<string>('pending_teacherName') ?? '';
-      item.dayOfWeek = AppStorage.Get<number>('pending_dayOfWeek') ?? 1;
-      item.startSection = AppStorage.Get<number>('pending_startSection') ?? 1;
-      item.endSection = AppStorage.Get<number>('pending_endSection') ?? 2;
-      item.startWeek = AppStorage.Get<number>('pending_startWeek') ?? 1;
-      item.endWeek = AppStorage.Get<number>('pending_endWeek') ?? 20;
-      item.weekParity = AppStorage.Get<string>('pending_weekParity') ?? 'all';
-      item.colorIndex = this.scheduleList.length % SCHEDULE_CARD_BG.length;
-      this.scheduleList.push(item);
-      this.updateScheduleGrid();
-      this.getUIContext().getPromptAction().showToast({ message: '课程已添加到当前课表' });
-    }
   }
 
   aboutToDisappear(): void {
@@ -321,27 +301,27 @@ struct MainPage {
     Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
       TabContent() {
         this.HomeContent()
-      }.tabBar(this.TabItem(0, '首页', '🏠'))
+      }.tabBar(this.TabItem(0, '首页'))
 
       TabContent() {
         this.ScheduleContent()
-      }.tabBar(this.TabItem(1, '课表', '📅'))
+      }.tabBar(this.TabItem(1, '课表'))
 
       TabContent() {
         this.MarketContent()
-      }.tabBar(this.TabItem(2, '交易', '🛒'))
+      }.tabBar(this.TabItem(2, '交易'))
 
       TabContent() {
         this.AIChatContent()
-      }.tabBar(this.TabItem(3, 'AI', '🤖'))
+      }.tabBar(this.TabItem(3, 'AI'))
 
       TabContent() {
         this.ProfileContent()
-      }.tabBar(this.TabItem(4, '我的', '👤'))
+      }.tabBar(this.TabItem(4, '我的'))
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
     .onChange((index: number) => {
       this.currentTab = index;
       if (index === 1) {
@@ -351,13 +331,27 @@ struct MainPage {
   }
 
   @Builder
-  TabItem(index: number, label: string, icon: string) {
+  TabItem(index: number, label: string) {
     Column() {
-      Text(icon)
-        .fontSize(22)
+      if (index === 0) {
+        Image(this.currentTab === 0 ? $r('app.media.ic_home_active') : $r('app.media.ic_home'))
+          .width(22).height(22)
+      } else if (index === 1) {
+        Image(this.currentTab === 1 ? $r('app.media.ic_schedule_active') : $r('app.media.ic_schedule'))
+          .width(22).height(22)
+      } else if (index === 2) {
+        Image(this.currentTab === 2 ? $r('app.media.ic_market_active') : $r('app.media.ic_market'))
+          .width(22).height(22)
+      } else if (index === 3) {
+        Image(this.currentTab === 3 ? $r('app.media.ic_ai_active') : $r('app.media.ic_ai'))
+          .width(22).height(22)
+      } else {
+        Image(this.currentTab === 4 ? $r('app.media.ic_profile_active') : $r('app.media.ic_profile'))
+          .width(22).height(22)
+      }
       Text(label)
         .fontSize(10)
-        .fontColor(this.currentTab === index ? '#4A90D9' : '#999999')
+        .fontColor(this.currentTab === index ? Theme.primary : Theme.textTertiary)
         .margin({ top: 2 })
     }
     .width('100%')
@@ -376,10 +370,10 @@ struct MainPage {
               Text(`你好，${this.userInfo.name}`)
                 .fontSize(22)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
               Text(`${this.userInfo.college} · ${this.userInfo.major}`)
                 .fontSize(13)
-                .fontColor('#999999')
+                .fontColor(Theme.textTertiary)
                 .margin({ top: 4 })
             }
             .alignItems(HorizontalAlign.Start)
@@ -399,7 +393,7 @@ struct MainPage {
                   .width(48)
                   .height(48)
                   .borderRadius(24)
-                  .backgroundColor('#4A90D9')
+                  .backgroundColor(Theme.primary)
               }
             }
           }
@@ -407,89 +401,104 @@ struct MainPage {
           .padding({ left: 20, right: 20, top: 20, bottom: 16 })
 
           Row() {
-            this.QuickEntry('📋', '我的课表', () => { this.currentTab = 1; })
-            this.QuickEntry('📚', '空教室', () => {
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/EmptyRoomPage' });
-            })
-            this.QuickEntry('🏃', '社团活动', () => {
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityListPage' });
-            })
-            this.QuickEntry('🔎', '失物招领', () => {
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/LostFoundListPage' });
-            })
+            Column() {
+              Image($r('app.media.ic_quick_schedule'))
+                .width(28).height(28)
+              Text('我的课表')
+                .fontSize(11)
+                .fontColor(Theme.textSecondary)
+                .margin({ top: 4 })
+            }
+            .width(64).height(72)
+            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
+            .backgroundColor(Color.White).borderRadius(12)
+            .shadow(ShadowStyle.sm)
+            .onClick(() => { this.currentTab = 1; })
+
+            Column() {
+              Image($r('app.media.ic_quick_library'))
+                .width(28).height(28)
+              Text('空教室')
+                .fontSize(11)
+                .fontColor(Theme.textSecondary)
+                .margin({ top: 4 })
+            }
+            .width(64).height(72)
+            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
+            .backgroundColor(Color.White).borderRadius(12)
+            .shadow(ShadowStyle.sm)
+            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/EmptyRoomPage' }); })
+
+            Column() {
+              Image($r('app.media.ic_quick_activity'))
+                .width(28).height(28)
+              Text('校园活动')
+                .fontSize(11)
+                .fontColor(Theme.textSecondary)
+                .margin({ top: 4 })
+            }
+            .width(64).height(72)
+            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
+            .backgroundColor(Color.White).borderRadius(12)
+            .shadow(ShadowStyle.sm)
+            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityListPage' }); })
+
+            Column() {
+              Image($r('app.media.ic_quick_search'))
+                .width(28).height(28)
+              Text('失物招领')
+                .fontSize(11)
+                .fontColor(Theme.textSecondary)
+                .margin({ top: 4 })
+            }
+            .width(64).height(72)
+            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
+            .backgroundColor(Color.White).borderRadius(12)
+            .shadow(ShadowStyle.sm)
+            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/LostFoundListPage' }); })
           }
           .width('100%')
           .padding({ left: 16, right: 16, bottom: 16 })
           .justifyContent(FlexAlign.SpaceAround)
 
-          if (this.myActivities.length > 0) {
+          Row() {
+            Column() {
+              Text('今日课程')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Theme.textPrimary)
+                .width('100%')
+                .padding({ left: 16, bottom: 8 })
+
+              this.TodaySchedule()
+            }
+            .layoutWeight(1)
+
             Column() {
               Text('我的活动')
                 .fontSize(16)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
                 .width('100%')
-                .padding({ left: 20, bottom: 12 })
+                .padding({ left: 16, bottom: 8 })
 
-              ForEach(this.myActivities, (act: ClubActivityItem) => {
-                Row() {
-                  Column() {
-                    Text(act.title)
-                      .fontSize(14)
-                      .fontColor('#333333')
-                      .fontWeight(FontWeight.Medium)
-                      .maxLines(1)
-                      .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    Text(`${act.club} · ${act.venue} · ${act.activityTime}`)
-                      .fontSize(12)
-                      .fontColor('#999999')
-                      .margin({ top: 4 })
-                  }
-                  .layoutWeight(1)
-                  .alignItems(HorizontalAlign.Start)
-                  Blank()
-                  Text('查看')
-                    .fontSize(13)
-                    .fontColor('#4A90D9')
-                }
-                .width('100%')
-                .padding({ left: 20, right: 20, top: 10, bottom: 10 })
-                .backgroundColor(Color.White)
-                .onClick(() => {
-                  this.getUIContext().getRouter().pushUrl({
-                    url: 'pages/ClubActivityDetailPage',
-                    params: { 'id': `${act.id}` } as Record<string, string>
-                  });
-                })
-              }, (act: ClubActivityItem) => `${act.id}`)
+              this.MyActivitiesList()
             }
-            .width('100%')
-            .padding({ top: 16 })
-          }
-
-          Column() {
-            Text('今日课程')
-              .fontSize(16)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
-              .width('100%')
-              .padding({ left: 20, bottom: 12 })
-
-            this.TodaySchedule()
+            .layoutWeight(1)
           }
           .width('100%')
-          .padding({ top: 16 })
+          .padding({ left: 16, right: 16, top: 16 })
 
           Column() {
             Row() {
               Text('校园公告')
                 .fontSize(16)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
               Blank()
               Text('更多 >')
                 .fontSize(13)
-                .fontColor('#999999')
+                .fontColor(Theme.textTertiary)
             }
             .width('100%')
             .padding({ left: 20, right: 20, bottom: 12 })
@@ -499,12 +508,12 @@ struct MainPage {
                 Column() {
                   Text(item.title)
                     .fontSize(15)
-                    .fontColor('#333333')
+                    .fontColor(Theme.textPrimary)
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                   Text(item.summary)
                     .fontSize(12)
-                    .fontColor('#999999')
+                    .fontColor(Theme.textTertiary)
                     .margin({ top: 4 })
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -514,15 +523,16 @@ struct MainPage {
                 Column() {
                   Text(item.category)
                     .fontSize(11)
-                    .fontColor('#4A90D9')
+                    .fontColor(Theme.primary)
                     .padding({ left: 6, right: 6, top: 2, bottom: 2 })
                     .borderRadius(4)
-                    .backgroundColor('#EBF3FC')
+                    .backgroundColor(Theme.primaryLight)
                 }
               }
               .width('100%')
               .padding({ left: 20, right: 20, top: 10, bottom: 10 })
               .backgroundColor(Color.White)
+              .shadow(ShadowStyle.sm)
             }, (item: Announcement) => `${item.id}`)
           }
           .width('100%')
@@ -539,51 +549,26 @@ struct MainPage {
   }
 
   @Builder
-  QuickEntry(icon: string, label: string, action: () => void) {
-    Column() {
-      Text(icon)
-        .fontSize(28)
-      Text(label)
-        .fontSize(11)
-        .fontColor('#666666')
-        .margin({ top: 4 })
-    }
-    .width(64)
-    .height(72)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-    .backgroundColor(Color.White)
-    .borderRadius(12)
-    .onClick(() => { action(); })
-  }
-
-  @Builder
   TodaySchedule() {
     if (this.todayCourses.length === 0) {
       Column() {
-        Text('今天没有课程，好好休息吧~')
-          .fontSize(14)
-          .fontColor('#999999')
-          .padding(20)
+        Text('今天没有课程')
+          .fontSize(12)
+          .fontColor(Theme.textTertiary)
+          .padding({ left: 16, top: 8, bottom: 8 })
       }
       .width('100%')
-      .alignItems(HorizontalAlign.Center)
+      .alignItems(HorizontalAlign.Start)
     } else {
       ForEach(this.todayCourses, (item: CourseSchedule) => {
         Row() {
           Column() {
             Text(Constants.SECTION_TIMES[item.startSection - 1][0])
-              .fontSize(13)
-              .fontColor('#999999')
-            Text(Constants.SECTION_TIMES[item.endSection - 1][1])
-              .fontSize(12)
-              .fontColor('#CCCCCC')
-              .margin({ top: 2 })
+              .fontSize(11)
+              .fontColor(Theme.textTertiary)
           }
-          .width(48)
+          .width(36)
           .alignItems(HorizontalAlign.Center)
-
-          Blank().width(8)
 
           Column() {
             Row()
@@ -592,27 +577,85 @@ struct MainPage {
               .backgroundColor(Constants.SCHEDULE_COLORS[item.colorIndex % Constants.SCHEDULE_COLORS.length])
               .borderRadius(2)
           }
-          .height(60)
+          .height(40)
 
-          Blank().width(12)
+          Blank().width(6)
 
           Column() {
             Text(item.courseName)
-              .fontSize(15)
+              .fontSize(13)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
-            Text(`${item.classroom} · ${item.teacherName}`)
-              .fontSize(12)
-              .fontColor('#999999')
-              .margin({ top: 4 })
+              .fontColor(Theme.textPrimary)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+            Text(item.classroom.length > 0 ? item.classroom : '未定')
+              .fontSize(11)
+              .fontColor(Theme.textTertiary)
+              .margin({ top: 2 })
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)
         }
         .width('100%')
-        .padding({ left: 20, right: 20, top: 10, bottom: 10 })
+        .padding({ left: 12, right: 12, top: 6, bottom: 6 })
         .alignItems(VerticalAlign.Center)
+        .backgroundColor(Color.White)
+        .borderRadius(8)
+        .margin({ bottom: 6 })
+        .onClick(() => {
+          this.selectedCourse = item;
+          this.showCourseDetail = true;
+        })
       }, (item: CourseSchedule) => `${item.id}`)
+    }
+  }
+
+  @Builder
+  MyActivitiesList() {
+    if (this.myActivities.length === 0) {
+      Column() {
+        Text('暂无活动')
+          .fontSize(12)
+          .fontColor(Theme.textTertiary)
+          .padding({ left: 16, top: 8, bottom: 8 })
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+    } else {
+      ForEach(this.myActivities, (act: ClubActivityItem) => {
+        Row() {
+          Column() {
+            Text(act.title)
+              .fontSize(13)
+              .fontColor(Theme.textPrimary)
+              .fontWeight(FontWeight.Medium)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+            Text(act.venue.length > 0 ? act.venue : '未定')
+              .fontSize(11)
+              .fontColor(Theme.textTertiary)
+              .margin({ top: 2 })
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+        }
+        .width('100%')
+        .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(Color.White)
+        .borderRadius(8)
+        .margin({ bottom: 6 })
+        .onClick(() => {
+          this.getUIContext().getRouter().pushUrl({
+            url: 'pages/ClubActivityDetailPage',
+            params: { 'id': `${act.id}` } as Record<string, string>
+          });
+        })
+      }, (act: ClubActivityItem) => `${act.id}`)
     }
   }
 
@@ -638,10 +681,14 @@ struct MainPage {
     if (semesterDate !== null) {
       return semesterDate;
     }
-    const today: Date = new Date();
-    const todayIndex: number = this.todayDayIndex();
-    const date: Date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    date.setDate(date.getDate() + (this.currentWeek - this.todayWeek) * 7 + dayIndex - todayIndex);
+    const parts: string[] = this.semesterStartDate.split('-');
+    if (parts.length < 3) {
+      return null;
+    }
+    const date: Date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const dow: number = date.getDay();
+    const offsetToMonday: number = dow === 0 ? -6 : 1 - dow;
+    date.setDate(date.getDate() + offsetToMonday + (this.currentWeek - 1) * 7 + dayIndex);
     return date;
   }
 
@@ -692,11 +739,17 @@ struct MainPage {
   }
 
   private courseBg(item: CourseSchedule): string {
-    return SCHEDULE_CARD_BG[Math.abs(item.colorIndex) % SCHEDULE_CARD_BG.length];
+    if (item.source === 'personal') {
+      return Theme.personalCardBg[Math.abs(item.colorIndex) % Theme.personalCardBg.length];
+    }
+    return Theme.scheduleCardBg[Math.abs(item.colorIndex) % Theme.scheduleCardBg.length];
   }
 
   private courseFg(item: CourseSchedule): string {
-    return SCHEDULE_CARD_FG[Math.abs(item.colorIndex) % SCHEDULE_CARD_FG.length];
+    if (item.source === 'personal') {
+      return Theme.personalCardFg[Math.abs(item.colorIndex) % Theme.personalCardFg.length];
+    }
+    return Theme.scheduleCardFg[Math.abs(item.colorIndex) % Theme.scheduleCardFg.length];
   }
 
   private sectionStartTime(section: number): string {
@@ -881,27 +934,35 @@ struct MainPage {
     });
   }
 
-  private saveManualCourse(): void {
+  private async saveManualCourse(): Promise<void> {
     if (this.addCourseName.trim().length === 0) {
       this.getUIContext().getPromptAction().showToast({ message: '请输入课程名称' });
       return;
     }
-    const item: CourseSchedule = new CourseSchedule();
-    item.id = Date.now();
-    item.courseName = this.addCourseName.trim();
-    item.classroom = this.addClassroom.trim();
-    item.teacherName = this.addTeacherName.trim();
-    item.dayOfWeek = this.addDayOfWeek;
-    item.startSection = this.addStartSection;
-    item.endSection = this.addEndSection;
-    item.startWeek = this.addStartWeek;
-    item.endWeek = this.addEndWeek;
-    item.weekParity = 'all';
-    item.colorIndex = this.scheduleList.length % SCHEDULE_CARD_BG.length;
-    this.scheduleList.push(item);
-    this.updateScheduleGrid();
-    this.showAddCourseForm = false;
-    this.getUIContext().getPromptAction().showToast({ message: '课程已添加到当前课表' });
+    const store: AppStore = AppStore.getInstance();
+    if (!store.isLoggedIn) {
+      this.getUIContext().getPromptAction().showToast({ message: '请先登录' });
+      return;
+    }
+    const params: Record<string, Object> = {
+      'semesterId': this.semesterId,
+      'courseName': this.addCourseName.trim(),
+      'classroom': this.addClassroom.trim(),
+      'teacher': this.addTeacherName.trim(),
+      'dayOfWeek': this.addDayOfWeek,
+      'startSection': this.addStartSection,
+      'endSection': this.addEndSection,
+      'startWeek': this.addStartWeek,
+      'endWeek': this.addEndWeek
+    } as Record<string, Object>;
+    const result: ApiResult = await ApiService.addPersonalCourse(params);
+    if (result.code === 200) {
+      this.showAddCourseForm = false;
+      this.getUIContext().getPromptAction().showToast({ message: '课程已添加' });
+      this.loadSchedule();
+    } else {
+      this.getUIContext().getPromptAction().showToast({ message: result.msg.length > 0 ? result.msg : '添加失败' });
+    }
   }
 
   @Builder
@@ -925,11 +986,10 @@ struct MainPage {
             .height(42)
             .fontSize(15)
             .fontColor(Color.White)
-            .backgroundColor('#FF6B4A')
-            .borderRadius(21)
-            .padding({ left: 0, right: 0 })
-            .position({ x: '100%', y: 610 })
-            .translate({ x: -88, y: 0 })
+            .backgroundColor(Theme.primary)
+            .borderRadius(24)
+            .padding({ left: 24, right: 24 })
+            .position({ x: 292, y: 610 })
             .onClick(() => {
               this.backToCurrentWeek();
             })
@@ -953,10 +1013,10 @@ struct MainPage {
           Text(`第${this.currentWeek}周`)
             .fontSize(22)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#EF4A48')
+            .fontColor(Theme.danger)
           Text('▼')
             .fontSize(16)
-            .fontColor('#20242A')
+            .fontColor(Theme.textPrimary)
             .margin({ left: 8 })
         }
         .onClick(() => {
@@ -964,7 +1024,7 @@ struct MainPage {
         })
         Text(this.semesterTitle())
           .fontSize(14)
-          .fontColor('#999999')
+          .fontColor(Theme.textTertiary)
           .margin({ top: 3 })
       }
       .layoutWeight(1)
@@ -977,7 +1037,7 @@ struct MainPage {
         .width(42)
         .height(42)
         .textAlign(TextAlign.Center)
-        .backgroundColor('#080B12')
+        .backgroundColor(Theme.primary)
         .borderRadius(10)
         .onClick(() => {
           this.showAddCourse();
@@ -995,10 +1055,10 @@ struct MainPage {
       Column() {
         Text(this.weekMonthText().length > 0 ? this.weekMonthText().replace('月', '') : '')
           .fontSize(17)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
         Text('月')
           .fontSize(17)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
           .margin({ top: 2 })
       }
       .width(50)
@@ -1008,10 +1068,10 @@ struct MainPage {
         Column() {
           Text(day)
             .fontSize(19)
-            .fontColor('#333333')
+            .fontColor(Theme.textPrimary)
           Text(this.weekDayText(index))
             .fontSize(15)
-            .fontColor('#999999')
+            .fontColor(Theme.textTertiary)
             .margin({ top: 8 })
         }
         .layoutWeight(1)
@@ -1022,7 +1082,7 @@ struct MainPage {
     }
     .width('100%')
     .height(60)
-    .border({ width: 1, color: '#EEEEEE' })
+    .border({ width: 1, color: Theme.border })
     .backgroundColor(Color.White)
   }
 
@@ -1035,14 +1095,14 @@ struct MainPage {
             Column() {
               Text(`${section}`)
                 .fontSize(18)
-                .fontColor('#333333')
+                .fontColor(Theme.textPrimary)
               Text(this.sectionStartTime(section))
                 .fontSize(11)
-                .fontColor('#999999')
+                .fontColor(Theme.textTertiary)
                 .margin({ top: 3 })
               Text(this.sectionEndTime(section))
                 .fontSize(11)
-                .fontColor('#999999')
+                .fontColor(Theme.textTertiary)
                 .margin({ top: 1 })
             }
             .width(50)
@@ -1060,7 +1120,7 @@ struct MainPage {
                 Stack() {
                   Divider()
                     .height(1)
-                    .color('#F0F0F0')
+                    .color(Theme.border)
                     .width('100%')
                     .position({ x: 0, y: SCHEDULE_SECTION_HEIGHT - 1 })
                   if (!this.hasCourseCovering(day, section)) {
@@ -1125,7 +1185,7 @@ struct MainPage {
       Column()
         .width('100%')
         .height('100%')
-        .backgroundColor('#FFFFFFDD')
+        .backgroundColor('rgba(255,255,255,0.87)')
         .onClick(() => {
           this.closeCourseDetail();
         })
@@ -1151,7 +1211,7 @@ struct MainPage {
           Text('非本周')
             .fontSize(14)
             .fontColor(Color.White)
-            .backgroundColor('#222222')
+            .backgroundColor(Theme.textPrimary)
             .borderRadius(4)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
             .margin({ right: 8 })
@@ -1159,42 +1219,71 @@ struct MainPage {
         Text(item.courseName.length > 0 ? item.courseName : '课程名称未录入')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#111111')
+          .fontColor(Theme.textPrimary)
           .layoutWeight(1)
-        Text('编辑')
-          .fontSize(15)
-          .fontColor('#999999')
-          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-          .backgroundColor(Color.White)
-          .borderRadius(5)
+        if (item.source === 'personal') {
+          Text('个人')
+            .fontSize(11)
+            .fontColor('#FFFFFF')
+            .backgroundColor(Theme.danger)
+            .borderRadius(4)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .margin({ left: 4 })
+        }
+        if (item.source === 'personal') {
+          Text('删除')
+            .fontSize(15)
+            .fontColor(Theme.danger)
+            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+            .backgroundColor(Color.White)
+            .borderRadius(5)
+            .onClick(async () => {
+              const result: ApiResult = await ApiService.deletePersonalCourse(item.id);
+              if (result.code === 200) {
+                this.getUIContext().getPromptAction().showToast({ message: '已删除' });
+                this.showCourseDetail = false;
+                this.loadSchedule();
+              } else {
+                this.getUIContext().getPromptAction().showToast({ message: result.msg.length > 0 ? result.msg : '删除失败' });
+              }
+            })
+        } else {
+          Text('编辑')
+            .fontSize(15)
+            .fontColor(Theme.textTertiary)
+            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+            .backgroundColor(Color.White)
+            .borderRadius(5)
+        }
       }
       .width('100%')
 
       Text(this.courseWeekText(item))
         .fontSize(17)
-        .fontColor('#333333')
+        .fontColor(Theme.textPrimary)
         .width('100%')
         .margin({ top: 18 })
       Text(`周${WEEK_DAY_LABELS[item.dayOfWeek - 1]} | 第${item.startSection}-${item.endSection}节 | ${this.courseTimeText(item)}`)
         .fontSize(15)
-        .fontColor('#999999')
+        .fontColor(Theme.textTertiary)
         .width('100%')
         .margin({ top: 12 })
       Text(`教室：${item.classroom.length > 0 ? item.classroom : '未填写'}`)
         .fontSize(15)
-        .fontColor('#999999')
+        .fontColor(Theme.textTertiary)
         .width('100%')
         .margin({ top: 12 })
       Text(`老师：${item.teacherName.length > 0 ? item.teacherName : '未填写'}`)
         .fontSize(15)
-        .fontColor('#999999')
+        .fontColor(Theme.textTertiary)
         .width('100%')
         .margin({ top: 12 })
     }
     .width('100%')
     .padding(24)
-    .backgroundColor('#EEF3F6')
+    .backgroundColor(Theme.bgPage)
     .borderRadius(14)
+    .shadow(ShadowStyle.md)
     .margin({ bottom: 18 })
     .alignItems(HorizontalAlign.Start)
   }
@@ -1205,7 +1294,7 @@ struct MainPage {
       Row() {
         Text('<')
           .fontSize(30)
-          .fontColor('#20242A')
+          .fontColor(Theme.textPrimary)
           .width(50)
           .onClick(() => {
             this.hideAddCourse();
@@ -1213,12 +1302,12 @@ struct MainPage {
         Text('添加课程')
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#222222')
+          .fontColor(Theme.textPrimary)
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
         Text('保存')
           .fontSize(16)
-          .fontColor('#5A82D9')
+          .fontColor(Theme.primary)
           .width(50)
           .textAlign(TextAlign.End)
           .onClick(() => {
@@ -1228,7 +1317,7 @@ struct MainPage {
       .width('100%')
       .height(52)
       .padding({ left: 18, right: 18 })
-      .border({ width: 1, color: '#EEEEEE' })
+      .border({ width: 1, color: Theme.border })
 
       Scroll() {
         Column() {
@@ -1237,21 +1326,21 @@ struct MainPage {
               Text('当前学期为')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#3D6FB8')
+                .fontColor(Theme.primary)
               Text('返回课程表页面即可切换学期')
                 .fontSize(14)
-                .fontColor('#3D6FB8')
+                .fontColor(Theme.primary)
                 .margin({ top: 12 })
             }
             .alignItems(HorizontalAlign.Start)
             .layoutWeight(1)
             Text(this.semesterTitle())
               .fontSize(18)
-              .fontColor('#3D6FB8')
+              .fontColor(Theme.primary)
           }
           .width('100%')
           .padding(20)
-          .backgroundColor('#F1F7FF')
+          .backgroundColor(Theme.primaryLight)
           .borderRadius(3)
           .margin({ top: 8, bottom: 18 })
 
@@ -1265,8 +1354,8 @@ struct MainPage {
             .width('100%')
             .height(58)
             .fontSize(17)
-            .fontColor('#5A82D9')
-            .backgroundColor('#EEF4FF')
+            .fontColor(Theme.primary)
+            .backgroundColor(Theme.primaryLight)
             .borderRadius(8)
             .margin({ top: 34 })
             .onClick(() => {
@@ -1290,7 +1379,7 @@ struct MainPage {
       Text(label)
         .fontSize(19)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#222222')
+        .fontColor(Theme.textPrimary)
         .width(104)
       TextInput({ placeholder: placeholder, text: value })
         .layoutWeight(1)
@@ -1298,7 +1387,7 @@ struct MainPage {
         .fontSize(16)
         .textAlign(TextAlign.End)
         .backgroundColor('#00000000')
-        .placeholderColor('#D0D0D0')
+        .placeholderColor(Theme.textDisabled)
         .onChange((val: string) => {
           if (type === 1) {
             this.addCourseName = val;
@@ -1313,7 +1402,7 @@ struct MainPage {
     }
     .width('100%')
     .height(70)
-    .border({ width: 1, color: '#EEEEEE' })
+    .border({ width: 1, color: Theme.border })
   }
 
   @Builder
@@ -1322,20 +1411,20 @@ struct MainPage {
       Text(label)
         .fontSize(19)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#222222')
+        .fontColor(Theme.textPrimary)
         .width(104)
       Blank()
       Text(value)
         .fontSize(17)
-        .fontColor(type === 2 ? '#E45A73' : '#666666')
+        .fontColor(type === 2 ? Theme.danger : Theme.textSecondary)
       Text('>')
         .fontSize(24)
-        .fontColor('#BBBBBB')
+        .fontColor(Theme.textDisabled)
         .margin({ left: 10 })
     }
     .width('100%')
     .height(70)
-    .border({ width: 1, color: '#EEEEEE' })
+    .border({ width: 1, color: Theme.border })
     .onClick(() => {
       if (type === 1) {
         this.showAddStartWeekPicker();
@@ -1368,6 +1457,69 @@ struct MainPage {
   }
 
   @Builder
+  ProductCard(item: Product) {
+    Column() {
+      if (item.images.length > 0) {
+        Image(`${ApiService.baseUrl}${item.images[0]}`)
+          .width('100%')
+          .aspectRatio(1)
+          .borderRadius({ topLeft: 10, topRight: 10 })
+          .objectFit(ImageFit.Cover)
+      } else {
+        Column()
+          .width('100%')
+          .aspectRatio(1)
+          .backgroundColor(Theme.border)
+          .borderRadius({ topLeft: 10, topRight: 10 })
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+      }
+      Column() {
+        Text(item.title)
+          .fontSize(13)
+          .fontColor(Theme.textPrimary)
+          .maxLines(2)
+          .lineHeight(18)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Row() {
+          Text(`¥${item.price}`)
+            .fontSize(15)
+            .fontColor(Theme.danger)
+            .fontWeight(FontWeight.Bold)
+          if (item.originalPrice > 0) {
+            Text(`¥${item.originalPrice}`)
+              .fontSize(10)
+              .fontColor(Theme.textDisabled)
+              .decoration({ type: TextDecorationType.LineThrough })
+              .margin({ left: 4 })
+          }
+        }
+        .margin({ top: 6 })
+        if (item.campusLocation.length > 0) {
+          Text(item.campusLocation)
+            .fontSize(10)
+            .fontColor(Theme.textTertiary)
+            .margin({ top: 4 })
+        }
+      }
+      .padding({ left: 8, right: 8, top: 8, bottom: 10 })
+      .alignItems(HorizontalAlign.Start)
+    }
+    .backgroundColor(Color.White)
+    .borderRadius(10)
+    .shadow(ShadowStyle.sm)
+    .onClick(() => {
+      const detailParams: Record<string, Object> = {
+        'productId': item.id
+      } as Record<string, Object>;
+      this.getUIContext().getRouter().pushUrl({
+        url: 'pages/ProductDetailPage',
+        params: detailParams
+      });
+    })
+  }
+
+  @Builder
   MarketContent() {
     Refresh({ refreshing: $$this.marketRefreshing }) {
       Column() {
@@ -1375,11 +1527,11 @@ struct MainPage {
           Text('二手交易')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#333333')
+            .fontColor(Theme.textPrimary)
           Blank()
           Text('+ 发布')
             .fontSize(14)
-            .fontColor('#4A90D9')
+            .fontColor(Theme.primary)
             .fontWeight(FontWeight.Medium)
             .onClick(() => {
               this.getUIContext().getRouter().pushUrl({ url: 'pages/PublishPage' });
@@ -1394,7 +1546,7 @@ struct MainPage {
                 .fontColor(Color.White)
                 .padding({ left: 4, right: 4, top: 1, bottom: 1 })
                 .borderRadius(10)
-                .backgroundColor('#FF4444')
+                .backgroundColor(Theme.danger)
                 .position({ x: 14, y: -4 })
             }
           }
@@ -1413,7 +1565,7 @@ struct MainPage {
             .fontSize(14)
             .height(36)
             .borderRadius(18)
-            .backgroundColor('#F0F0F0')
+            .backgroundColor(Theme.border)
             .padding({ left: 16, right: 16 })
             .onChange((v: string) => {
               this.searchKeyword = v;
@@ -1428,7 +1580,7 @@ struct MainPage {
                 Row() {
                   Text(suggestion)
                     .fontSize(14)
-                    .fontColor('#333333')
+                    .fontColor(Theme.textPrimary)
                     .padding({ left: 16, right: 16, top: 8, bottom: 8 })
                 }
                 .width('100%')
@@ -1454,10 +1606,10 @@ struct MainPage {
           Row({ space: 8 }) {
             Text('全部')
               .fontSize(13)
-              .fontColor(this.selectedCategoryId === 0 ? '#4A90D9' : '#666666')
+              .fontColor(this.selectedCategoryId === 0 ? Theme.primary : Theme.textSecondary)
               .padding({ left: 12, right: 12, top: 6, bottom: 6 })
               .borderRadius(16)
-              .backgroundColor(this.selectedCategoryId === 0 ? '#EBF3FC' : '#F0F0F0')
+              .backgroundColor(this.selectedCategoryId === 0 ? Theme.primaryLight : Theme.border)
               .onClick(() => {
                 this.selectedCategoryId = 0;
                 this.loadProducts();
@@ -1465,10 +1617,10 @@ struct MainPage {
             ForEach(this.categories, (cat: ProductCategory) => {
               Text(cat.name)
                 .fontSize(13)
-                .fontColor(this.selectedCategoryId === cat.id ? '#4A90D9' : '#666666')
+                .fontColor(this.selectedCategoryId === cat.id ? Theme.primary : Theme.textSecondary)
                 .padding({ left: cat.parentId === 0 ? 12 : 8, right: cat.parentId === 0 ? 12 : 8, top: 6, bottom: 6 })
                 .borderRadius(16)
-                .backgroundColor(this.selectedCategoryId === cat.id ? '#EBF3FC' : '#F0F0F0')
+                .backgroundColor(this.selectedCategoryId === cat.id ? Theme.primaryLight : Theme.border)
                 .onClick(() => {
                   this.selectedCategoryId = cat.id;
                   this.loadProducts();
@@ -1480,89 +1632,38 @@ struct MainPage {
         .scrollable(ScrollDirection.Horizontal)
         .scrollBar(BarState.Off)
 
-        List({ space: 12 }) {
-          ForEach(this.products, (item: Product) => {
-            ListItem() {
-              Row() {
-                Column() {
-                  if (item.images.length > 0) {
-                    Image(`${ApiService.baseUrl}${item.images[0]}`)
-                      .width(80)
-                      .height(80)
-                      .borderRadius(8)
-                      .objectFit(ImageFit.Cover)
-                  } else {
-                    Row()
-                      .width(80)
-                      .height(80)
-                      .backgroundColor('#EEEEEE')
-                      .borderRadius(8)
-                  }
-                }
-                Column() {
-                  Text(item.title)
-                    .fontSize(15)
-                    .fontColor('#333333')
-                    .maxLines(2)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  Text(item.description)
-                    .fontSize(12)
-                    .fontColor('#999999')
-                    .margin({ top: 4 })
-                    .maxLines(1)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  Row() {
-                    Text(`¥${item.price}`)
-                      .fontSize(16)
-                      .fontColor('#FF4444')
-                      .fontWeight(FontWeight.Bold)
-                    if (item.originalPrice > 0) {
-                      Text(`¥${item.originalPrice}`)
-                        .fontSize(12)
-                        .fontColor('#CCCCCC')
-                        .decoration({ type: TextDecorationType.LineThrough })
-                        .margin({ left: 6 })
-                    }
-                    Blank()
-                    Text(item.campusLocation)
-                      .fontSize(11)
-                      .fontColor('#999999')
-                  }
-                  .width('100%')
-                  .margin({ top: 6 })
-                }
-                .layoutWeight(1)
-                .alignItems(HorizontalAlign.Start)
-                .padding({ left: 12 })
-              }
-              .width('100%')
-              .padding(12)
-              .backgroundColor(Color.White)
-              .borderRadius(12)
-              .onClick(() => {
-                const detailParams: Record<string, Object> = {
-                  'productId': item.id
-                } as Record<string, Object>;
-                this.getUIContext().getRouter().pushUrl({
-                  url: 'pages/ProductDetailPage',
-                  params: detailParams
-                });
-              })
+        Scroll() {
+          Row({ space: 8 }) {
+            Column({ space: 8 }) {
+              ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 0), (item: Product) => {
+                this.ProductCard(item)
+              }, (item: Product, _index: number) => `l-${item.id}`)
             }
-          }, (item: Product) => `${item.id}`)
+            .layoutWeight(1)
+
+            Column({ space: 8 }) {
+              ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 1), (item: Product) => {
+                this.ProductCard(item)
+              }, (item: Product, _index: number) => `r-${item.id}`)
+            }
+            .layoutWeight(1)
+            .margin({ top: 24 })
+          }
+          .width('100%')
+          .padding({ left: 12, right: 12, top: 4, bottom: 12 })
         }
-        .width('100%')
         .layoutWeight(1)
-        .padding({ left: 16, right: 16 })
+        .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring)
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F5F6FA')
+      .backgroundColor(Theme.bgPage)
     }
     .onRefreshing(() => {
       this.refreshMarket();
     })
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
     .width('100%')
     .height('100%')
   }
@@ -1603,7 +1704,7 @@ struct MainPage {
 
     const sIdx: number = this.aiStreamingIndex;
 
-    const baseUrl: string = 'http://10.0.2.2:8000';
+    const baseUrl: string = 'http://172.18.23.152:8000';
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
     this.aiHttpRequest = req;
@@ -1717,7 +1818,7 @@ struct MainPage {
         Text('AI 校园助手')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
+          .fontColor(Theme.textPrimary)
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 16, bottom: 12 })
@@ -1735,7 +1836,7 @@ struct MainPage {
                     .lineHeight(22)
                 }
                 .padding(12)
-                .backgroundColor('#4A90D9')
+                .backgroundColor(Theme.primary)
                 .borderRadius({ topLeft: 16, topRight: 4, bottomLeft: 16, bottomRight: 16 })
                 .constraintSize({ maxWidth: '75%' })
               } else {
@@ -1745,40 +1846,40 @@ struct MainPage {
                       LoadingProgress()
                         .width(16)
                         .height(16)
-                        .color('#4A90D9')
+                        .color(Theme.primary)
                       Text('正在检索知识库...')
                         .fontSize(14)
-                        .fontColor('#999999')
+                        .fontColor(Theme.textTertiary)
                     }
                   } else if (index === this.aiStreamingIndex && this.aiIsLoading) {
                     if (this.aiStreamText.length > 0) {
                       Text(this.cleanMarkdown(this.aiStreamText))
                         .fontSize(15)
-                        .fontColor('#333333')
+                        .fontColor(Theme.textPrimary)
                         .lineHeight(22)
                       Text('▍')
                         .fontSize(15)
-                        .fontColor('#4A90D9')
+                        .fontColor(Theme.primary)
                     } else {
                       Row({ space: 4 }) {
                         LoadingProgress()
                           .width(16)
                           .height(16)
-                          .color('#4A90D9')
+                          .color(Theme.primary)
                         Text('思考中...')
                           .fontSize(14)
-                          .fontColor('#999999')
+                          .fontColor(Theme.textTertiary)
                       }
                     }
                   } else if (msg.content.length > 0) {
                     Text(this.cleanMarkdown(msg.content))
                       .fontSize(15)
-                      .fontColor('#333333')
+                      .fontColor(Theme.textPrimary)
                       .lineHeight(22)
                   }
                 }
                 .padding(12)
-                .backgroundColor('#F0F0F0')
+                .backgroundColor(Theme.border)
                 .borderRadius({ topLeft: 4, topRight: 16, bottomLeft: 16, bottomRight: 16 })
                 .constraintSize({ maxWidth: '75%' })
                 Blank()
@@ -1799,8 +1900,8 @@ struct MainPage {
           .layoutWeight(1)
           .height(44)
           .fontSize(14)
-          .placeholderColor('#CCCCCC')
-          .backgroundColor('#F5F5F5')
+          .placeholderColor(Theme.textDisabled)
+          .backgroundColor(Theme.bgInput)
           .borderRadius(22)
           .padding({ left: 16, right: 16 })
           .enabled(!this.aiIsLoading)
@@ -1810,7 +1911,7 @@ struct MainPage {
           .height(44)
           .fontSize(14)
           .fontColor(Color.White)
-          .backgroundColor('#4A90D9')
+          .backgroundColor(Theme.primary)
           .borderRadius(22)
           .margin({ left: 8 })
           .padding({ left: 16, right: 16 })
@@ -1824,7 +1925,7 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F6FA')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -1847,7 +1948,7 @@ struct MainPage {
                 .width(64)
                 .height(64)
                 .borderRadius(32)
-                .backgroundColor('#4A90D9')
+                .backgroundColor(Theme.primary)
             }
           }
 
@@ -1855,10 +1956,10 @@ struct MainPage {
             Text(this.userInfo.name)
               .fontSize(20)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Text(`学号：${this.userInfo.studentId}`)
               .fontSize(13)
-              .fontColor('#999999')
+              .fontColor(Theme.textTertiary)
               .margin({ top: 4 })
           }
           .margin({ left: 16 })
@@ -1867,8 +1968,8 @@ struct MainPage {
           Button('编辑资料')
             .height(34)
             .fontSize(13)
-            .fontColor('#4A90D9')
-            .backgroundColor('#EBF3FC')
+            .fontColor(Theme.primary)
+            .backgroundColor(Theme.primaryLight)
             .borderRadius(17)
             .padding({ left: 14, right: 14 })
             .onClick(() => {
@@ -1879,17 +1980,18 @@ struct MainPage {
         .padding({ left: 20, right: 20, top: 24, bottom: 24 })
         .backgroundColor(Color.White)
         .borderRadius(12)
+        .shadow(ShadowStyle.md)
         .margin({ left: 16, right: 16, top: 16 })
 
         Column() {
           Row() {
             Text('学院')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(this.userInfo.college)
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
           }
           .width('100%')
           .height(48)
@@ -1900,11 +2002,11 @@ struct MainPage {
           Row() {
             Text('专业')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(this.userInfo.major)
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
           }
           .width('100%')
           .height(48)
@@ -1915,11 +2017,11 @@ struct MainPage {
           Row() {
             Text('年级')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(this.userInfo.grade)
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
           }
           .width('100%')
           .height(48)
@@ -1930,7 +2032,7 @@ struct MainPage {
           Row() {
             Text('信用分')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(`${this.userInfo.creditScore}`)
               .fontSize(14)
@@ -1952,11 +2054,11 @@ struct MainPage {
           Row() {
             Text('班级')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(this.userInfo.className)
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
           }
           .width('100%')
           .height(48)
@@ -1967,11 +2069,11 @@ struct MainPage {
           Row() {
             Text('手机号')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor(Theme.textSecondary)
             Blank()
             Text(this.userInfo.phone)
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
           }
           .width('100%')
           .height(48)
@@ -1986,11 +2088,11 @@ struct MainPage {
           Row() {
             Text('我的发布')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2004,11 +2106,11 @@ struct MainPage {
           Row() {
             Text('我的收藏')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2022,11 +2124,11 @@ struct MainPage {
           Row() {
             Text('我的失物招领')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2040,11 +2142,11 @@ struct MainPage {
           Row() {
             Text('浏览记录')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2058,11 +2160,11 @@ struct MainPage {
           Row() {
             Text('我的投诉')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2076,11 +2178,11 @@ struct MainPage {
           Row() {
             Text('AI 助手')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2094,11 +2196,11 @@ struct MainPage {
           Row() {
             Text('消息通知')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2112,11 +2214,11 @@ struct MainPage {
           Row() {
             Text('修改密码')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
@@ -2128,17 +2230,20 @@ struct MainPage {
           Divider().margin({ left: 20, right: 20 })
 
           Row() {
-            Text('设置')
+            Text('与我们联系')
               .fontSize(14)
-              .fontColor('#333333')
+              .fontColor(Theme.textPrimary)
             Blank()
             Text('>')
               .fontSize(14)
-              .fontColor('#CCCCCC')
+              .fontColor(Theme.textDisabled)
           }
           .width('100%')
           .height(48)
           .padding({ left: 20, right: 20 })
+          .onClick(() => {
+            this.getUIContext().getRouter().pushUrl({ url: 'pages/SettingsPage' });
+          })
         }
         .width('100%')
         .backgroundColor(Color.White)
@@ -2149,7 +2254,7 @@ struct MainPage {
           .width('90%')
           .height(44)
           .fontSize(16)
-          .fontColor('#FF4444')
+          .fontColor(Theme.danger)
           .backgroundColor(Color.White)
           .borderRadius(12)
           .margin({ top: 24 })

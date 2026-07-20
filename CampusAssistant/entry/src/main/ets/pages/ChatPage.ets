@@ -4,6 +4,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { ChatMessage } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 @Entry
 @Component
@@ -344,23 +345,23 @@ struct ChatPage {
             .fontSize(15)
             .fontColor('#FFFFFF')
             .padding({ left: 12, right: 12, top: 9, bottom: 9 })
-            .backgroundColor('#2563EB')
+            .backgroundColor(Theme.primary)
             .borderRadius(14)
             .maxLines(8)
           Text(this.formatTime(item.createTime))
-            .fontSize(11).fontColor('#9CA3AF').margin({ top: 4, right: 4 })
+            .fontSize(11).fontColor(Theme.textTertiary).margin({ top: 4, right: 4 })
         }.alignItems(HorizontalAlign.End).constraintSize({ maxWidth: '76%' })
       } else {
         Column() {
           Text(this.displayContent(item))
             .fontSize(15)
-            .fontColor('#111827')
+            .fontColor(Theme.textPrimary)
             .padding({ left: 12, right: 12, top: 9, bottom: 9 })
             .backgroundColor('#FFFFFF')
             .borderRadius(14)
             .maxLines(8)
           Text(this.formatTime(item.createTime))
-            .fontSize(11).fontColor('#9CA3AF').margin({ top: 4, left: 4 })
+            .fontSize(11).fontColor(Theme.textTertiary).margin({ top: 4, left: 4 })
         }.alignItems(HorizontalAlign.Start).constraintSize({ maxWidth: '76%' })
         Blank()
       }
@@ -372,24 +373,24 @@ struct ChatPage {
   build() {
     Column() {
       Row() {
-        Text('‹').fontSize(28).fontColor('#374151').width(34).onClick(() => { router.back() })
+        Text('‹').fontSize(28).fontColor(Theme.textPrimary).width(34).onClick(() => { router.back() })
         Column() {
-          Text(this.otherUserName).fontSize(18).fontWeight(FontWeight.Bold).fontColor('#111827')
+          Text(this.otherUserName).fontSize(18).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
           Row() {
             Text('')
               .width(7).height(7).borderRadius(4)
-              .backgroundColor(this.isOtherUserOnline ? '#22C55E' : '#9CA3AF')
+              .backgroundColor(this.isOtherUserOnline ? Theme.success : Theme.textTertiary)
               .margin({ right: 5 })
             Text(this.isOtherUserOnline ? '在线' : '离线')
               .fontSize(11)
-              .fontColor(this.isOtherUserOnline ? '#16A34A' : '#6B7280')
+              .fontColor(this.isOtherUserOnline ? Theme.success : Theme.textSecondary)
           }.margin({ top: 2 })
           if (this.productId > 0) {
-            Text('商品 #' + this.productId.toString()).fontSize(11).fontColor('#6B7280').margin({ top: 2 })
+            Text('商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary).margin({ top: 2 })
           }
         }.alignItems(HorizontalAlign.Start)
         Blank()
-        Text('刷新').fontSize(14).fontColor('#2563EB').onClick(() => {
+        Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => {
           this.isLoading = true;
           this.loadOnlineStatus();
           this.loadMessages();
@@ -401,23 +402,23 @@ struct ChatPage {
 
       if (!this.isLoggedIn) {
         Column() {
-          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#111827')
-          Text('登录后可以联系卖家').fontSize(14).fontColor('#6B7280').margin({ top: 8 })
+          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
+          Text('登录后可以联系卖家').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
           Button('去登录')
-            .type(ButtonType.Capsule).backgroundColor('#2563EB').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (this.isLoading) {
         Column() {
-          LoadingProgress().width(40).height(40).color('#2563EB')
-          Text('正在加载消息').fontSize(14).fontColor('#6B7280').margin({ top: 12 })
+          LoadingProgress().width(40).height(40).color(Theme.primary)
+          Text('正在加载消息').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 12 })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (this.errorMsg.length > 0) {
         Column() {
-          Text(this.errorMsg).fontSize(16).fontColor('#6B7280')
+          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary)
           Button('重试')
-            .type(ButtonType.Capsule).backgroundColor('#2563EB').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
             .margin({ top: 18 })
             .onClick(() => { this.prepareConversation() })
         }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
@@ -426,8 +427,8 @@ struct ChatPage {
           if (this.messages.length === 0) {
             ListItem() {
               Column() {
-                Text('还没有消息').fontSize(16).fontColor('#6B7280')
-                Text('发送第一条消息开始沟通').fontSize(13).fontColor('#9CA3AF').margin({ top: 6 })
+                Text('还没有消息').fontSize(16).fontColor(Theme.textSecondary)
+                Text('发送第一条消息开始沟通').fontSize(13).fontColor(Theme.textTertiary).margin({ top: 6 })
               }
               .width('100%')
               .padding({ top: 40, left: 16, right: 16 })
@@ -444,11 +445,11 @@ struct ChatPage {
         .width('100%')
         .layoutWeight(1)
         .padding({ top: 8, bottom: 8 })
-        .backgroundColor('#F3F4F6')
+        .backgroundColor(Theme.bgPage)
 
         Row() {
           TextInput({ placeholder: '输入消息', text: this.inputText })
-            .height(42).fontSize(15).backgroundColor('#F3F4F6').borderRadius(21)
+            .height(42).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(21)
             .layoutWeight(1)
             .onChange((value: string) => { this.inputText = value })
             .onSubmit(() => { this.sendText() })
@@ -457,7 +458,7 @@ struct ChatPage {
             .height(40)
             .fontSize(14)
             .fontColor('#FFFFFF')
-            .backgroundColor(this.inputText.trim().length > 0 ? '#2563EB' : '#9CA3AF')
+            .backgroundColor(this.inputText.trim().length > 0 ? Theme.primary : Theme.textTertiary)
             .margin({ left: 10 })
             .enabled(this.inputText.trim().length > 0 && !this.isSending)
             .onClick(() => { this.sendText() })
@@ -469,6 +470,6 @@ struct ChatPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F3F4F6')
+    .backgroundColor(Theme.bgPage)
   }
 }

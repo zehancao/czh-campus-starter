@@ -4,6 +4,7 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
+import { Theme, ShadowStyle } from '../common/Theme';
 
 const CATEGORIES_LIST: string[] = ['电子产品', '证件', '钥匙', '衣物', '其他'];
 
@@ -165,7 +166,7 @@ struct LostFoundPublishPage {
     Column() {
       Row() {
         Text('取消')
-          .fontSize(16).fontColor('#6B7280')
+          .fontSize(16).fontColor(Theme.textSecondary)
           .onClick(() => { router.back() })
         Blank()
         Text('发布信息')
@@ -173,7 +174,7 @@ struct LostFoundPublishPage {
         Blank()
         Text(this.isSubmitting ? '提交中…' : '发布')
           .fontSize(16)
-          .fontColor(this.canSubmitNow() ? '#FF6B35' : '#D1D5DB')
+          .fontColor(this.canSubmitNow() ? Theme.secondary : Theme.textDisabled)
           .onClick(() => { this.submitPublish() })
       }
       .width('100%')
@@ -182,7 +183,7 @@ struct LostFoundPublishPage {
 
       if (this.isLoading) {
         Column() {
-          LoadingProgress().color('#FF6B35').width(36).height(36)
+          LoadingProgress().color(Theme.secondary).width(36).height(36)
         }
         .width('100%').layoutWeight(1)
         .justifyContent(FlexAlign.Center)
@@ -190,9 +191,9 @@ struct LostFoundPublishPage {
         Column() {
           Text('🔒').fontSize(48)
           Text('请先登录再发布信息')
-            .fontSize(16).fontColor('#6B7280').margin({ top: 12 })
+            .fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
           Button('去登录')
-            .type(ButtonType.Capsule).backgroundColor('#FF6B35').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
         }
@@ -201,11 +202,11 @@ struct LostFoundPublishPage {
       } else if (!this.canPublish) {
         Column() {
           Text('😕').fontSize(48)
-          Text('信用分不足').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#EF4444')
+          Text('信用分不足').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.danger)
           Text('当前信用分：' + this.creditScore + '，低于85分无法发布')
-            .fontSize(14).fontColor('#6B7280').margin({ top: 8 })
+            .fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
           Button('我知道了')
-            .type(ButtonType.Capsule).backgroundColor('#9CA3AF').fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.textTertiary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => { router.back() })
         }
@@ -216,7 +217,7 @@ struct LostFoundPublishPage {
           Column() {
             Column() {
               Row() {
-                Text('发布类型').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
+                Text('发布类型').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
@@ -225,14 +226,14 @@ struct LostFoundPublishPage {
               Row() {
                 Button(this.publishType === 1 ? '🔍 寻物' : '寻物')
                   .type(ButtonType.Capsule)
-                  .backgroundColor(this.publishType === 1 ? '#FF6B35' : '#F3F4F6')
-                  .fontColor(this.publishType === 1 ? '#FFFFFF' : '#6B7280')
+                  .backgroundColor(this.publishType === 1 ? Theme.secondary : Theme.bgPage)
+                  .fontColor(this.publishType === 1 ? '#FFFFFF' : Theme.textSecondary)
                   .height(40).layoutWeight(1).margin({ right: 8 })
                   .onClick(() => { this.publishType = 1 })
                 Button(this.publishType === 2 ? '📢 招领' : '招领')
                   .type(ButtonType.Capsule)
-                  .backgroundColor(this.publishType === 2 ? '#10B981' : '#F3F4F6')
-                  .fontColor(this.publishType === 2 ? '#FFFFFF' : '#6B7280')
+                  .backgroundColor(this.publishType === 2 ? Theme.success : Theme.bgPage)
+                  .fontColor(this.publishType === 2 ? '#FFFFFF' : Theme.textSecondary)
                   .height(40).layoutWeight(1)
                   .onClick(() => { this.publishType = 2 })
               }
@@ -240,8 +241,8 @@ struct LostFoundPublishPage {
 
               Column() {
                 Row() {
-                  Text('添加图片').fontSize(14).fontColor('#374151')
-                  Text('(' + this.imageUrlList.length + '/5)').fontSize(12).fontColor('#9CA3AF').margin({ left: 4 })
+                  Text('添加图片').fontSize(14).fontColor(Theme.textPrimary)
+                  Text('(' + this.imageUrlList.length + '/5)').fontSize(12).fontColor(Theme.textTertiary).margin({ left: 4 })
                   Blank()
                 }
                 .width('100%')
@@ -267,16 +268,16 @@ struct LostFoundPublishPage {
                     if (this.imageUrlList.length < 5) {
                       Column() {
                         if (this.isUploading) {
-                          LoadingProgress().color('#FF6B35').width(24).height(24)
+                          LoadingProgress().color(Theme.secondary).width(24).height(24)
                         } else {
-                          Text('+').fontSize(28).fontColor('#D1D5DB')
-                          Text('上传').fontSize(10).fontColor('#D1D5DB').margin({ top: 2 })
+                          Text('+').fontSize(28).fontColor(Theme.textDisabled)
+                          Text('上传').fontSize(10).fontColor(Theme.textDisabled).margin({ top: 2 })
                         }
                       }
                       .width(76).height(76)
-                      .backgroundColor('#F9FAFB')
+                      .backgroundColor(Theme.bgInput)
                       .borderRadius(8)
-                      .border({ width: 1, color: '#E5E7EB', style: BorderStyle.Dashed })
+                      .border({ width: 1, color: Theme.border, style: BorderStyle.Dashed })
                       .justifyContent(FlexAlign.Center)
                       .onClick(() => { this.pickImagesFromAlbum() })
                     }
@@ -296,15 +297,15 @@ struct LostFoundPublishPage {
 
             Column() {
               Row() {
-                Text('标题').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
-                Text(' *').fontSize(15).fontColor('#EF4444')
+                Text('标题').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
+                Text(' *').fontSize(15).fontColor(Theme.danger)
                 Blank()
               }
               .width('100%')
               .margin({ bottom: 6 })
               TextInput({ placeholder: '如：丢失校园卡、捡到钥匙串', text: this.titleInput })
                 .width('100%').height(46).fontSize(15)
-                .backgroundColor('#F9FAFB')
+                .backgroundColor(Theme.bgInput)
                 .borderRadius(8)
                 .padding({ left: 12, right: 12 })
                 .onChange((val: string) => { this.titleInput = val })
@@ -317,14 +318,14 @@ struct LostFoundPublishPage {
 
             Column() {
               Row() {
-                Text('详细描述').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
+                Text('详细描述').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
               .margin({ bottom: 6 })
               TextArea({ placeholder: '描述物品特征、丢失/拾到时间、周围环境等…', text: this.descInput })
                 .width('100%').height(120).fontSize(15)
-                .backgroundColor('#F9FAFB')
+                .backgroundColor(Theme.bgInput)
                 .borderRadius(8)
                 .padding({ left: 12, right: 12 })
                 .onChange((val: string) => { this.descInput = val })
@@ -337,14 +338,14 @@ struct LostFoundPublishPage {
 
             Column() {
               Row() {
-                Text('地点').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
+                Text('地点').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
               .margin({ bottom: 6 })
               TextInput({ placeholder: '如：二教203、一食堂二楼', text: this.locationInput })
                 .width('100%').height(46).fontSize(15)
-                .backgroundColor('#F9FAFB')
+                .backgroundColor(Theme.bgInput)
                 .borderRadius(8)
                 .padding({ left: 12, right: 12 })
                 .onChange((val: string) => { this.locationInput = val })
@@ -357,8 +358,8 @@ struct LostFoundPublishPage {
 
             Column() {
               Row() {
-                Text('联系方式').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
-                Text(' *').fontSize(15).fontColor('#EF4444')
+                Text('联系方式').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
+                Text(' *').fontSize(15).fontColor(Theme.danger)
                 Blank()
               }
               .width('100%')
@@ -366,7 +367,7 @@ struct LostFoundPublishPage {
               TextInput({ placeholder: '手机号', text: this.phoneInput })
                 .width('100%').height(46).fontSize(15)
                 .type(InputType.Number)
-                .backgroundColor('#F9FAFB')
+                .backgroundColor(Theme.bgInput)
                 .borderRadius(8)
                 .padding({ left: 12, right: 12 })
                 .onChange((val: string) => { this.phoneInput = val })
@@ -379,7 +380,7 @@ struct LostFoundPublishPage {
 
             Column() {
               Row() {
-                Text('物品分类').fontSize(15).fontWeight(FontWeight.Medium).fontColor('#374151')
+                Text('物品分类').fontSize(15).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
                 Blank()
               }
               .width('100%')
@@ -389,9 +390,9 @@ struct LostFoundPublishPage {
                 ForEach(CATEGORIES_LIST, (cat: string, idx: number) => {
                   Text(cat)
                     .fontSize(13)
-                    .fontColor(this.selectedCategoryIndex === idx ? '#FF6B35' : '#6B7280')
-                    .backgroundColor(this.selectedCategoryIndex === idx ? '#FFF3ED' : '#F3F4F6')
-                    .border({ width: 1, color: this.selectedCategoryIndex === idx ? '#FF6B35' : '#E5E7EB' })
+                    .fontColor(this.selectedCategoryIndex === idx ? Theme.secondary : Theme.textSecondary)
+                    .backgroundColor(this.selectedCategoryIndex === idx ? Theme.secondaryLight : Theme.bgPage)
+                    .border({ width: 1, color: this.selectedCategoryIndex === idx ? Theme.secondary : Theme.border })
                     .borderRadius(16)
                     .padding({ left: 16, right: 16, top: 6, bottom: 6 })
                     .margin({ right: 10, bottom: 10 })
@@ -409,7 +410,7 @@ struct LostFoundPublishPage {
             Row() {
               Text('💳').fontSize(16)
               Text('当前信用分：' + this.creditScore + '  |  发布需 ≥85分')
-                .fontSize(13).fontColor(this.canPublish ? '#10B981' : '#EF4444')
+                .fontSize(13).fontColor(this.canPublish ? Theme.success : Theme.danger)
                 .margin({ left: 6 })
               Blank()
             }
@@ -422,7 +423,7 @@ struct LostFoundPublishPage {
               .type(ButtonType.Capsule)
               .width('92%')
               .height(48)
-              .backgroundColor(this.canSubmitNow() ? (this.publishType === 1 ? '#FF6B35' : '#10B981') : '#D1D5DB')
+              .backgroundColor(this.canSubmitNow() ? (this.publishType === 1 ? Theme.secondary : Theme.success) : Theme.textDisabled)
               .fontColor('#FFFFFF')
               .margin({ bottom: 40 })
               .enabled(this.canSubmitNow())
@@ -436,6 +437,6 @@ struct LostFoundPublishPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F0F2F5')
+    .backgroundColor(Theme.bgInput)
   }
 }

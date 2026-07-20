@@ -11,5 +11,7 @@ uploads/*
 !uploads/.gitkeep
 .idea/
 *.iml
+.deveco/
+.workbuddy/
 __pycache__/
 local.properties

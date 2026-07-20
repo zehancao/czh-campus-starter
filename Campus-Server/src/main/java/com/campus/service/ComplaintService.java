@@ -43,17 +43,25 @@ public class ComplaintService {
 
     public List<Map<String, Object>> getMyComplaints(Long userId) {
         LambdaQueryWrapper<Complaint> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Complaint::getComplainantId, userId).orderByDesc(Complaint::getCreateTime);
+        wrapper.eq(Complaint::getComplainantId, userId)
+               .or()
+               .eq(Complaint::getDefendantId, userId)
+               .orderByDesc(Complaint::getCreateTime);
         List<Complaint> complaints = complaintMapper.selectList(wrapper);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Complaint c : complaints) {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
+            map.put("complainantId", c.getComplainantId());
             map.put("defendantId", c.getDefendantId());
             map.put("productId", c.getProductId());
             map.put("reason", c.getReason());
             map.put("status", c.getStatus());
             map.put("createTime", c.getCreateTime());
+            User complainant = userMapper.selectById(c.getComplainantId());
+            if (complainant != null) {
+                map.put("complainantName", complainant.getName());
+            }
             User defendant = userMapper.selectById(c.getDefendantId());
             if (defendant != null) {
                 map.put("defendantName", defendant.getName());

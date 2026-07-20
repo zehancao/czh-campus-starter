@@ -5,6 +5,8 @@
 
 import { router } from '@kit.ArkUI'
 import { AppStore } from '../service/AppStore'
+import { Theme, ShadowStyle } from '../common/Theme'
+import { NavHeader } from '../common/NavHeader'
 
 @Entry
 @Component
@@ -12,12 +14,7 @@ struct AccountSecurityPage {
 
   build() {
     Column() {
-      Row() {
-        Image($r('app.media.ic_back')).width(24).height(24)
-          .onClick(() => { router.back() })
-        Text('账号安全').fontSize(18).fontWeight(FontWeight.Medium).margin({ left: 8 })
-      }
-      .width('100%').padding(16)
+      NavHeader({ title: '账号安全' })
 
       Column() {
         this.MenuItem('修改密码', () => { router.pushUrl({ url: 'pages/PasswordChangePage' }) })
@@ -25,18 +22,19 @@ struct AccountSecurityPage {
         this.MenuItem('切换账号', () => { this.switchAccount() })
       }
       .width('90%').padding(12)
-      .backgroundColor(Color.White).borderRadius(12).margin({ top: 12 })
+      .backgroundColor(Theme.bgCard).borderRadius(12).margin({ top: 12 })
+      .shadow(ShadowStyle.sm)
 
       // 退出登录
       Button('退出登录')
         .width('90%')
-        .backgroundColor('#FF4D4F')
+        .backgroundColor(Theme.danger)
         .fontColor(Color.White)
         .margin({ top: 24 })
         .onClick(() => { this.doLogout() })
     }
     .width('100%').height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder MenuItem(label: string, onClick: () => void) {
@@ -50,7 +48,7 @@ struct AccountSecurityPage {
   }
 
   @Builder Divider() {
-    Row().width('100%').height(0.5).backgroundColor('#F0F0F0')
+    Row().width('100%').height(0.5).backgroundColor(Theme.border)
   }
 
   async doLogout(): Promise<void> {
