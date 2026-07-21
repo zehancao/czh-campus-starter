@@ -304,12 +304,12 @@ struct MainPage {
       }.tabBar(this.TabItem(0, '首页'))
 
       TabContent() {
-        this.ScheduleContent()
-      }.tabBar(this.TabItem(1, '课表'))
+        this.MarketContent()
+      }.tabBar(this.TabItem(1, '交易'))
 
       TabContent() {
-        this.MarketContent()
-      }.tabBar(this.TabItem(2, '交易'))
+        this.MessageContent()
+      }.tabBar(this.TabItem(2, '消息'))
 
       TabContent() {
         this.AIChatContent()
@@ -323,10 +323,13 @@ struct MainPage {
     .height('100%')
     .backgroundColor(Theme.bgPage)
     .onChange((index: number) => {
-      this.currentTab = index;
-      if (index === 1) {
-        this.loadSemester();
+      if (index === 2) {
+        // 消息 tab 跳转到会话列表页面
+        this.currentTab = this.currentTab;
+        this.getUIContext().getRouter().pushUrl({ url: 'pages/ConversationListPage' });
+        return;
       }
+      this.currentTab = index;
     })
   }
 
@@ -337,10 +340,10 @@ struct MainPage {
         Image(this.currentTab === 0 ? $r('app.media.ic_home_active') : $r('app.media.ic_home'))
           .width(22).height(22)
       } else if (index === 1) {
-        Image(this.currentTab === 1 ? $r('app.media.ic_schedule_active') : $r('app.media.ic_schedule'))
+        Image(this.currentTab === 1 ? $r('app.media.ic_market_active') : $r('app.media.ic_market'))
           .width(22).height(22)
       } else if (index === 2) {
-        Image(this.currentTab === 2 ? $r('app.media.ic_market_active') : $r('app.media.ic_market'))
+        Image(this.currentTab === 2 ? $r('app.media.ic_message_active') : $r('app.media.ic_message'))
           .width(22).height(22)
       } else if (index === 3) {
         Image(this.currentTab === 3 ? $r('app.media.ic_ai_active') : $r('app.media.ic_ai'))
@@ -361,130 +364,145 @@ struct MainPage {
   }
 
   @Builder
+  QuickEntry(emoji: string, label: string, targetPage: string) {
+    Stack({ alignContent: Alignment.TopStart }) {
+      Column()
+        .width(68).height(88)
+        .backgroundColor('#C8CFDA')
+        .borderRadius(28)
+        .offset({ x: 4, y: 4 })
+      Column() {
+        Text(emoji)
+          .fontSize(32)
+          .fontColor(Theme.textPrimary)
+        Text(label)
+          .fontSize(12)
+          .fontColor(Theme.textSecondary)
+          .margin({ top: 6 })
+      }
+      .width(68).height(88)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .borderRadius(28)
+      .backgroundColor('#FFFFFF')
+    }
+    .width(72).height(92)
+    .borderRadius(28)
+    .linearGradient({
+      direction: GradientDirection.RightBottom,
+      colors: [['#FFFFFF', 0.0], ['#D0D5DD', 1.0]]
+    })
+    .clip(false)
+    .shadow({ radius: 16, color: '#ABB3C0', offsetX: 0, offsetY: 4 })
+    .onClick(() => {
+      this.getUIContext().getRouter().pushUrl({ url: targetPage });
+    })
+  }
+
+  @Builder
   HomeContent() {
     Refresh({ refreshing: $$this.isRefreshing }) {
       Scroll() {
         Column() {
           Row() {
-            Column() {
-              Text(`你好，${this.userInfo.name}`)
-                .fontSize(22)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(Theme.textPrimary)
-              Text(`${this.userInfo.college} · ${this.userInfo.major}`)
-                .fontSize(13)
-                .fontColor(Theme.textTertiary)
-                .margin({ top: 4 })
+            Stack({ alignContent: Alignment.TopStart }) {
+              Column() {
+                Text(`你好，${this.userInfo.name}`)
+                  .fontSize(22)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
+                Text(`${this.userInfo.college} · ${this.userInfo.major}`)
+                  .fontSize(13)
+                  .fontColor(Theme.textTertiary)
+                  .margin({ top: 4 })
+              }
+              .alignItems(HorizontalAlign.Start)
+              .backgroundColor('#FFFFFF')
+              .borderRadius(28)
+              .padding({ left: 28, right: 24, top: 16, bottom: 14 })
+              .margin({ right: 4, bottom: 4 })
             }
-            .alignItems(HorizontalAlign.Start)
+            .height(73)
+            .backgroundColor('#C8CFDA')
+            .borderRadius(28)
+            .linearGradient({
+              direction: GradientDirection.RightBottom,
+              colors: [['#FFFFFF', 0.0], ['#D0D5DD', 1.0]]
+            })
+            .clip(false)
+            .shadow({ radius: 16, color: '#ABB3C0', offsetX: 0, offsetY: 4 })
+
             Blank()
-            Column() {
+
+            Stack({ alignContent: Alignment.Center }) {
               if (this.userInfo.avatar.length > 0) {
                 Image(`${ApiService.baseUrl}${this.userInfo.avatar}`)
-                  .width(48)
-                  .height(48)
-                  .borderRadius(24)
+                  .width(40)
+                  .height(40)
+                  .borderRadius(20)
                   .objectFit(ImageFit.Cover)
               } else {
                 Text(this.userInfo.name.length > 0 ? this.userInfo.name[0] : 'U')
-                  .fontSize(24)
+                  .fontSize(20)
                   .fontColor(Color.White)
                   .textAlign(TextAlign.Center)
-                  .width(48)
-                  .height(48)
-                  .borderRadius(24)
+                  .width(40)
+                  .height(40)
+                  .borderRadius(20)
                   .backgroundColor(Theme.primary)
               }
             }
+            .width(56).height(56)
+            .borderRadius(28)
+            .linearGradient({
+              direction: GradientDirection.RightBottom,
+              colors: [['#FFFFFF', 0.0], ['#D0D5DD', 1.0]]
+            })
+            .clip(false)
+            .shadow({ radius: 16, color: '#ABB3C0', offsetX: 0, offsetY: 4 })
+            .margin({ right: 12 })
           }
           .width('100%')
-          .padding({ left: 20, right: 20, top: 20, bottom: 16 })
+          .alignItems(VerticalAlign.Center)
+          .padding({ left: 16, right: 16 })
+          .margin({ top: 12, bottom: 20 })
 
           Row() {
-            Column() {
-              Image($r('app.media.ic_quick_schedule'))
-                .width(28).height(28)
-              Text('我的课表')
-                .fontSize(11)
-                .fontColor(Theme.textSecondary)
-                .margin({ top: 4 })
-            }
-            .width(64).height(72)
-            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
-            .backgroundColor(Color.White).borderRadius(12)
-            .shadow(ShadowStyle.sm)
-            .onClick(() => { this.currentTab = 1; })
-
-            Column() {
-              Image($r('app.media.ic_quick_library'))
-                .width(28).height(28)
-              Text('空教室')
-                .fontSize(11)
-                .fontColor(Theme.textSecondary)
-                .margin({ top: 4 })
-            }
-            .width(64).height(72)
-            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
-            .backgroundColor(Color.White).borderRadius(12)
-            .shadow(ShadowStyle.sm)
-            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/EmptyRoomPage' }); })
-
-            Column() {
-              Image($r('app.media.ic_quick_activity'))
-                .width(28).height(28)
-              Text('校园活动')
-                .fontSize(11)
-                .fontColor(Theme.textSecondary)
-                .margin({ top: 4 })
-            }
-            .width(64).height(72)
-            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
-            .backgroundColor(Color.White).borderRadius(12)
-            .shadow(ShadowStyle.sm)
-            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityListPage' }); })
-
-            Column() {
-              Image($r('app.media.ic_quick_search'))
-                .width(28).height(28)
-              Text('失物招领')
-                .fontSize(11)
-                .fontColor(Theme.textSecondary)
-                .margin({ top: 4 })
-            }
-            .width(64).height(72)
-            .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
-            .backgroundColor(Color.White).borderRadius(12)
-            .shadow(ShadowStyle.sm)
-            .onClick(() => { this.getUIContext().getRouter().pushUrl({ url: 'pages/LostFoundListPage' }); })
+            this.QuickEntry('📅', '课表', 'pages/SchedulePage')
+            this.QuickEntry('🏫', '空教室', 'pages/EmptyRoomPage')
+            this.QuickEntry('🎉', '活动', 'pages/ClubActivityListPage')
+            this.QuickEntry('🔍', '招领', 'pages/LostFoundListPage')
           }
           .width('100%')
-          .padding({ left: 16, right: 16, bottom: 16 })
+          .padding({ left: 16, right: 16, bottom: 20 })
           .justifyContent(FlexAlign.SpaceAround)
 
-          Row() {
+          Column() {
             Column() {
               Text('今日课程')
-                .fontSize(16)
+                .fontSize(18)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Theme.textPrimary)
                 .width('100%')
-                .padding({ left: 16, bottom: 8 })
+                .padding({ left: 16, top: 4, bottom: 4 })
 
               this.TodaySchedule()
             }
-            .layoutWeight(1)
+            .width('100%')
+
+            Blank().height(12)
 
             Column() {
               Text('我的活动')
-                .fontSize(16)
+                .fontSize(18)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Theme.textPrimary)
                 .width('100%')
-                .padding({ left: 16, bottom: 8 })
+                .padding({ left: 16, top: 4, bottom: 4 })
 
               this.MyActivitiesList()
             }
-            .layoutWeight(1)
+            .width('100%')
           }
           .width('100%')
           .padding({ left: 16, right: 16, top: 16 })
@@ -492,7 +510,7 @@ struct MainPage {
           Column() {
             Row() {
               Text('校园公告')
-                .fontSize(16)
+                .fontSize(18)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Theme.textPrimary)
               Blank()
@@ -501,7 +519,7 @@ struct MainPage {
                 .fontColor(Theme.textTertiary)
             }
             .width('100%')
-            .padding({ left: 20, right: 20, bottom: 12 })
+            .padding({ left: 20, right: 20, top: 16, bottom: 12 })
 
             ForEach(this.announcements, (item: Announcement) => {
               Row() {
@@ -561,49 +579,61 @@ struct MainPage {
       .alignItems(HorizontalAlign.Start)
     } else {
       ForEach(this.todayCourses, (item: CourseSchedule) => {
-        Row() {
-          Column() {
-            Text(Constants.SECTION_TIMES[item.startSection - 1][0])
-              .fontSize(11)
-              .fontColor(Theme.textTertiary)
-          }
-          .width(36)
-          .alignItems(HorizontalAlign.Center)
+        Stack({ alignContent: Alignment.TopStart }) {
+          Row() {
+            Column() {
+              Text(Constants.SECTION_TIMES[item.startSection - 1][0])
+                .fontSize(11)
+                .fontColor(Theme.textTertiary)
+            }
+            .width(36)
+            .alignItems(HorizontalAlign.Center)
 
-          Column() {
-            Row()
-              .width(3)
-              .height('100%')
-              .backgroundColor(Constants.SCHEDULE_COLORS[item.colorIndex % Constants.SCHEDULE_COLORS.length])
-              .borderRadius(2)
-          }
-          .height(40)
+            Column() {
+              Row()
+                .width(3)
+                .height('100%')
+                .backgroundColor(Constants.SCHEDULE_COLORS[item.colorIndex % Constants.SCHEDULE_COLORS.length])
+                .borderRadius(2)
+            }
+            .height(40)
 
-          Blank().width(6)
+            Blank().width(6)
 
-          Column() {
-            Text(item.courseName)
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(Theme.textPrimary)
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-            Text(item.classroom.length > 0 ? item.classroom : '未定')
-              .fontSize(11)
-              .fontColor(Theme.textTertiary)
-              .margin({ top: 2 })
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
+            Column() {
+              Text(item.courseName)
+                .fontSize(13)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Theme.textPrimary)
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+              Text(item.classroom.length > 0 ? item.classroom : '未定')
+                .fontSize(11)
+                .fontColor(Theme.textTertiary)
+                .margin({ top: 2 })
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            .layoutWeight(1)
+            .alignItems(HorizontalAlign.Start)
           }
-          .layoutWeight(1)
-          .alignItems(HorizontalAlign.Start)
+          .width('100%')
+          .backgroundColor('#FFFFFF')
+          .borderRadius(16)
+          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+          .alignItems(VerticalAlign.Center)
+          .margin({ right: 3, bottom: 3 })
         }
         .width('100%')
-        .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .margin({ bottom: 6 })
+        .backgroundColor('#C8CFDA')
+        .borderRadius(16)
+        .linearGradient({
+          direction: GradientDirection.RightBottom,
+          colors: [['#FFFFFF', 0.0], ['#D0D5DD', 1.0]]
+        })
+        .clip(false)
+        .shadow({ radius: 10, color: '#ABB3C0', offsetX: 0, offsetY: 3 })
+        .margin({ bottom: 4 })
         .onClick(() => {
           this.selectedCourse = item;
           this.showCourseDetail = true;
@@ -625,30 +655,64 @@ struct MainPage {
       .alignItems(HorizontalAlign.Start)
     } else {
       ForEach(this.myActivities, (act: ClubActivityItem) => {
-        Row() {
-          Column() {
-            Text(act.title)
-              .fontSize(13)
-              .fontColor(Theme.textPrimary)
-              .fontWeight(FontWeight.Medium)
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-            Text(act.venue.length > 0 ? act.venue : '未定')
-              .fontSize(11)
-              .fontColor(Theme.textTertiary)
-              .margin({ top: 2 })
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Stack({ alignContent: Alignment.TopStart }) {
+          Row() {
+            Blank().width(36)
+
+            Column() {
+              Row()
+                .width(3)
+                .height('100%')
+                .backgroundColor(Constants.SCHEDULE_COLORS[0])
+                .borderRadius(2)
+            }
+            .height(40)
+
+            Blank().width(6)
+
+            Column() {
+              Row() {
+                Text(act.title)
+                  .fontSize(13)
+                  .fontColor(Theme.textPrimary)
+                  .fontWeight(FontWeight.Medium)
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .layoutWeight(1)
+                Text(act.activityTime.length > 0 ? act.activityTime : '')
+                  .fontSize(11)
+                  .fontColor(Theme.textTertiary)
+              }
+              .width('100%')
+              .alignItems(VerticalAlign.Center)
+              Text(act.venue.length > 0 ? act.venue : '')
+                .fontSize(11)
+                .fontColor(Theme.textTertiary)
+                .width('100%')
+                .margin({ top: 2 })
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            .layoutWeight(1)
+            .alignItems(HorizontalAlign.Start)
           }
-          .layoutWeight(1)
-          .alignItems(HorizontalAlign.Start)
+          .width('100%')
+          .backgroundColor('#FFFFFF')
+          .borderRadius(16)
+          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+          .alignItems(VerticalAlign.Center)
+          .margin({ right: 3, bottom: 3 })
         }
         .width('100%')
-        .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .margin({ bottom: 6 })
+        .backgroundColor('#C8CFDA')
+        .borderRadius(16)
+        .linearGradient({
+          direction: GradientDirection.RightBottom,
+          colors: [['#FFFFFF', 0.0], ['#D0D5DD', 1.0]]
+        })
+        .clip(false)
+        .shadow({ radius: 10, color: '#ABB3C0', offsetX: 0, offsetY: 3 })
+        .margin({ bottom: 4 })
         .onClick(() => {
           this.getUIContext().getRouter().pushUrl({
             url: 'pages/ClubActivityDetailPage',
@@ -1704,7 +1768,7 @@ struct MainPage {
 
     const sIdx: number = this.aiStreamingIndex;
 
-    const baseUrl: string = 'http://172.18.23.152:8000';
+    const baseUrl: string = 'http://192.168.1.3:8000';
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
     this.aiHttpRequest = req;
@@ -1926,6 +1990,14 @@ struct MainPage {
     .width('100%')
     .height('100%')
     .backgroundColor(Theme.bgPage)
+  }
+
+  @Builder
+  MessageContent() {
+    Column()
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Theme.bgPage)
   }
 
   @Builder

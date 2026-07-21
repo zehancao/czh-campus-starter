@@ -3,6 +3,7 @@
     "pages/LoginPage",
     "pages/RegisterPage",
     "pages/MainPage",
+    "pages/SchedulePage",
     "pages/ConversationListPage",
     "pages/ChatPage",
     "pages/ProductDetailPage",
