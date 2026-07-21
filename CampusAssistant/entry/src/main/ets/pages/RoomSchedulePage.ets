@@ -129,8 +129,8 @@ struct RoomSchedulePage {
         Text('<')
           .fontSize(24)
           .fontColor(Theme.textPrimary)
-          .width(40)
-          .height(40)
+          .width(44)
+          .height(44)
           .textAlign(TextAlign.Center)
           .onClick(() => {
             this.getUIContext().getRouter().back();
@@ -149,18 +149,22 @@ struct RoomSchedulePage {
         .alignItems(HorizontalAlign.Start)
         Text(this.dayText())
           .fontSize(14)
+          .fontWeight(FontWeight.Medium)
           .fontColor(Theme.primary)
-          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+          .padding({ left: 14, right: 14, top: 7, bottom: 7 })
           .backgroundColor(Theme.primaryLight)
-          .borderRadius(15)
+          .borderRadius(Theme.radiusPill)
           .onClick(() => {
             this.showDayPicker();
           })
       }
       .width('100%')
-      .height(64)
-      .padding({ left: 8, right: 16 })
+      .height(66)
+      .padding({ left: 10, right: 16 })
       .backgroundColor(Theme.bgCard)
+      .borderRadius(Theme.cardRadius)
+      .shadow(ShadowStyle.nmRaised)
+      .margin({ left: 12, right: 12, top: 8, bottom: 8 })
 
       Column() {
         Row() {
@@ -181,11 +185,11 @@ struct RoomSchedulePage {
           .width('100%')
           .margin({ top: 6 })
       }
-      .width('100%')
-      .padding(16)
+      .padding({ left: 18, right: 18, top: 16, bottom: 16 })
       .backgroundColor(Theme.bgCard)
-      .margin({ top: 10 })
-      .shadow(ShadowStyle.sm)
+      .borderRadius(Theme.cardRadius)
+      .margin({ left: 16, right: 16, top: 4 })
+      .shadow(ShadowStyle.nmRaised)
 
       if (this.errorMessage.length > 0) {
         Text(this.errorMessage)
@@ -254,7 +258,10 @@ struct RoomSchedulePage {
           .fontColor(Theme.textTertiary)
           .margin({ top: 5 })
       }
-      .width(78)
+      .width(82)
+      .padding({ left: 10, right: 8, top: 9, bottom: 9 })
+      .backgroundColor(Theme.primaryLight)
+      .borderRadius(16)
       .alignItems(HorizontalAlign.Start)
 
       Column() {
@@ -283,9 +290,9 @@ struct RoomSchedulePage {
       .margin({ left: 12 })
     }
     .width('100%')
-    .padding(16)
+    .padding({ left: 16, right: 16, top: 14, bottom: 14 })
     .backgroundColor(Theme.bgCard)
-    .borderRadius(10)
-    .shadow(ShadowStyle.sm)
+    .borderRadius(20)
+    .shadow(ShadowStyle.nmRaised)
   }
 }

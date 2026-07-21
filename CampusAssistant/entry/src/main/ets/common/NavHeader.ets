@@ -1,5 +1,4 @@
 import { Theme } from './Theme';
-import { router } from '@kit.ArkUI';
 
 @Component
 export struct NavHeader {
@@ -12,13 +11,18 @@ export struct NavHeader {
 
   build() {
     Row() {
-      Image($r('app.media.ic_back'))
-        .width(Theme.navBackSize)
-        .height(Theme.navBackSize)
-        .onClick(() => {
-          router.back();
-        })
-        .padding(4)
+      Row() {
+        Image($r('app.media.ic_back'))
+          .width(Theme.navBackSize)
+          .height(Theme.navBackSize)
+      }
+      .width(44)
+      .height(44)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .onClick(() => {
+        this.getUIContext().getRouter().back();
+      })
 
       Text(this.title)
         .fontSize(Theme.navTitleSize)
@@ -26,16 +30,17 @@ export struct NavHeader {
         .fontColor(Theme.textPrimary)
         .layoutWeight(1)
         .textAlign(TextAlign.Center)
-        .margin({ left: -32 })
 
       if (this.rightSlot !== undefined) {
         Row() {
           this.rightSlot();
         }
-        .width(32)
+        .width(44)
+        .height(44)
         .justifyContent(FlexAlign.End)
+        .alignItems(VerticalAlign.Center)
       } else {
-        Blank().width(32)
+        Blank().width(44)
       }
     }
     .width('100%')

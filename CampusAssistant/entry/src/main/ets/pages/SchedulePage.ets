@@ -249,7 +249,7 @@ struct SchedulePage {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#FFFFFF')
+        .backgroundColor(Theme.bgPage)
 
         if (this.currentWeek !== this.todayWeek) {
           Button('切回本周')
@@ -260,6 +260,7 @@ struct SchedulePage {
             .backgroundColor(Theme.primary)
             .borderRadius(24)
             .padding({ left: 24, right: 24 })
+            .shadow(ShadowStyle.sm)
             .position({ x: 292, y: 610 })
             .onClick(() => {
               this.backToCurrentWeek();
@@ -275,7 +276,7 @@ struct SchedulePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -286,10 +287,10 @@ struct SchedulePage {
           Text(`第${this.currentWeek}周`)
             .fontSize(22)
             .fontWeight(FontWeight.Bold)
-            .fontColor(Theme.danger)
+            .fontColor(Theme.textPrimary)
           Text('▼')
             .fontSize(16)
-            .fontColor(Theme.textPrimary)
+            .fontColor(Theme.primary)
             .margin({ left: 8 })
         }
         .onClick(() => {
@@ -304,14 +305,15 @@ struct SchedulePage {
       .alignItems(HorizontalAlign.Start)
 
       Text('+')
-        .fontSize(30)
-        .fontColor(Color.White)
+        .fontSize(28)
+        .fontColor(Theme.primary)
         .fontWeight(FontWeight.Bold)
         .width(42)
         .height(42)
         .textAlign(TextAlign.Center)
-        .backgroundColor(Theme.primary)
-        .borderRadius(10)
+        .backgroundColor(Theme.primaryLight)
+        .borderRadius(21)
+        .shadow(ShadowStyle.sm)
         .onClick(() => {
           router.pushUrl({
             url: 'pages/AddCoursePage',
@@ -325,9 +327,12 @@ struct SchedulePage {
         })
     }
     .width('100%')
-    .height(58)
-    .padding({ left: 12, right: 14, top: 2, bottom: 2 })
-    .backgroundColor(Color.White)
+    .height(62)
+    .padding({ left: 16, right: 16, top: 6, bottom: 6 })
+    .backgroundColor(Theme.bgCard)
+    .borderRadius(Theme.cardRadius)
+    .shadow(ShadowStyle.nmRaised)
+    .margin({ left: 12, right: 12, top: 8, bottom: 8 })
   }
 
   @Builder
@@ -363,8 +368,10 @@ struct SchedulePage {
     }
     .width('100%')
     .height(60)
-    .border({ width: 1, color: Theme.border })
-    .backgroundColor(Color.White)
+    .backgroundColor(Theme.bgCard)
+    .borderRadius(18)
+    .shadow(ShadowStyle.sm)
+    .margin({ left: 8, right: 8, bottom: 6 })
   }
 
   @Builder
@@ -421,6 +428,9 @@ struct SchedulePage {
       .width('100%')
     }
     .layoutWeight(1)
+    .backgroundColor(Theme.bgCard)
+    .borderRadius(18)
+    .margin({ left: 8, right: 8, bottom: 8 })
     .scrollBar(BarState.Off)
     .edgeEffect(EdgeEffect.Spring)
   }
@@ -451,8 +461,8 @@ struct SchedulePage {
     .height(this.courseDuration(item) * SCHEDULE_SECTION_HEIGHT - 8)
     .padding({ left: 7, right: 5, top: 8, bottom: 6 })
     .backgroundColor(this.courseBg(item))
-    .border({ width: 1, color: this.courseFg(item) })
     .borderRadius(8)
+    .shadow(ShadowStyle.sm)
     .margin({ left: 3, right: 3, top: 4 })
     .alignItems(HorizontalAlign.Start)
     .onClick(() => {
@@ -562,9 +572,9 @@ struct SchedulePage {
     }
     .width('100%')
     .padding(24)
-    .backgroundColor(Theme.bgPage)
-    .borderRadius(14)
-    .shadow(ShadowStyle.md)
+    .backgroundColor(Theme.bgCard)
+    .borderRadius(Theme.cardRadius)
+    .shadow(ShadowStyle.nmRaisedLg)
     .margin({ bottom: 18 })
     .alignItems(HorizontalAlign.Start)
   }

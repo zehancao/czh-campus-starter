@@ -1527,28 +1527,33 @@ struct MainPage {
         Image(`${ApiService.baseUrl}${item.images[0]}`)
           .width('100%')
           .aspectRatio(1)
-          .borderRadius({ topLeft: 10, topRight: 10 })
+          .borderRadius({ topLeft: 18, topRight: 18 })
           .objectFit(ImageFit.Cover)
       } else {
-        Column()
-          .width('100%')
-          .aspectRatio(1)
-          .backgroundColor(Theme.border)
-          .borderRadius({ topLeft: 10, topRight: 10 })
-          .justifyContent(FlexAlign.Center)
-          .alignItems(HorizontalAlign.Center)
+        Column() {
+          Text('暂无图片')
+            .fontSize(13)
+            .fontColor(Theme.textTertiary)
+        }
+        .width('100%')
+        .aspectRatio(1)
+        .backgroundColor(Theme.bgInput)
+        .borderRadius({ topLeft: 18, topRight: 18 })
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
       }
       Column() {
         Text(item.title)
-          .fontSize(13)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
           .fontColor(Theme.textPrimary)
           .maxLines(2)
           .lineHeight(18)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
         Row() {
           Text(`¥${item.price}`)
-            .fontSize(15)
-            .fontColor(Theme.danger)
+            .fontSize(16)
+            .fontColor(Theme.primary)
             .fontWeight(FontWeight.Bold)
           if (item.originalPrice > 0) {
             Text(`¥${item.originalPrice}`)
@@ -1566,12 +1571,12 @@ struct MainPage {
             .margin({ top: 4 })
         }
       }
-      .padding({ left: 8, right: 8, top: 8, bottom: 10 })
+      .padding({ left: 10, right: 10, top: 9, bottom: 12 })
       .alignItems(HorizontalAlign.Start)
     }
-    .backgroundColor(Color.White)
-    .borderRadius(10)
-    .shadow(ShadowStyle.sm)
+    .backgroundColor(Theme.bgCard)
+    .borderRadius(18)
+    .shadow(ShadowStyle.nmRaised)
     .onClick(() => {
       const detailParams: Record<string, Object> = {
         'productId': item.id
@@ -1622,15 +1627,16 @@ struct MainPage {
           })
         }
         .width('100%')
-        .padding({ left: 20, right: 20, top: 16, bottom: 12 })
+        .padding({ left: 20, right: 20, top: 18, bottom: 12 })
 
         Stack() {
           TextInput({ placeholder: '搜索商品...', text: this.searchKeyword })
             .fontSize(14)
-            .height(36)
-            .borderRadius(18)
-            .backgroundColor(Theme.border)
+            .height(40)
+            .borderRadius(20)
+            .backgroundColor(Theme.bgCard)
             .padding({ left: 16, right: 16 })
+            .shadow(ShadowStyle.sm)
             .onChange((v: string) => {
               this.searchKeyword = v;
               this.loadSearchSuggestions(v);
@@ -1656,10 +1662,10 @@ struct MainPage {
               }, (suggestion: string, index: number) => `${index}`)
             }
             .width('92%')
-            .backgroundColor(Color.White)
-            .borderRadius(8)
-            .shadow({ radius: 4, color: '#20000000', offsetY: 2 })
-            .position({ y: 36 })
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(14)
+            .shadow(ShadowStyle.md)
+            .position({ y: 42 })
             .zIndex(10)
           }
         }
@@ -1673,7 +1679,8 @@ struct MainPage {
               .fontColor(this.selectedCategoryId === 0 ? Theme.primary : Theme.textSecondary)
               .padding({ left: 12, right: 12, top: 6, bottom: 6 })
               .borderRadius(16)
-              .backgroundColor(this.selectedCategoryId === 0 ? Theme.primaryLight : Theme.border)
+              .backgroundColor(this.selectedCategoryId === 0 ? Theme.primaryLight : Theme.bgCard)
+              .shadow(ShadowStyle.sm)
               .onClick(() => {
                 this.selectedCategoryId = 0;
                 this.loadProducts();
@@ -1684,7 +1691,8 @@ struct MainPage {
                 .fontColor(this.selectedCategoryId === cat.id ? Theme.primary : Theme.textSecondary)
                 .padding({ left: cat.parentId === 0 ? 12 : 8, right: cat.parentId === 0 ? 12 : 8, top: 6, bottom: 6 })
                 .borderRadius(16)
-                .backgroundColor(this.selectedCategoryId === cat.id ? Theme.primaryLight : Theme.border)
+                .backgroundColor(this.selectedCategoryId === cat.id ? Theme.primaryLight : Theme.bgCard)
+                .shadow(ShadowStyle.sm)
                 .onClick(() => {
                   this.selectedCategoryId = cat.id;
                   this.loadProducts();
@@ -1714,7 +1722,7 @@ struct MainPage {
             .margin({ top: 24 })
           }
           .width('100%')
-          .padding({ left: 12, right: 12, top: 4, bottom: 12 })
+          .padding({ left: 12, right: 12, top: 4, bottom: 86 })
         }
         .layoutWeight(1)
         .scrollBar(BarState.Off)
@@ -2008,25 +2016,29 @@ struct MainPage {
           Column() {
             if (this.userInfo.avatar.length > 0) {
               Image(`${ApiService.baseUrl}${this.userInfo.avatar}`)
-                .width(64)
-                .height(64)
-                .borderRadius(32)
+                .width(72)
+                .height(72)
+                .borderRadius(36)
                 .objectFit(ImageFit.Cover)
             } else {
               Text(this.userInfo.name.length > 0 ? this.userInfo.name[0] : 'U')
-                .fontSize(28)
+                .fontSize(30)
                 .fontColor(Color.White)
                 .textAlign(TextAlign.Center)
-                .width(64)
-                .height(64)
-                .borderRadius(32)
+                .width(72)
+                .height(72)
+                .borderRadius(36)
                 .backgroundColor(Theme.primary)
             }
           }
+          .padding(6)
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(42)
+          .shadow(ShadowStyle.nmRaised)
 
           Column() {
             Text(this.userInfo.name)
-              .fontSize(20)
+              .fontSize(22)
               .fontWeight(FontWeight.Bold)
               .fontColor(Theme.textPrimary)
             Text(`学号：${this.userInfo.studentId}`)
@@ -2038,22 +2050,23 @@ struct MainPage {
           .alignItems(HorizontalAlign.Start)
           Blank()
           Button('编辑资料')
-            .height(34)
+            .height(38)
             .fontSize(13)
             .fontColor(Theme.primary)
-            .backgroundColor(Theme.primaryLight)
-            .borderRadius(17)
-            .padding({ left: 14, right: 14 })
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(19)
+            .padding({ left: 16, right: 16 })
+            .shadow(ShadowStyle.sm)
             .onClick(() => {
               this.openEditProfilePage();
             })
         }
         .width('100%')
-        .padding({ left: 20, right: 20, top: 24, bottom: 24 })
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .shadow(ShadowStyle.md)
-        .margin({ left: 16, right: 16, top: 16 })
+        .padding({ left: 24, right: 20, top: 26, bottom: 26 })
+        .backgroundColor(Theme.bgCard)
+        .borderRadius(Theme.heroRadius)
+        .shadow(ShadowStyle.nmRaisedLg)
+        .margin({ left: 20, right: 20, top: 22 })
 
         Column() {
           Row() {
@@ -2152,9 +2165,10 @@ struct MainPage {
           .padding({ left: 20, right: 20 })
         }
         .width('100%')
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .margin({ left: 16, right: 16, top: 0 })
+        .backgroundColor(Theme.bgCard)
+        .borderRadius(Theme.cardRadius)
+        .shadow(ShadowStyle.nmRaised)
+        .margin({ left: 20, right: 20, top: 14 })
 
         Column() {
           Row() {
@@ -2318,17 +2332,19 @@ struct MainPage {
           })
         }
         .width('100%')
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .margin({ left: 16, right: 16, top: 16 })
+        .backgroundColor(Theme.bgCard)
+        .borderRadius(Theme.cardRadius)
+        .shadow(ShadowStyle.nmRaised)
+        .margin({ left: 20, right: 20, top: 16 })
 
         Button('退出登录')
-          .width('90%')
-          .height(44)
+          .width('88%')
+          .height(46)
           .fontSize(16)
           .fontColor(Theme.danger)
-          .backgroundColor(Color.White)
-          .borderRadius(12)
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(23)
+          .shadow(ShadowStyle.sm)
           .margin({ top: 24 })
           .onClick(() => {
             const store: AppStore = AppStore.getInstance();

@@ -252,7 +252,7 @@ struct ProductDetailPage {
     Column() {
       if (this.isLoading) {
         Column() {
-          LoadingProgress().color(Theme.secondary).width(48).height(48)
+          LoadingProgress().color(Theme.primary).width(48).height(48)
           Text('加载中…').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 12 })
         }
         .width('100%').height('100%')
@@ -262,7 +262,7 @@ struct ProductDetailPage {
           Text('😕').fontSize(48)
           Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
           Button('重试')
-            .type(ButtonType.Capsule).backgroundColor(Theme.secondary).fontColor('#FFFFFF')
+            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
             .margin({ top: 20 })
             .onClick(() => {
               this.errorMsg = '';
@@ -287,12 +287,12 @@ struct ProductDetailPage {
                 ForEach(this.parsedImages, (img: string) => {
                   Image(ApiService.baseUrl + img)
                     .width('100%')
-                    .height(360)
+                    .height(300)
                     .objectFit(ImageFit.Cover)
                 }, (img: string) => img)
               }
               .width('100%')
-              .height(360)
+              .height(300)
               .autoPlay(false)
               .indicator(true)
               .loop(false)
@@ -301,8 +301,8 @@ struct ProductDetailPage {
                 Text('📷').fontSize(64)
                 Text('暂无图片').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 8 })
               }
-              .width('100%').height(360)
-          .backgroundColor(Theme.bgPage)
+              .width('100%').height(300)
+              .backgroundColor(Theme.bgInput)
               .justifyContent(FlexAlign.Center)
             }
 
@@ -319,7 +319,7 @@ struct ProductDetailPage {
 
               Row() {
                 Text('¥' + this.product.price.toFixed(2))
-                  .fontSize(28).fontWeight(FontWeight.Bold).fontColor(Theme.secondary)
+                  .fontSize(28).fontWeight(FontWeight.Bold).fontColor(Theme.primary)
                 if (this.product.originalPrice > 0) {
                   Text('¥' + this.product.originalPrice.toFixed(2))
                     .fontSize(14).fontColor(Theme.textTertiary)
@@ -336,8 +336,8 @@ struct ProductDetailPage {
                   .backgroundColor(STATUS_COLORS[Math.max(0, Math.min(this.product.status, 3))])
                   .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
                 Text(CONDITION_LABELS[Math.max(0, Math.min(this.product.conditionLevel, 3))])
-                  .fontSize(12).fontColor(Theme.secondary)
-                  .backgroundColor(Theme.secondaryLight)
+                  .fontSize(12).fontColor(Theme.primary)
+                  .backgroundColor(Theme.primaryLight)
                   .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
                   .margin({ left: 8 })
                 if (this.product.categoryName.length > 0) {
@@ -351,9 +351,11 @@ struct ProductDetailPage {
               }
               .width('100%').margin({ top: 8 })
             }
-            .width('100%').padding(16).backgroundColor('#FFFFFF')
+            .width('100%').padding(18).backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+            .margin({ left: 14, right: 14, top: 12 })
 
-            Divider().height(8).color(Theme.bgPage).width('100%')
+            Blank().height(12)
 
             // ══════ 卖家信息 + 电话 ══════
             Row() {
@@ -362,7 +364,7 @@ struct ProductDetailPage {
                 Text('卖家').fontSize(12).fontColor(Theme.textTertiary).margin({ top: 2 })
                 if (this.sellerPhoneText.length > 0) {
                   Text('📞 ' + this.sellerPhoneText)
-                    .fontSize(13).fontColor(Theme.secondary)
+                    .fontSize(13).fontColor(Theme.primary)
                     .margin({ top: 4 })
                 }
               }
@@ -385,9 +387,11 @@ struct ProductDetailPage {
               }
               .alignItems(HorizontalAlign.Center)
             }
-            .width('100%').padding(16).backgroundColor('#FFFFFF')
+            .width('100%').padding(18).backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+            .margin({ left: 14, right: 14 })
 
-            Divider().height(8).color(Theme.bgPage).width('100%')
+            Blank().height(12)
 
             // ══════ 商品描述 ══════
             Column() {
@@ -399,9 +403,11 @@ struct ProductDetailPage {
               Text(this.product.description.length > 0 ? this.product.description : '暂无描述')
                 .fontSize(14).fontColor(Theme.textSecondary).width('100%').margin({ top: 8 })
             }
-            .width('100%').padding(16).backgroundColor('#FFFFFF')
+            .width('100%').padding(18).backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+            .margin({ left: 14, right: 14 })
 
-            Divider().height(8).color(Theme.bgPage).width('100%')
+            Blank().height(12)
 
             // ══════ 标签 ══════
             if (this.parsedTags.length > 0) {
@@ -414,9 +420,8 @@ struct ProductDetailPage {
                 Flex({ wrap: FlexWrap.Wrap }) {
                   ForEach(this.parsedTags, (tag: string) => {
                     Text(tag)
-                      .fontSize(12).fontColor(Theme.secondary)
-                      .backgroundColor(Theme.secondaryLight)
-                      .border({ width: 1, color: Theme.secondary })
+                      .fontSize(12).fontColor(Theme.primary)
+                      .backgroundColor(Theme.primaryLight)
                       .borderRadius(12)
                       .padding({ left: 10, right: 10, top: 3, bottom: 3 })
                       .margin({ right: 8, bottom: 4 })
@@ -425,8 +430,10 @@ struct ProductDetailPage {
                 }
                 .width('100%')
               }
-              .width('100%').padding(16).backgroundColor('#FFFFFF')
-              Divider().height(8).color(Theme.bgPage).width('100%')
+              .width('100%').padding(18).backgroundColor(Theme.bgCard)
+              .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+              .margin({ left: 14, right: 14 })
+              Blank().height(12)
             }
 
             // ══════ 时间信息 ══════
@@ -438,7 +445,9 @@ struct ProductDetailPage {
               }
               .width('100%').padding({ top: 4, bottom: 4 })
             }
-            .width('100%').padding(16).backgroundColor('#FFFFFF')
+            .width('100%').padding(18).backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+            .margin({ left: 14, right: 14 })
 
             Blank().height(16)
           }
@@ -450,7 +459,7 @@ struct ProductDetailPage {
             Text(this.isFavorite ? '❤️' : '🤍').fontSize(22)
           }
           .width(48).height(48)
-          .backgroundColor(this.isFavorite ? Theme.secondaryLight : Theme.bgPage)
+          .backgroundColor(this.isFavorite ? Theme.primaryLight : Theme.bgPage)
           .borderRadius(24)
           .justifyContent(FlexAlign.Center)
           .onClick(() => { this.toggleFavorite() })
@@ -469,7 +478,7 @@ struct ProductDetailPage {
 
           Button('联系卖家')
             .type(ButtonType.Capsule)
-            .backgroundColor(Theme.secondary)
+            .backgroundColor(Theme.primary)
             .fontColor('#FFFFFF')
             .borderRadius(22)
             .height(44)
@@ -478,12 +487,12 @@ struct ProductDetailPage {
         }
         .width('100%').height(64)
         .padding({ left: 16, right: 16 })
-        .backgroundColor('#FFFFFF')
-        .shadow(ShadowStyle.sm)
+        .backgroundColor(Theme.bgCard)
+        .shadow(ShadowStyle.nmRaised)
       }
     }
     .width('100%').height('100%')
-    .backgroundColor(Theme.bgInput)
+    .backgroundColor(Theme.bgPage)
   }
 
   private formatTime(timeStr: string): string {

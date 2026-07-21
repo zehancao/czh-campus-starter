@@ -212,10 +212,10 @@ struct AddCoursePage {
         // Keep custom header - has save action on right side
         Row() {
           Text('<')
-            .fontSize(28)
+            .fontSize(26)
             .fontColor(Theme.textPrimary)
-            .width(50)
-            .height(50)
+            .width(44)
+            .height(44)
             .textAlign(TextAlign.Center)
             .onClick(() => {
               router.back();
@@ -227,47 +227,55 @@ struct AddCoursePage {
             .layoutWeight(1)
             .textAlign(TextAlign.Center)
           Text(this.isSaving ? '保存中' : '保存')
-            .fontSize(16)
+            .fontSize(15)
             .fontColor(Theme.primary)
-            .width(50)
-            .textAlign(TextAlign.End)
+            .width(64)
+            .height(34)
+            .textAlign(TextAlign.Center)
+            .backgroundColor(Theme.primaryLight)
+            .borderRadius(17)
             .onClick(() => {
               this.saveAndBack();
             })
         }
         .width('100%')
-        .height(56)
-        .padding({ left: 6, right: 18 })
+        .height(62)
+        .padding({ left: 10, right: 14 })
         .backgroundColor(Theme.bgCard)
+        .borderRadius(Theme.cardRadius)
+        .shadow(ShadowStyle.nmRaised)
+        .margin({ left: 12, right: 12, top: 8, bottom: 8 })
 
         Scroll() {
           Column() {
-            // 学期提示卡
             Row() {
               Column() {
                 Text('当前学期为')
-                  .fontSize(16)
-                  .fontColor(Theme.primary)
+                  .fontSize(Theme.fsSubtitle)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor(Theme.textPrimary)
                 Text('返回课程表页面即可切换学期')
-                  .fontSize(13)
-                  .fontColor(Theme.primary)
-                  .margin({ top: 8 })
+                  .fontSize(Theme.fsCaption)
+                  .fontColor(Theme.textTertiary)
+                  .margin({ top: 6 })
               }
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
               Text(this.semesterTitle)
-                .fontSize(16)
+                .fontSize(Theme.fsCaption)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Theme.primary)
+                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                .backgroundColor(Theme.primaryLight)
+                .borderRadius(Theme.chipRadius)
             }
             .width('100%')
-            .padding(18)
-            .backgroundColor(Theme.primaryLight)
-            .borderRadius(10)
+            .padding({ left: 18, right: 18, top: 16, bottom: 16 })
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius)
             .margin({ bottom: 16 })
-            .shadow(ShadowStyle.sm)
+            .shadow(ShadowStyle.nmRaised)
 
-            // 表单卡
             Column() {
               this.FormInputRow('课程名称', '请输入课程名称', 1)
               this.RowDivider()
@@ -285,11 +293,11 @@ struct AddCoursePage {
             }
             .width('100%')
             .backgroundColor(Theme.bgCard)
-            .borderRadius(12)
-            .shadow(ShadowStyle.sm)
+            .borderRadius(Theme.cardRadius)
+            .shadow(ShadowStyle.nmRaised)
           }
           .width('100%')
-          .padding({ left: 16, right: 16, top: 16, bottom: 40 })
+          .padding({ left: 16, right: 16, top: 8, bottom: 40 })
         }
         .layoutWeight(1)
         .scrollBar(BarState.Off)
@@ -370,7 +378,8 @@ struct AddCoursePage {
           }
           .width('100%')
           .backgroundColor(Theme.bgCard)
-          .borderRadius({ topLeft: 20, topRight: 20 })
+          .borderRadius({ topLeft: 28, topRight: 28 })
+          .shadow(ShadowStyle.nmRaisedLg)
           .position({ x: 0, y: '100%' })
           .translate({ y: '-100%' })
         }
@@ -447,7 +456,8 @@ struct AddCoursePage {
           }
           .width('100%')
           .backgroundColor(Theme.bgCard)
-          .borderRadius({ topLeft: 20, topRight: 20 })
+          .borderRadius({ topLeft: 28, topRight: 28 })
+          .shadow(ShadowStyle.nmRaisedLg)
           .position({ x: 0, y: '100%' })
           .translate({ y: '-100%' })
         }
@@ -468,12 +478,14 @@ struct AddCoursePage {
         .width(80)
       TextInput({ placeholder: placeholder })
         .layoutWeight(1)
-        .height(44)
+        .height(40)
         .fontSize(15)
         .fontColor(Theme.textPrimary)
         .placeholderColor(Theme.textDisabled)
         .textAlign(TextAlign.End)
-        .backgroundColor(Color.Transparent)
+        .backgroundColor(Theme.bgInput)
+        .borderRadius(20)
+        .padding({ left: 12, right: 12 })
         .onChange((val: string) => {
           if (fieldType === 1) {
             this.courseName = val;
@@ -485,7 +497,7 @@ struct AddCoursePage {
         })
     }
     .width('100%')
-    .height(56)
+    .height(58)
     .padding({ left: 16, right: 16 })
   }
 
@@ -500,13 +512,16 @@ struct AddCoursePage {
       Text(value)
         .fontSize(14)
         .fontColor(isHighlight ? Theme.danger : Theme.textSecondary)
+        .padding({ left: 10, right: 8, top: 5, bottom: 5 })
+        .backgroundColor(isHighlight ? Theme.dangerLight : Theme.bgInput)
+        .borderRadius(Theme.chipRadius)
       Text('›')
         .fontSize(22)
         .fontColor(Theme.textDisabled)
         .margin({ left: 6 })
     }
     .width('100%')
-    .height(56)
+    .height(58)
     .padding({ left: 16, right: 16 })
     .onClick(onTap)
   }

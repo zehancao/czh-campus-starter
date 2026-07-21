@@ -13,6 +13,7 @@ struct EditProfilePage {
   @State private userName: string = '';
   @State private isUploading: boolean = false;
   @State private isSavingName: boolean = false;
+  @State private showAvatarSheet: boolean = false;
   @State private errorMsg: string = '';
 
   aboutToAppear(): void {
@@ -52,19 +53,7 @@ struct EditProfilePage {
     if (this.isUploading) {
       return;
     }
-    ActionSheet.show({
-      title: '修改头像',
-      message: '选择修改头像的方式',
-      sheets: [
-        {
-          title: '相册上传',
-          action: () => {
-            this.uploadFromAlbum();
-          }
-        }
-      ],
-      cancel: () => {}
-    });
+    this.showAvatarSheet = true;
   }
 
   private async uploadFromAlbum(): Promise<void> {
@@ -72,6 +61,7 @@ struct EditProfilePage {
       return;
     }
     this.errorMsg = '';
+    this.showAvatarSheet = false;
     this.isUploading = true;
     try {
       const uris: string[] = await ApiService.pickImages();
@@ -115,155 +105,214 @@ struct EditProfilePage {
   }
 
   build() {
-    Column() {
-      // 顶部导航栏 - replaced with NavHeader
-      NavHeader({ title: '编辑资料' })
+    Stack() {
+      Column() {
+        NavHeader({ title: '编辑资料' })
 
-      Scroll() {
-        Column() {
-          // 头像区域
+        Scroll() {
           Column() {
-            Stack() {
-              if (this.avatar.length > 0) {
-                Image(`${ApiService.baseUrl}${this.avatar}`)
-                  .width(88)
-                  .height(88)
-                  .borderRadius(44)
-                  .objectFit(ImageFit.Cover)
-              } else {
-                Text(this.userName.length > 0 ? this.userName[0] : 'U')
-                  .fontSize(36)
-                  .fontColor(Color.White)
-                  .textAlign(TextAlign.Center)
-                  .width(88)
-                  .height(88)
-                  .borderRadius(44)
-                  .backgroundColor(Theme.primary)
+            Column() {
+              Stack() {
+                if (this.avatar.length > 0) {
+                  Image(`${ApiService.baseUrl}${this.avatar}`)
+                    .width(96)
+                    .height(96)
+                    .borderRadius(48)
+                    .objectFit(ImageFit.Cover)
+                } else {
+                  Text(this.userName.length > 0 ? this.userName[0] : 'U')
+                    .fontSize(38)
+                    .fontColor(Color.White)
+                    .textAlign(TextAlign.Center)
+                    .width(96)
+                    .height(96)
+                    .borderRadius(48)
+                    .backgroundColor(Theme.primary)
+                }
+                Column() {
+                  Text('📷').fontSize(13)
+                }
+                .width(26)
+                .height(26)
+                .borderRadius(13)
+                .backgroundColor('rgba(0,0,0,0.5)')
+                .justifyContent(FlexAlign.Center)
+                .alignItems(HorizontalAlign.Center)
+                .offset({ x: 30, y: 30 })
               }
-              // 相机角标
-              Column() {
-                Text('📷').fontSize(13)
-              }
-              .width(26)
-              .height(26)
-              .borderRadius(13)
-              .backgroundColor('rgba(0,0,0,0.5)')
-              .justifyContent(FlexAlign.Center)
-              .alignItems(HorizontalAlign.Center)
-              .offset({ x: 30, y: 30 })
-            }
-            .width(88)
-            .height(88)
-            .onClick(() => {
-              this.showAvatarOptions();
-            })
+              .width(96)
+              .height(96)
+              .onClick(() => {
+                this.showAvatarOptions();
+              })
 
-            Text(this.isUploading ? '上传中...' : this.userName)
+              Text(this.isUploading ? '上传中...' : this.userName)
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.isUploading ? Theme.primary : Theme.textPrimary)
+                .margin({ top: 12 })
+
+              Text(this.isUploading ? '' : '点击头像可更换')
+                .fontSize(12)
+                .fontColor(Theme.textTertiary)
+                .margin({ top: 4 })
+            }
+            .width('100%')
+            .padding({ top: 34, bottom: 30 })
+            .backgroundColor(Theme.bgCard)
+            .alignItems(HorizontalAlign.Center)
+            .borderRadius(Theme.heroRadius)
+            .shadow(ShadowStyle.nmRaisedLg)
+
+            Column() {
+              Row() {
+                Text('用户名')
+                  .fontSize(15)
+                  .fontColor(Theme.textPrimary)
+                  .width(76)
+                TextInput({ placeholder: '请输入用户名', text: this.userName })
+                  .layoutWeight(1)
+                  .height(44)
+                  .fontSize(15)
+                  .fontColor(Theme.textPrimary)
+                  .placeholderColor(Theme.textDisabled)
+                  .textAlign(TextAlign.End)
+                  .backgroundColor(Color.Transparent)
+                  .padding({ left: 8, right: 0 })
+                  .onChange((value: string) => {
+                    this.userName = value;
+                    this.errorMsg = '';
+                  })
+              }
+              .width('100%')
+              .height(56)
+              .padding({ left: 16, right: 16 })
+
+              Row()
+                .width('100%')
+                .height(0.5)
+                .margin({ left: 16 })
+                .backgroundColor(Theme.border)
+
+              Row() {
+                Text('修改密码')
+                  .fontSize(15)
+                  .fontColor(Theme.textPrimary)
+                Blank()
+                Text('›')
+                  .fontSize(22)
+                  .fontColor(Theme.textDisabled)
+              }
+              .width('100%')
+              .height(56)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                router.pushUrl({ url: 'pages/PasswordChangePage' });
+              })
+            }
+            .width('100%')
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius)
+            .margin({ top: 16 })
+            .shadow(ShadowStyle.nmRaised)
+
+            if (this.errorMsg.length > 0) {
+              Text(this.errorMsg)
+                .fontSize(13)
+                .fontColor(Theme.danger)
+                .width('100%')
+                .textAlign(TextAlign.Center)
+                .margin({ top: 12 })
+            }
+
+            Button(this.isSavingName ? '保存中...' : '保存修改')
+              .width('100%')
+              .height(48)
               .fontSize(16)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(this.isUploading ? Theme.primary : Theme.textPrimary)
-              .margin({ top: 12 })
-
-            Text(this.isUploading ? '' : '点击头像可更换')
-              .fontSize(12)
-              .fontColor(Theme.textTertiary)
-              .margin({ top: 4 })
+              .fontColor(Color.White)
+              .backgroundColor(Theme.primary)
+              .borderRadius(24)
+              .margin({ top: 30 })
+              .shadow(ShadowStyle.sm)
+              .enabled(!this.isSavingName)
+              .onClick(() => {
+                this.saveUserName();
+              })
           }
           .width('100%')
-          .padding({ top: 32, bottom: 28 })
-          .backgroundColor(Theme.bgCard)
-          .alignItems(HorizontalAlign.Center)
-          .borderRadius(12)
-          .shadow(ShadowStyle.sm)
-
-          // 设置项卡片：用户名 + 修改密码
-          Column() {
-            // 用户名行
-            Row() {
-              Text('用户名')
-                .fontSize(15)
-                .fontColor(Theme.textPrimary)
-                .width(76)
-              TextInput({ placeholder: '请输入用户名', text: this.userName })
-                .layoutWeight(1)
-                .height(44)
-                .fontSize(15)
-                .fontColor(Theme.textPrimary)
-                .placeholderColor(Theme.textDisabled)
-                .textAlign(TextAlign.End)
-                .backgroundColor(Color.Transparent)
-                .padding({ left: 8, right: 0 })
-                .onChange((value: string) => {
-                  this.userName = value;
-                  this.errorMsg = '';
-                })
-            }
-            .width('100%')
-            .height(56)
-            .padding({ left: 16, right: 16 })
-
-            // 分隔线
-            Row()
-              .width('100%')
-              .height(0.5)
-              .margin({ left: 16 })
-              .backgroundColor(Theme.border)
-
-            // 修改密码行
-            Row() {
-              Text('修改密码')
-                .fontSize(15)
-                .fontColor(Theme.textPrimary)
-              Blank()
-              Text('›')
-                .fontSize(22)
-                .fontColor(Theme.textDisabled)
-            }
-            .width('100%')
-            .height(56)
-            .padding({ left: 16, right: 16 })
-            .onClick(() => {
-              router.pushUrl({ url: 'pages/PasswordChangePage' });
-            })
-          }
-          .width('100%')
-          .backgroundColor(Theme.bgCard)
-          .borderRadius(12)
-          .margin({ top: 14 })
-          .shadow(ShadowStyle.sm)
-
-          // 错误提示
-          if (this.errorMsg.length > 0) {
-            Text(this.errorMsg)
-              .fontSize(13)
-              .fontColor(Theme.danger)
-              .width('100%')
-              .textAlign(TextAlign.Center)
-              .margin({ top: 12 })
-          }
-
-          // 保存按钮
-          Button(this.isSavingName ? '保存中...' : '保存修改')
-            .width('100%')
-            .height(48)
-            .fontSize(16)
-            .fontColor(Color.White)
-            .backgroundColor(Theme.primary)
-            .borderRadius(24)
-            .margin({ top: 28 })
-            .enabled(!this.isSavingName)
-            .onClick(() => {
-              this.saveUserName();
-            })
+          .padding({ left: 20, right: 20, top: 20, bottom: 40 })
         }
-        .width('100%')
-        .padding({ left: 16, right: 16, top: 16, bottom: 40 })
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
       }
-      .layoutWeight(1)
-      .scrollBar(BarState.Off)
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Theme.bgPage)
+
+      if (this.showAvatarSheet) {
+        this.AvatarSheet()
+      }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(Theme.bgPage)
+  }
+
+  @Builder
+  AvatarSheet() {
+    Stack({ alignContent: Alignment.Bottom }) {
+      Column()
+        .width('100%')
+        .height('100%')
+        .backgroundColor('rgba(0,0,0,0.28)')
+        .onClick(() => {
+          this.showAvatarSheet = false;
+        })
+
+      Column() {
+        Text('修改头像')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.textPrimary)
+          .width('100%')
+          .padding({ left: 24, right: 24, top: 22, bottom: 14 })
+
+        Row() {
+          Text('从相册选择')
+            .fontSize(16)
+            .fontColor(Theme.textPrimary)
+          Blank()
+          Text('›')
+            .fontSize(22)
+            .fontColor(Theme.textDisabled)
+        }
+        .width('100%')
+        .height(56)
+        .padding({ left: 24, right: 24 })
+        .onClick(() => {
+          this.uploadFromAlbum();
+        })
+
+        Row()
+          .width('100%')
+          .height(8)
+          .backgroundColor(Theme.bgPage)
+
+        Text('取消')
+          .fontSize(16)
+          .fontColor(Theme.textSecondary)
+          .width('100%')
+          .height(56)
+          .textAlign(TextAlign.Center)
+          .onClick(() => {
+            this.showAvatarSheet = false;
+          })
+      }
+      .width('100%')
+      .backgroundColor(Theme.bgCard)
+      .borderRadius({ topLeft: 28, topRight: 28 })
+      .shadow(ShadowStyle.nmRaisedLg)
+    }
+    .width('100%')
+    .height('100%')
   }
 }

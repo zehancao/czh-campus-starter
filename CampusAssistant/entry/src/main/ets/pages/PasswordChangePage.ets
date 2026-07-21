@@ -96,13 +96,13 @@ struct PasswordChangePage {
       // 步骤指示器
       Row() {
         this.StepDot(1, this.step >= 0, '验证身份')
-        Row().width(48).height(2).backgroundColor(this.step >= 1 ? Theme.primary : Theme.textDisabled)
+        Row().width(52).height(2).backgroundColor(this.step >= 1 ? Theme.primary : Theme.textDisabled)
         this.StepDot(2, this.step >= 1, '设置新密码')
       }
       .width('100%')
       .justifyContent(FlexAlign.Center)
       .alignItems(VerticalAlign.Center)
-      .padding({ top: 28, bottom: 20 })
+      .padding({ top: 30, bottom: 22 })
 
       // 表单区域
       Column() {
@@ -112,18 +112,18 @@ struct PasswordChangePage {
           this.Step2Content()
         }
       }
-      .width('90%')
-      .padding(20)
+      .width('88%')
+      .padding(22)
       .backgroundColor(Theme.bgCard)
-      .borderRadius(12)
-      .shadow(ShadowStyle.sm)
+      .borderRadius(Theme.cardRadius)
+      .shadow(ShadowStyle.nmRaisedLg)
 
       // 错误提示
       if (this.errorMsg.length > 0) {
         Text(this.errorMsg)
           .fontSize(13)
           .fontColor(Theme.danger)
-          .width('90%')
+          .width('88%')
           .margin({ top: 12 })
       }
     }
@@ -135,8 +135,8 @@ struct PasswordChangePage {
   StepDot(num: number, active: boolean, label: string) {
     Column() {
       Text(`${num}`)
-        .width(28).height(28)
-        .borderRadius(14)
+        .width(32).height(32)
+        .borderRadius(16)
         .backgroundColor(active ? Theme.primary : Theme.textDisabled)
         .fontColor(Color.White)
         .fontSize(14)
@@ -164,7 +164,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(8)
+      .borderRadius(24)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
         this.oldPassword = value
@@ -179,6 +179,7 @@ struct PasswordChangePage {
       .backgroundColor(Theme.primary)
       .borderRadius(22)
       .margin({ top: 20 })
+      .shadow(ShadowStyle.sm)
       .enabled(!this.isLoading)
       .onClick(() => { this.verifyOldPassword() })
   }
@@ -198,7 +199,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(8)
+      .borderRadius(24)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
         this.newPassword = value
@@ -212,7 +213,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(8)
+      .borderRadius(24)
       .padding({ left: 14, right: 14 })
       .margin({ top: 12 })
       .onChange((value: string) => {
@@ -228,6 +229,7 @@ struct PasswordChangePage {
       .backgroundColor(Theme.primary)
       .borderRadius(22)
       .margin({ top: 20 })
+      .shadow(ShadowStyle.sm)
       .enabled(!this.isLoading)
       .onClick(() => { this.submitNewPassword() })
 
@@ -236,10 +238,10 @@ struct PasswordChangePage {
       .height(44)
       .fontSize(16)
       .fontColor(Theme.primary)
-      .backgroundColor(Color.Transparent)
-      .border({ width: 1, color: Theme.primary })
+      .backgroundColor(Theme.bgCard)
       .borderRadius(22)
       .margin({ top: 10 })
+      .shadow(ShadowStyle.sm)
       .onClick(() => {
         this.step = 0
         this.newPassword = ''
