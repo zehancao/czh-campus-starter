@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园助手 - 鸿蒙前端美化原型</title>
+<style>
+/* ═══════════════════════════════════════
+   Design Tokens —— 与 Theme.ets 一一对应
+   ═══════════════════════════════════════ */
+:root {
+  --primary: #4F46E5;
+  --primary-light: #EEF2FF;
+  --primary-dark: #3730A3;
+  --secondary: #F97316;
+  --secondary-light: #FFF7ED;
+  --secondary-dark: #EA580C;
+  --success: #10B981;
+  --success-light: #ECFDF5;
+  --warning: #F59E0B;
+  --warning-light: #FEF3C7;
+  --danger: #EF4444;
+  --danger-light: #FEF2F2;
+  --info: #0EA5E9;
+
+  --text-1: #1F2937;
+  --text-2: #6B7280;
+  --text-3: #9CA3AF;
+  --text-disabled: #D1D5DB;
+  --text-white: #FFFFFF;
+
+  --bg-page: #F3F4F6;
+  --bg-card: #FFFFFF;
+  --bg-input: #F9FAFB;
+  --bg-hover: #F3F4F6;
+
+  --border: #E5E7EB;
+  --divider: #F3F4F6;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 22px;
+
+  --card-padding: 18px;
+  --card-gap: 12px;
+  --section-gap: 16px;
+  --input-h: 46px;
+  --btn-h: 44px;
+
+  --shadow-sm: 0 1px 4px rgba(15,23,42,.04);
+  --shadow-md: 0 2px 8px rgba(15,23,42,.05);
+  --shadow-lg: 0 4px 16px rgba(15,23,42,.07);
+
+  --schedule-0-bg: #EEF2FF; --schedule-0-fg: #4F46E5;
+  --schedule-1-bg: #CCFBF1; --schedule-1-fg: #059669;
+  --schedule-2-bg: #FEF3C7; --schedule-2-fg: #D97706;
+  --schedule-3-bg: #FFE4E6; --schedule-3-fg: #E11D48;
+  --schedule-4-bg: #FCE7F3; --schedule-4-fg: #DB2777;
+  --schedule-5-bg: #F3E8FF; --schedule-5-fg: #7C3AED;
+
+  --personal-0-bg: #FFF7ED; --personal-0-fg: #EA580C;
+  --personal-1-bg: #FEF3C7; --personal-1-fg: #D97706;
+  --personal-2-bg: #FFE4E6; --personal-2-fg: #E11D48;
+  --personal-3-bg: #FCE7F3; --personal-3-fg: #DB2777;
+}
+
+/* ═══ 暗色主题（与浅色 token 一一对应）═══ */
+:root[data-theme="dark"] {
+  --primary: #6366F1;
+  --primary-light: rgba(99,102,241,.16);
+  --primary-dark: #4338CA;
+  --secondary: #FB923C;
+  --secondary-light: rgba(249,115,22,.16);
+  --secondary-dark: #EA580C;
+  --success: #34D399;
+  --success-light: rgba(16,185,129,.16);
+  --warning: #FBBF24;
+  --warning-light: rgba(245,158,11,.16);
+  --danger: #F87171;
+  --danger-light: rgba(239,68,68,.16);
+  --info: #38BDF8;
+
+  --text-1: #F2F2F5;
+  --text-2: #A1A1AA;
+  --text-3: #6B7280;
+  --text-disabled: #4B5563;
+  --text-white: #FFFFFF;
+
+  --bg-page: #0B0B0F;
+  --bg-card: #16161C;
+  --bg-input: #1C1C24;
+  --bg-hover: #22222B;
+
+  --border: #2A2A33;
+  --divider: #23232C;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.5);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.55);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.6);
+}
+:root[data-theme="dark"] body {
+  background: linear-gradient(135deg, #0B0B0F 0%, #1A1A24 100%);
+}
+:root[data-theme="dark"] .qa-lost-card {
+  background: linear-gradient(145deg, #2A2118 0%, #2E2418 50%, #2A2410 100%);
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+/* ═══════════════════════════════════════
+   Reset & Base
+   ═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display:flex; justify-content:center; align-items:center;
+  min-height:100vh; padding:20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════
+   Phone Shell
+   ═══════════════════════════════════════ */
+.phone {
+  width: 390px; height: 844px;
+  background: var(--bg-page);
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3), 0 0 0 2px #1a1a2e, 0 0 0 6px #2d2d44, 0 0 0 8px #1a1a2e;
+  display:flex; flex-direction:column;
+  position:relative;
+}
+
+/* Status Bar */
+.status-bar {
+  height:44px; background:var(--bg-card);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; flex-shrink:0;
+  font-size:12px; font-weight:600; color:var(--text-1);
+  border-bottom:1px solid var(--divider);
+}
+.status-bar .time { letter-spacing:.5px; }
+.status-icons { display:flex; gap:6px; align-items:center; }
+.status-icons span { font-size:11px; }
+
+/* Content Area */
+.content {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+}
+.content::-webkit-scrollbar { display:none; }
+
+/* Page Container */
+.page {
+  display:none; flex-direction:column;
+  animation: fadeSlideIn .3s ease;
+  min-height:100%;
+}
+.page.active { display:flex; }
+.page.sub-page { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; background:var(--bg-page); }
+
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateX(20px); }
+  to { opacity:1; transform:translateX(0); }
+}
+@keyframes fadeSlideOut {
+  from { opacity:1; transform:translateX(0); }
+  to { opacity:0; transform:translateX(-20px); }
+}
+
+/* ═══════════════════════════════════════
+   Bottom Tab Bar
+   ═══════════════════════════════════════ */
+.tab-bar {
+  height:64px; background:var(--bg-card);
+  display:flex; align-items:center; justify-content:space-around;
+  border-top:1px solid var(--divider);
+  flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,0);
+}
+.tab-item {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; padding:6px 12px; border-radius:var(--radius-md);
+  transition:all .2s; color:var(--text-3); font-size:10px; font-weight:500;
+  border:none; background:none; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.tab-item svg { width:22px; height:22px; transition:all .2s; }
+.tab-item.active { color:var(--primary); }
+.tab-item.active svg { color:var(--primary); }
+.tab-item:active { background:var(--bg-hover); }
+
+/* ═══════════════════════════════════════
+   Shared Components
+   ═══════════════════════════════════════ */
+.card {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  padding:var(--card-padding); box-shadow:var(--shadow-sm);
+}
+.card-lg { border-radius:var(--radius-lg); }
+
+.chip {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:4px 12px; border-radius:var(--radius-sm);
+  font-size:12px; font-weight:500; cursor:pointer; border:none; outline:none;
+  transition:all .2s; white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.chip-default { background:var(--bg-input); color:var(--text-2); }
+.chip-default.active, .chip-default:hover { background:var(--primary-light); color:var(--primary); }
+.chip-primary { background:var(--primary-light); color:var(--primary); }
+.chip-success { background:var(--success-light); color:var(--success); }
+.chip-warning { background:var(--warning-light); color:var(--warning); }
+.chip-danger { background:var(--danger-light); color:var(--danger); }
+
+.btn-primary {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  height:var(--btn-h); padding:0 24px;
+  border-radius:var(--radius-pill); border:none;
+  background:linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color:var(--text-white); font-size:15px; font-weight:600;
+  cursor:pointer; box-shadow:0 4px 14px rgba(79,70,229,.35);
+  transition:all .2s; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-primary:active { transform:scale(.97); opacity:.9; }
+.btn-outline {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  height:var(--btn-h); padding:0 24px;
+  border-radius:var(--radius-pill);
+  background:transparent; border:1.5px solid var(--primary);
+  color:var(--primary); font-size:15px; font-weight:600;
+  cursor:pointer; transition:all .2s; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-outline:active { background:var(--primary-light); }
+
+.section-title {
+  font-size:16px; font-weight:700; color:var(--text-1);
+  margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.section-title .badge {
+  font-size:11px; font-weight:500; color:var(--text-3); margin-left:auto;
+}
+
+/* Nav Header (for sub-pages) */
+.nav-header {
+  height:44px; background:var(--bg-card);
+  display:flex; align-items:center; padding:0 12px; gap:8px;
+  border-bottom:1px solid var(--divider); flex-shrink:0;
+}
+.nav-header .back-btn {
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border:none; background:none; cursor:pointer; border-radius:50%;
+  color:var(--text-1); font-size:20px; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-header .back-btn:active { background: var(--bg-hover); }
+.nav-header .nav-title {
+  font-size:16px; font-weight:600; color:var(--text-1);
+}
+
+.input-field {
+  height:var(--input-h); border-radius:var(--radius-md);
+  border:1px solid var(--border); background:var(--bg-input);
+  padding:0 14px; font-size:15px; color:var(--text-1); width:100%;
+  transition:border .2s; outline:none;
+}
+.input-field:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+
+.divider { height:1px; background:var(--divider); margin:0 var(--card-padding); }
+
+/* ═══════════════════════════════════════
+   首页 Index Page
+   ═══════════════════════════════════════ */
+.index-page { padding:18px; gap:var(--section-gap); }
+.index-header { display:flex; align-items:center; justify-content:space-between; }
+.index-header .greeting { font-size:22px; font-weight:700; color:var(--text-1); }
+.index-header .greeting span { color:var(--primary); }
+.index-header .avatar-ring { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--secondary)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; font-weight:700; cursor:pointer; }
+
+.banner-card {
+  background:linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius:var(--radius-lg); padding:20px; color:var(--text-white);
+  box-shadow:0 8px 24px rgba(79,70,229,.3);
+  position:relative; overflow:hidden;
+}
+.banner-card::after {
+  content:''; position:absolute; right:-20px; top:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background:rgba(255,255,255,.1);
+}
+.banner-card .banner-title { font-size:18px; font-weight:700; margin-bottom:6px; position:relative; z-index:1; }
+.banner-card .banner-sub { font-size:13px; opacity:.85; position:relative; z-index:1; }
+.banner-card .banner-stats { display:flex; gap:16px; margin-top:12px; position:relative; z-index:1; }
+.banner-card .banner-stat { text-align:center; }
+.banner-card .banner-stat .num { font-size:20px; font-weight:700; }
+.banner-card .banner-stat .label { font-size:11px; opacity:.75; }
+
+.quick-actions { display:flex; gap:10px; }
+.qa-grid {
+  flex:1; display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
+}
+.qa-grid .quick-action { padding:12px 6px; }
+.quick-action {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:12px 4px; border-radius:var(--radius-md); background:var(--bg-card);
+  box-shadow:var(--shadow-sm); cursor:pointer; transition:all .2s; border:none; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.quick-action:active { transform:scale(.95); background:var(--bg-hover); }
+.quick-action .qa-icon {
+  width:40px; height:40px; border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+}
+.quick-action .qa-label { font-size:11px; color:var(--text-2); font-weight:500; }
+.qa-icon.schedule { background:var(--primary-light); }
+.qa-icon.room { background:var(--success-light); }
+.qa-icon.lost { background:var(--warning-light); }
+.qa-icon.ai { background:var(--danger-light); }
+.qa-icon.club { background:var(--secondary-light); }
+
+.qa-lost-card {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-radius:var(--radius-md); cursor:pointer; transition:all .2s;
+  background:linear-gradient(145deg, #FFF7ED 0%, #FFF1E6 50%, #FEF3C7 100%);
+  box-shadow:var(--shadow-sm); padding:14px 10px; gap:8px;
+  -webkit-tap-highlight-color:transparent; border:none; outline:none;
+}
+.qa-lost-card:active { transform:scale(.97); }
+.qa-lost-card .qa-lost-icon { font-size:32px; }
+.qa-lost-card .qa-lost-title { font-size:15px; font-weight:700; color:var(--text-1); }
+.qa-lost-card .qa-lost-desc { font-size:11px; color:var(--text-2); }
+.qa-lost-card .qa-lost-count {
+  font-size:12px; color:var(--secondary-dark); font-weight:600;
+  background:rgba(249,115,22,.1); padding:4px 12px; border-radius:var(--radius-pill);
+}
+.qa-lost-card .qa-lost-count span { font-size:16px; font-weight:700; }
+
+.schedule-timeline { display:flex; flex-direction:column; }
+.schedule-timeline .s-item { display:flex; align-items:stretch; }
+.schedule-timeline .s-item:last-child .s-time-bar { padding-bottom:0; }
+.schedule-timeline .s-time-bar {
+  width:44px; display:flex; flex-direction:column; align-items:center; flex-shrink:0;
+  padding-bottom:10px; position:relative;
+}
+.schedule-timeline .s-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:16px; z-index:1;
+  transition:box-shadow .3s;
+}
+.schedule-timeline .s-line {
+  flex:1; width:2px; min-height:8px; opacity:.35; margin-top:-2px; margin-bottom:-2px;
+}
+.schedule-timeline .s-period {
+  font-size:10px; font-weight:600; margin-top:4px; text-align:center;
+}
+.schedule-timeline .s-card {
+  flex:1; margin-left:12px; padding:10px 14px; border-radius:10px;
+  border-left:3px solid; margin-bottom:10px; transition:box-shadow .3s;
+  background:var(--bg-card);
+}
+.schedule-timeline .s-card .s-name {
+  font-size:14px; font-weight:600; color:var(--text-1);
+}
+.schedule-timeline .s-card .s-meta {
+  font-size:11px; color:var(--text-3); margin-top:5px;
+  display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center;
+}
+.schedule-timeline .s-card .s-meta span {
+  display:inline-flex; align-items:center; gap:3px;
+}
+.schedule-timeline .s-item.current .s-card {
+  box-shadow:0 2px 16px rgba(79,70,229,.12);
+  border-left-width:4px;
+}
+.schedule-timeline .s-item.current .s-dot {
+  box-shadow:0 0 0 5px rgba(79,70,229,.12);
+}
+
+.home-half-row {
+  display:flex; gap:10px;
+}
+.home-half-row > div {
+  flex:1; min-width:0;
+}
+.home-half-row .schedule-timeline .s-time-bar { width:28px; }
+.home-half-row .schedule-timeline .s-dot {
+  width:7px; height:7px; margin-top:11px;
+}
+.home-half-row .schedule-timeline .s-period { font-size:9px; margin-top:3px; }
+.home-half-row .schedule-timeline .s-card {
+  padding:5px 8px; margin-left:6px; margin-bottom:5px; border-radius:7px;
+}
+.home-half-row .schedule-timeline .s-card .s-name { font-size:12px; }
+.home-half-row .schedule-timeline .s-card .s-meta { font-size:10px; margin-top:2px; gap:2px 6px; }
+.home-half-row .schedule-timeline .s-item.current .s-dot {
+  box-shadow:0 0 0 3px rgba(79,70,229,.12);
+}
+
+.announce-list { display:flex; flex-direction:column; gap:8px; }
+.announce-item {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid var(--divider); cursor:pointer;
+}
+.announce-item:last-child { border-bottom:none; }
+.announce-item .announce-dot { width:6px; height:6px; border-radius:50%; background:var(--danger); flex-shrink:0; }
+.announce-item .announce-text { font-size:14px; color:var(--text-1); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.announce-item .announce-time { font-size:11px; color:var(--text-3); flex-shrink:0; }
+
+/* ═══════════════════════════════════════
+   二手商品列表 Product List
+   ═══════════════════════════════════════ */
+.product-page { padding:18px; gap:var(--section-gap); }
+.product-page .search-bar {
+  height:var(--input-h); border-radius:var(--radius-pill);
+  background:var(--bg-card); border:1px solid var(--border);
+  display:flex; align-items:center; padding:0 18px; gap:8px;
+  box-shadow:var(--shadow-sm);
+}
+.search-bar input {
+  flex:1; border:none; background:none; outline:none; font-size:14px; color:var(--text-1);
+}
+.search-bar input::placeholder { color:var(--text-3); }
+.filter-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+.filter-row::-webkit-scrollbar { display:none; }
+
+.product-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.product-card {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  overflow:hidden; box-shadow:var(--shadow-sm); cursor:pointer;
+  transition:all .2s;
+}
+.product-card:active { transform:scale(.97); }
+.product-card .p-img {
+  width:100%; height:150px; object-fit:cover;
+  display:flex; align-items:center; justify-content:center;
+  font-size:40px; color:var(--text-3);
+}
+.product-card .p-info { padding:10px 12px 12px; }
+.product-card .p-title { font-size:14px; font-weight:600; color:var(--text-1); margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.product-card .p-price { font-size:17px; font-weight:700; color:var(--danger); }
+.product-card .p-price .yuan { font-size:12px; }
+.product-card .p-meta { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+.product-card .p-loc { font-size:11px; color:var(--text-3); }
+
+/* ═══════════════════════════════════════
+   商品详情 Product Detail
+   ═══════════════════════════════════════ */
+.detail-page { flex:1; display:flex; flex-direction:column; }
+.detail-scroll { flex:1; overflow-y:auto; }
+.detail-hero {
+  width:100%; height:320px; display:flex; align-items:center; justify-content:center;
+  font-size:80px; position:relative;
+}
+.detail-hero .hero-overlay {
+  position:absolute; bottom:0; left:0; right:0;
+  height:80px; background:linear-gradient(transparent, rgba(0,0,0,.4));
+}
+.detail-hero .hero-back {
+  position:absolute; top:12px; left:12px;
+  width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:18px; cursor:pointer; border:none; outline:none;
+  z-index:2;
+}
+.detail-body { padding:18px; display:flex; flex-direction:column; gap:12px; }
+.detail-price-row { display:flex; align-items:baseline; gap:8px; }
+.detail-price { font-size:28px; font-weight:700; color:var(--danger); }
+.detail-price .yuan { font-size:14px; }
+.detail-original { font-size:14px; color:var(--text-3); text-decoration:line-through; }
+.detail-title { font-size:18px; font-weight:700; color:var(--text-1); line-height:1.4; }
+.detail-tags { display:flex; gap:8px; flex-wrap:wrap; }
+.detail-meta { display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--bg-input); border-radius:var(--radius-md); }
+.detail-meta-row { display:flex; justify-content:space-between; font-size:13px; color:var(--text-2); }
+
+.detail-seller { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-card); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); }
+.detail-seller .s-avatar { width:44px; height:44px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px; font-weight:700; flex-shrink:0; }
+.detail-seller .s-info { flex:1; }
+.detail-seller .s-name { font-size:15px; font-weight:600; color:var(--text-1); }
+.detail-seller .s-badge { font-size:11px; color:var(--text-3); }
+
+.detail-bottom {
+  padding:12px 18px; background:var(--bg-card);
+  border-top:1px solid var(--divider);
+  box-shadow:var(--shadow-lg);
+  display:flex; gap:10px; flex-shrink:0;
+}
+.detail-bottom .btn-collect {
+  width:44px; height:44px; border-radius:var(--radius-pill);
+  border:1px solid var(--border); background:var(--bg-card);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; flex-shrink:0; outline:none;
+  transition:all .2s;
+}
+.detail-bottom .btn-collect.liked { color:var(--danger); border-color:var(--danger); }
+.detail-bottom .btn-buy { flex:1; }
+
+/* ═══════════════════════════════════════
+   社团组局 Club
+   ═══════════════════════════════════════ */
+.club-page { padding:18px; gap:var(--section-gap); }
+.activity-card {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  overflow:hidden; box-shadow:var(--shadow-sm); cursor:pointer; transition:all .2s;
+}
+.activity-card:active { transform:scale(.98); }
+.activity-card .ac-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 18px 0;
+}
+.activity-card .ac-host { display:flex; align-items:center; gap:8px; }
+.activity-card .ac-host-avatar {
+  width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:700; color:#fff;
+}
+.activity-card .ac-host-name { font-size:14px; font-weight:600; color:var(--text-1); }
+.activity-card .ac-time { font-size:11px; color:var(--text-3); }
+.activity-card .ac-body { padding:12px 18px; }
+.activity-card .ac-title { font-size:16px; font-weight:700; color:var(--text-1); margin-bottom:8px; }
+.activity-card .ac-detail-row { display:flex; gap:16px; }
+.activity-card .ac-detail { font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:4px; }
+.activity-card .ac-footer {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 18px; border-top:1px solid var(--divider);
+}
+.activity-card .ac-joined { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-2); }
+.activity-card .ac-avatars { display:flex; }
+.activity-card .ac-avatars span {
+  width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:10px; color:#fff; margin-left:-6px; border:1.5px solid #fff;
+}
+.activity-card .ac-avatars span:first-child { margin-left:0; }
+
+/* ═══════════════════════════════════════
+   消息 / 聊天
+   ═══════════════════════════════════════ */
+.chatlist-page { padding:0; }
+.chat-item {
+  display:flex; align-items:center; gap:12px; padding:14px 18px;
+  cursor:pointer; transition:background .2s; border-bottom:1px solid var(--divider);
+}
+.chat-item:active { background:var(--bg-hover); }
+.chat-item .ci-avatar {
+  width:50px; height:50px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:700; color:#fff; position:relative;
+}
+.chat-item .ci-avatar .online-dot {
+  position:absolute; bottom:2px; right:2px;
+  width:12px; height:12px; border-radius:50%; background:var(--success);
+  border:2px solid #fff;
+}
+.chat-item .ci-info { flex:1; min-width:0; }
+.chat-item .ci-top { display:flex; justify-content:space-between; margin-bottom:4px; }
+.chat-item .ci-name { font-size:15px; font-weight:600; color:var(--text-1); }
+.chat-item .ci-time { font-size:11px; color:var(--text-3); }
+.chat-item .ci-msg { font-size:13px; color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chat-item .ci-badge {
+  width:18px; height:18px; border-radius:50%; background:var(--danger);
+  color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+.chat-page { flex:1; display:flex; flex-direction:column; }
+.chat-msgs { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px; }
+.chat-bubble {
+  max-width:75%; padding:10px 14px; border-radius:18px;
+  font-size:14px; line-height:1.5; word-break:break-word;
+}
+.chat-bubble.me {
+  align-self:flex-end; background:var(--primary); color:var(--text-white);
+  border-bottom-right-radius:4px;
+}
+.chat-bubble.other {
+  align-self:flex-start; background:var(--bg-card); color:var(--text-1);
+  box-shadow:var(--shadow-sm); border-bottom-left-radius:4px;
+}
+.chat-input-bar {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 18px; background:var(--bg-card); border-top:1px solid var(--divider);
+  flex-shrink:0;
+}
+.chat-input-bar input {
+  flex:1; height:38px; border-radius:19px; border:1px solid var(--border);
+  background:var(--bg-input); padding:0 14px; font-size:14px; outline:none;
+}
+.chat-input-bar input:focus { border-color:var(--primary); }
+.chat-send-btn {
+  width:38px; height:38px; border-radius:50%; border:none;
+  background:var(--primary); color:#fff; font-size:18px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; outline:none;
+}
+
+/* ═══════════════════════════════════════
+   我的 / 设置
+   ═══════════════════════════════════════ */
+.profile-page { padding:18px; gap:var(--section-gap); }
+.profile-header {
+  background:linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius:var(--radius-lg); padding:24px; color:var(--text-white);
+  display:flex; align-items:center; gap:16px;
+  box-shadow:0 8px 24px rgba(79,70,229,.3);
+}
+.profile-header .ph-avatar {
+  width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; flex-shrink:0; border:2px solid rgba(255,255,255,.3);
+}
+.profile-header .ph-info { flex:1; }
+.profile-header .ph-name { font-size:20px; font-weight:700; }
+.profile-header .ph-id { font-size:12px; opacity:.8; margin-top:2px; }
+
+.profile-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat-card {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  padding:14px; text-align:center; box-shadow:var(--shadow-sm); cursor:pointer; transition:all .2s;
+}
+.stat-card:active { background:var(--bg-hover); }
+.stat-card .stat-num { font-size:20px; font-weight:700; color:var(--primary); }
+.stat-card .stat-label { font-size:11px; color:var(--text-3); margin-top:4px; }
+
+.menu-list {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  overflow:hidden; box-shadow:var(--shadow-sm);
+}
+.menu-item {
+  display:flex; align-items:center; gap:12px; padding:14px 18px;
+  cursor:pointer; transition:background .2s; border:none; background:none; width:100%; outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.menu-item:active { background:var(--bg-hover); }
+.menu-item .mi-icon {
+  width:36px; height:36px; border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+}
+.menu-item .mi-text { flex:1; font-size:15px; color:var(--text-1); text-align:left; }
+.menu-item .mi-arrow { font-size:16px; color:var(--text-3); }
+.menu-item .mi-badge {
+  font-size:12px; color:var(--text-3); margin-right:4px;
+}
+.menu-divider { height:1px; background:var(--divider); margin:0 16px; }
+
+/* ═══════════════════════════════════════
+   空教室
+   ═══════════════════════════════════════ */
+.room-page { padding:18px; gap:var(--section-gap); }
+.room-filter { display:flex; gap:8px; flex-wrap:wrap; }
+.room-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.room-card {
+  background:var(--bg-card); border-radius:var(--radius-md);
+  padding:14px; box-shadow:var(--shadow-sm); cursor:pointer; transition:all .2s;
+  text-align:center; border:2px solid transparent;
+}
+.room-card:active { transform:scale(.97); }
+.room-card .room-num { font-size:22px; font-weight:700; color:var(--primary); }
+.room-card .room-bld { font-size:12px; color:var(--text-3); margin-top:4px; }
+.room-card .room-stat { font-size:12px; color:var(--success); margin-top:4px; }
+
+/* ═══════════════════════════════════════
+   设置页
+   ═══════════════════════════════════════ */
+.settings-page { padding:18px; gap:20px; }
+.setting-group { display:flex; flex-direction:column; gap:0; }
+.setting-group-title { font-size:13px; color:var(--text-3); font-weight:600; padding:0 4px 8px; }
+.toggle-switch {
+  width:48px; height:28px; border-radius:14px; background:var(--text-disabled);
+  position:relative; cursor:pointer; transition:background .3s; flex-shrink:0;
+}
+.toggle-switch.on { background:var(--primary); }
+.toggle-switch::after {
+  content:''; position:absolute; top:2px; left:2px;
+  width:24px; height:24px; border-radius:50%; background:#fff;
+  transition:transform .3s; box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.toggle-switch.on::after { transform:translateX(20px); }
+
+/* Toast */
+.toast {
+  position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
+  background:rgba(31,41,55,.9); color:#fff; padding:10px 20px;
+  border-radius:var(--radius-pill); font-size:14px; z-index:999;
+  opacity:0; transition:opacity .3s; pointer-events:none;
+}
+.toast.show { opacity:1; }
+
+/* Empty state */
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 20px; gap:8px;
+}
+.empty-state .empty-icon { font-size:48px; opacity:.5; }
+.empty-state .empty-text { font-size:14px; color:var(--text-3); }
+</style>
+</head>
+<body>
+
+<button id="themeToggle" onclick="toggleTheme()"
+  style="position:fixed;top:12px;right:12px;z-index:999;padding:6px 12px;border:none;border-radius:20px;
+         background:#6366F1;color:#fff;font-size:12px;cursor:pointer;font-weight:500;">🌙 暗色</button>
+
+<div class="phone" id="app">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="status-icons">
+      <span>5G</span>
+      <span>▮▮▮▮</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="contentArea">
+
+    <!-- ═══════════════════════════════════════
+         首页 Index
+         ═══════════════════════════════════════ -->
+    <div class="page active" id="page-index">
+      <div class="index-page">
+        <div class="index-header">
+          <div class="greeting">早上好，<span>老板</span> 👋</div>
+          <div class="avatar-ring" onclick="navigateTo('profile')">Z</div>
+        </div>
+
+        <!-- Banner -->
+        <div class="banner-card">
+          <div class="banner-title">📚 校园助手 · 让校园生活更简单</div>
+          <div class="banner-sub">一站式解决课表、二手、组局、失物招领</div>
+          <div class="banner-stats">
+            <div class="banner-stat"><div class="num">128</div><div class="label">二手商品</div></div>
+            <div class="banner-stat"><div class="num">16</div><div class="label">今日组局</div></div>
+            <div class="banner-stat"><div class="num">5</div><div class="label">失物招领</div></div>
+          </div>
+        </div>
+
+        <!-- Quick Actions: 2x2 grid + lost&found hero -->
+        <div class="quick-actions">
+          <div class="qa-grid">
+            <button class="quick-action" onclick="navigateTo('schedule')">
+              <div class="qa-icon schedule">📅</div>
+              <div class="qa-label">课表</div>
+            </button>
+            <button class="quick-action" onclick="navigateTo('emptyRoom')">
+              <div class="qa-icon room">🏫</div>
+              <div class="qa-label">空教室</div>
+            </button>
+            <button class="quick-action" onclick="navigateTo('club')">
+              <div class="qa-icon club">🎯</div>
+              <div class="qa-label">社团互动</div>
+            </button>
+            <button class="quick-action" onclick="switchTab('ai')">
+              <div class="qa-icon ai">🤖</div>
+              <div class="qa-label">AI 助手</div>
+            </button>
+          </div>
+          <div class="qa-lost-card" onclick="navigateTo('lostFound')">
+            <div class="qa-lost-icon">🔍</div>
+            <div class="qa-lost-title">失物招领</div>
+            <div class="qa-lost-desc">丢了东西？来这里找找</div>
+            <div class="qa-lost-count"><span>5</span> 条新线索</div>
+          </div>
+        </div>
+
+        <!-- Today Schedule + Activities Side-by-Side -->
+        <div class="home-half-row">
+          <!-- Today Schedule -->
+          <div>
+            <div class="section-title" style="font-size:13px;margin-bottom:8px;">📅 今日课表</div>
+            <div class="card card-lg" style="padding:8px 10px 2px;">
+              <div class="schedule-timeline">
+                <div class="s-item">
+                  <div class="s-time-bar">
+                    <div class="s-dot" style="background:var(--schedule-0-fg);"></div>
+                    <div class="s-line" style="background:var(--schedule-0-fg);"></div>
+                    <div class="s-period" style="color:var(--schedule-0-fg);">1-2</div>
+                  </div>
+                  <div class="s-card" style="border-left-color:var(--schedule-0-fg);background:linear-gradient(135deg,var(--bg-card) 0%,var(--schedule-0-bg) 100%);">
+                    <div class="s-name">高等数学</div>
+                    <div class="s-meta"><span>教A201</span></div>
+                  </div>
+                </div>
+                <div class="s-item current">
+                  <div class="s-time-bar">
+                    <div class="s-dot" style="background:var(--schedule-1-fg);"></div>
+                    <div class="s-line" style="background:var(--schedule-1-fg);"></div>
+                    <div class="s-period" style="color:var(--schedule-1-fg);">3-4</div>
+                  </div>
+                  <div class="s-card" style="border-left-color:var(--schedule-1-fg);background:linear-gradient(135deg,var(--bg-card) 0%,var(--schedule-1-bg) 100%);">
+                    <div class="s-name">大学英语</div>
+                    <div class="s-meta"><span>教B103</span></div>
+                  </div>
+                </div>
+                <div class="s-item">
+                  <div class="s-time-bar">
+                    <div class="s-dot" style="background:var(--schedule-2-fg);"></div>
+                    <div class="s-line" style="background:var(--schedule-2-fg);"></div>
+                    <div class="s-period" style="color:var(--schedule-2-fg);">5-6</div>
+                  </div>
+                  <div class="s-card" style="border-left-color:var(--schedule-2-fg);background:linear-gradient(135deg,var(--bg-card) 0%,var(--schedule-2-bg) 100%);">
+                    <div class="s-name">数据结构</div>
+                    <div class="s-meta"><span>教A305</span></div>
+                  </div>
+                </div>
+                <div class="s-item">
+                  <div class="s-time-bar">
+                    <div class="s-dot" style="background:var(--schedule-3-fg);"></div>
+                    <div class="s-period" style="color:var(--schedule-3-fg);">7-8</div>
+                  </div>
+                  <div class="s-card" style="border-left-color:var(--schedule-3-fg);background:linear-gradient(135deg,var(--bg-card) 0%,var(--schedule-3-bg) 100%);">
+                    <div class="s-name">体育</div>
+                    <div class="s-meta"><span>体育馆</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:center;padding:2px 0 0;">
+                <span style="font-size:10px;color:var(--primary);cursor:pointer;font-weight:500;" onclick="navigateTo('schedule')">完整课表 →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Registered Activities -->
+          <div>
+            <div class="section-title" style="font-size:13px;margin-bottom:8px;">🎫 我的报名 <span class="badge">3</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="showToast('活动详情 - 篮球3v3')">
+                <div style="width:32px;height:32px;border-radius:6px;background:var(--secondary-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🏀</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">篮球 3v3 约球</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:1px;">周六 15:00 · 北区</div>
+                </div>
+                <span class="chip chip-success" style="font-size:10px;padding:2px 6px;">已报</span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="showToast('活动详情 - 高数复习')">
+                <div style="width:32px;height:32px;border-radius:6px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📖</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">高数复习小组</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:1px;">周五 19:00 · 图书馆</div>
+                </div>
+                <span class="chip chip-warning" style="font-size:10px;padding:2px 6px;">待签</span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="showToast('活动详情 - 登山徒步')">
+                <div style="width:32px;height:32px;border-radius:6px;background:var(--success-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🏔️</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">登山徒步活动</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:1px;">周日 08:00 · 校门口</div>
+                </div>
+                <span class="chip chip-success" style="font-size:10px;padding:2px 6px;">已报</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div>
+          <div class="section-title">📢 校园公告</div>
+          <div class="card">
+            <div class="announce-list">
+              <div class="announce-item"><div class="announce-dot"></div><div class="announce-text">关于期末图书馆延长开放时间的通知</div><div class="announce-time">07-18</div></div>
+              <div class="announce-item"><div class="announce-dot"></div><div class="announce-text">校园卡系统升级维护公告</div><div class="announce-time">07-15</div></div>
+              <div class="announce-item"><div class="announce-dot"></div><div class="announce-text">2026年暑期社会实践报名通知</div><div class="announce-time">07-12</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         二手 Product List
+         ═══════════════════════════════════════ -->
+    <div class="page" id="page-product">
+      <div class="product-page">
+        <div class="search-bar">
+          <span style="color:var(--text-3);">🔍</span>
+          <input type="text" placeholder="搜索二手商品..." id="productSearch" oninput="filterProducts()">
+        </div>
+        <div class="filter-row" id="productFilters">
+          <button class="chip chip-default active" onclick="filterProducts('all', this)">全部</button>
+          <button class="chip chip-default" onclick="filterProducts('数码', this)">📱 数码</button>
+          <button class="chip chip-default" onclick="filterProducts('书籍', this)">📖 书籍</button>
+          <button class="chip chip-default" onclick="filterProducts('生活', this)">🏠 生活</button>
+          <button class="chip chip-default" onclick="filterProducts('服饰', this)">👗 服饰</button>
+          <button class="chip chip-default" onclick="filterProducts('运动', this)">⚽ 运动</button>
+        </div>
+        <div class="product-grid" id="productGrid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         AI 助手
+         ═══════════════════════════════════════ -->
+    <div class="page" id="page-ai">
+      <div class="chat-page">
+        <div class="nav-header" style="border-bottom:none;">
+          <span class="nav-title" style="display:flex;align-items:center;gap:8px;">🤖 AI 校园助手</span>
+        </div>
+        <div class="chat-msgs" id="aiMessages">
+          <div class="chat-bubble other">
+            👋 你好！我是校园 AI 助手，可以帮你：<br><br>
+            • 📅 查询课表和空教室<br>
+            • 🛒 搜索二手商品<br>
+            • 📢 发布失物招领<br>
+            • 🎯 查看校园组局<br>
+            • 📝 解答学习问题<br><br>
+            有什么可以帮你的？
+            <div style="font-size:10px;opacity:.6;margin-top:4px;">刚刚</div>
+          </div>
+        </div>
+        <div style="padding:12px 18px;display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="chip chip-primary" onclick="sendAiMsg('今天有什么课？')">📅 今天有什么课？</button>
+          <button class="chip chip-success" onclick="sendAiMsg('帮我查一下空教室')">🏫 帮我查一下空教室</button>
+          <button class="chip chip-warning" onclick="navigateTo('club')">🎯 查看校园组局</button>
+          <button class="chip chip-default" onclick="sendAiMsg('推荐二手好物')">🛒 推荐二手好物</button>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" placeholder="向 AI 助手提问..." id="aiInput" onkeydown="if(event.key==='Enter')sendAiMsg()">
+          <button class="chat-send-btn" onclick="sendAiMsg()" style="background:linear-gradient(135deg,var(--secondary),var(--secondary-dark));">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         消息 Chat List
+         ═══════════════════════════════════════ -->
+    <div class="page" id="page-chat">
+      <div class="chatlist-page" id="chatList">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         我的 Profile
+         ═══════════════════════════════════════ -->
+    <div class="page" id="page-profile">
+      <div class="profile-page">
+        <div class="profile-header">
+          <div class="ph-avatar">Z</div>
+          <div class="ph-info">
+            <div class="ph-name">老板</div>
+            <div class="ph-id">ID: 20240001 · 计算机学院</div>
+          </div>
+        </div>
+
+        <div class="profile-stats">
+          <div class="stat-card" onclick="switchTab('product')"><div class="stat-num">3</div><div class="stat-label">我的发布</div></div>
+          <div class="stat-card" onclick="showToast('收藏列表')"><div class="stat-num">12</div><div class="stat-label">我的收藏</div></div>
+          <div class="stat-card" onclick="navigateTo('club')"><div class="stat-num">5</div><div class="stat-label">参与组局</div></div>
+        </div>
+
+        <div class="menu-list">
+          <button class="menu-item" onclick="navigateTo('schedule')">
+            <div class="mi-icon" style="background:var(--primary-light);color:var(--primary);">📅</div>
+            <span class="mi-text">我的课表</span><span class="mi-arrow">›</span>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" onclick="navigateTo('emptyRoom')">
+            <div class="mi-icon" style="background:var(--success-light);color:var(--success);">🏫</div>
+            <span class="mi-text">空教室查询</span><span class="mi-arrow">›</span>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" onclick="showToast('历史记录')">
+            <div class="mi-icon" style="background:var(--warning-light);color:var(--warning);">🕐</div>
+            <span class="mi-text">浏览历史</span><span class="mi-badge">128条</span><span class="mi-arrow">›</span>
+          </button>
+        </div>
+
+        <div class="menu-list">
+          <button class="menu-item" onclick="navigateTo('settings')">
+            <div class="mi-icon" style="background:var(--bg-input);color:var(--text-2);">⚙️</div>
+            <span class="mi-text">设置</span><span class="mi-arrow">›</span>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" onclick="showToast('关于校园助手 v2.0')">
+            <div class="mi-icon" style="background:var(--bg-input);color:var(--text-2);">ℹ️</div>
+            <span class="mi-text">关于</span><span class="mi-arrow">›</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         Sub Pages (overlay)
+         ═══════════════════════════════════════ -->
+
+    <!-- Product Detail -->
+    <div class="page sub-page" id="page-product-detail">
+      <div class="detail-page">
+        <div class="detail-scroll">
+          <div class="detail-hero" id="detailHero" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe);">
+            <button class="hero-back" onclick="goBack()">←</button>
+          </div>
+          <div class="detail-body">
+            <div class="detail-price-row">
+              <span class="detail-price"><span class="yuan">¥</span><span id="detailPrice">129</span></span>
+              <span class="detail-original" id="detailOriginal">¥299</span>
+            </div>
+            <div class="detail-title" id="detailTitle">九成新 机械键盘 Cherry轴</div>
+            <div class="detail-tags" id="detailTags">
+              <span class="chip chip-primary">数码</span>
+              <span class="chip chip-success">九成新</span>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-row"><span>发布时间</span><span id="detailTime">2026-07-18</span></div>
+              <div class="detail-meta-row"><span>交易地点</span><span id="detailLoc">图书馆门口</span></div>
+              <div class="detail-meta-row"><span>浏览次数</span><span>128 次</span></div>
+            </div>
+            <div class="detail-seller">
+              <div class="s-avatar">L</div>
+              <div class="s-info">
+                <div class="s-name" id="detailSeller">李同学</div>
+                <div class="s-badge">🏅 已认证 · 好评率 98%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-bottom">
+          <button class="btn-collect" id="btnCollect" onclick="toggleCollect()">♡</button>
+          <button class="btn-primary btn-buy" onclick="showToast('功能开发中，敬请期待~')">立即购买</button>
+          <button class="btn-outline" onclick="showToast('已发送消息')">联系卖家</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Page -->
+    <div class="page sub-page" id="page-chat-detail">
+      <div class="chat-page">
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title" id="chatWithName">张三</span>
+        </div>
+        <div class="chat-msgs" id="chatMessages">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" placeholder="输入消息..." id="chatInput" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-send-btn" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule Page -->
+    <div class="page sub-page" id="page-schedule">
+      <div>
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title">我的课表</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-3);">第18周</span>
+        </div>
+        <div style="padding:18px;overflow-y:auto;max-height:calc(100% - 44px);">
+          <div style="display:flex;gap:4px;margin-bottom:10px;">
+            <div style="width:32px;"></div>
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--text-3);padding:6px 0;">周一</div>
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--text-3);padding:6px 0;">周二</div>
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--text-3);padding:6px 0;">周三</div>
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--text-3);padding:6px 0;">周四</div>
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--text-3);padding:6px 0;">周五</div>
+          </div>
+          <div id="scheduleGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty Room Page -->
+    <div class="page sub-page" id="page-empty-room">
+      <div>
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title">空教室查询</span>
+        </div>
+        <div class="room-page">
+          <div class="room-filter" id="roomFilter">
+            <button class="chip chip-default active" onclick="filterRooms('all',this)">全部</button>
+            <button class="chip chip-default" onclick="filterRooms('教学楼A',this)">教学楼A</button>
+            <button class="chip chip-default" onclick="filterRooms('教学楼B',this)">教学楼B</button>
+            <button class="chip chip-default" onclick="filterRooms('实验楼',this)">实验楼</button>
+          </div>
+          <div class="section-title">📋 当前可用教室 <span style="font-size:12px;color:var(--text-3);font-weight:400;">第3-4节</span></div>
+          <div class="room-grid" id="roomGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div class="page sub-page" id="page-settings">
+      <div>
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title">设置</span>
+        </div>
+        <div class="settings-page">
+          <div class="setting-group">
+            <div class="setting-group-title">通知设置</div>
+            <div class="menu-list">
+              <div class="menu-item"><span class="mi-text">消息推送</span><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="menu-divider"></div>
+              <div class="menu-item"><span class="mi-text">组局提醒</span><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="menu-divider"></div>
+              <div class="menu-item"><span class="mi-text">系统通知</span><div class="toggle-switch" onclick="this.classList.toggle('on')"></div></div>
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-group-title">通用</div>
+            <div class="menu-list">
+              <div class="menu-item"><span class="mi-text">深色模式</span><div class="toggle-switch" id="darkModeSetting" onclick="toggleThemeFromSetting(this)"></div></div>
+              <div class="menu-divider"></div>
+              <div class="menu-item" onclick="showToast('已清除缓存')"><span class="mi-text">清除缓存</span><span class="mi-badge">23.5MB</span><span class="mi-arrow">›</span></div>
+              <div class="menu-divider"></div>
+              <div class="menu-item" onclick="showToast('当前版本 v2.0.0')"><span class="mi-text">检查更新</span><span class="mi-badge">v2.0.1</span><span class="mi-arrow">›</span></div>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%;background:var(--danger);box-shadow:0 4px 14px rgba(239,68,68,.3);" onclick="showToast('退出登录')">退出登录</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lost & Found -->
+    <div class="page sub-page" id="page-lost-found">
+      <div>
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title">失物招领</span>
+        </div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:12px;">
+          <div class="filter-row">
+            <button class="chip chip-default active">全部</button>
+            <button class="chip chip-default">寻物启事</button>
+            <button class="chip chip-default">失物招领</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;" id="lostFoundList">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Club Sub Page -->
+    <div class="page sub-page" id="page-club">
+      <div>
+        <div class="nav-header">
+          <button class="back-btn" onclick="goBack()">←</button>
+          <span class="nav-title">校园组局</span>
+        </div>
+        <div class="club-page" id="clubSubList">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Bottom Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-item active" data-tab="index" onclick="switchTab('index')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>首页</span>
+    </button>
+    <button class="tab-item" data-tab="product" onclick="switchTab('product')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+      <span>二手</span>
+    </button>
+    <button class="tab-item" data-tab="chat" onclick="switchTab('chat')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span>消息</span>
+    </button>
+    <button class="tab-item" data-tab="ai" onclick="switchTab('ai')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>AI</span>
+    </button>
+    <button class="tab-item" data-tab="profile" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>我的</span>
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   Data
+   ═══════════════════════════════════════ */
+const products = [
+  { id:1, title:'九成新 机械键盘 Cherry轴', price:129, original:299, tag:'数码', emoji:'⌨️', bg:'#e0e7ff', time:'07-18', loc:'图书馆', seller:'李同学' },
+  { id:2, title:'高等数学 第七版 上下册', price:25, original:68, tag:'书籍', emoji:'📚', bg:'#ccfbf1', time:'07-17', loc:'宿舍楼', seller:'王同学' },
+  { id:3, title:'尤尼克斯羽毛球拍 一对', price:180, original:450, tag:'运动', emoji:'🏸', bg:'#fef3c7', time:'07-16', loc:'体育馆', seller:'张同学' },
+  { id:4, title:'99新 iPhone 15 保护壳', price:15, original:49, tag:'数码', emoji:'📱', bg:'#fce7f3', time:'07-15', loc:'食堂', seller:'陈同学' },
+  { id:5, title:'宿舍用小台灯 LED护眼', price:35, original:89, tag:'生活', emoji:'💡', bg:'#f3e8ff', time:'07-14', loc:'教学楼', seller:'刘同学' },
+  { id:6, title:'UNIQLO 卫衣 M码 仅穿一次', price:59, original:199, tag:'服饰', emoji:'👔', bg:'#ffe4e6', time:'07-13', loc:'快递站', seller:'赵同学' },
+  { id:7, title:'数据结构与算法分析 C++版', price:30, original:79, tag:'书籍', emoji:'📘', bg:'#e0e7ff', time:'07-12', loc:'图书馆', seller:'孙同学' },
+  { id:8, title:'全新保温杯 500ml', price:22, original:59, tag:'生活', emoji:'🥤', bg:'#ccfbf1', time:'07-11', loc:'宿舍楼', seller:'周同学' },
+];
+
+const activities = [
+  { id:1, title:'周末篮球 3v3 约球', host:'篮球社', time:'07-20 15:00', loc:'北区篮球场', joined:8, max:12, tag:'进行中', tagColor:'success', emoji:'🏀', avatarBg:'#F97316' },
+  { id:2, title:'期末高数复习小组', host:'学习部', time:'07-19 19:00', loc:'图书馆 302', joined:15, max:20, tag:'即将开始', tagColor:'warning', emoji:'📖', avatarBg:'#4F46E5' },
+  { id:3, title:'周末登山徒步活动', host:'户外社', time:'07-21 08:00', loc:'校门口集合', joined:22, max:30, tag:'报名中', tagColor:'info', emoji:'🏔️', avatarBg:'#10B981' },
+  { id:4, title:'摄影基础 Workshop', host:'摄影社团', time:'07-22 14:00', loc:'艺术楼 105', joined:10, max:15, tag:'即将开始', tagColor:'warning', emoji:'📷', avatarBg:'#EF4444' },
+];
+
+const chatList = [
+  { id:1, name:'李同学', msg:'好的，明天图书馆门口见～', time:'10:32', unread:2, emoji:'L', bg:'#F97316', online:true },
+  { id:2, name:'篮球社群', msg:'张三: 今天下午3点北区球场！', time:'09:15', unread:0, emoji:'🏀', bg:'#4F46E5', online:true },
+  { id:3, name:'王老师', msg:'作业记得下周一之前提交', time:'昨天', unread:0, emoji:'王', bg:'#10B981', online:false },
+  { id:4, name:'二手交易通知', msg:'您的商品有新的留言', time:'昨天', unread:1, emoji:'📢', bg:'#9CA3AF', online:false },
+  { id:5, name:'赵同学', msg:'谢谢，物品已收到！', time:'周一', unread:0, emoji:'赵', bg:'#7C3AED', online:true },
+];
+let chatMessages = [
+  { me:false, text:'你好，键盘还在吗？', time:'10:20' },
+  { me:true, text:'在的，九成新，就用了一个月', time:'10:21' },
+  { me:false, text:'能便宜一点吗？120可以吗', time:'10:22' },
+  { me:true, text:'行吧，120就120，明天图书馆门口交易？', time:'10:25' },
+  { me:false, text:'好的，明天图书馆门口见～', time:'10:32' },
+];
+
+const scheduleData = [
+  [{ name:'高等数学', loc:'教A201', row:2 },{},{ name:'大学英语', loc:'教B103', row:2 },{ name:'数据结构', loc:'教A305', row:2 },{}],
+  [{},{ name:'线性代数', loc:'教A201', row:2 },{},{ name:'体育', loc:'体育馆', row:2 },{}],
+  [{ name:'数据结构', loc:'教A305', row:2 },{},{ name:'高等数学', loc:'教A201', row:2 },{},{}],
+  [{},{ name:'大学英语', loc:'教B103', row:2 },{},{ name:'思政课', loc:'教C101', row:2 },{}],
+];
+
+const rooms = [
+  { bld:'教学楼A', num:'A201' },{ bld:'教学楼A', num:'A305' },{ bld:'教学楼A', num:'A407' },
+  { bld:'教学楼B', num:'B103' },{ bld:'教学楼B', num:'B210' },{ bld:'教学楼B', num:'B312' },
+  { bld:'实验楼', num:'实201' },{ bld:'实验楼', num:'实305' },
+];
+
+const lostFounds = [
+  { title:'丢失校园卡一张', desc:'7月18日在图书馆二楼丢失，卡号后四位1234', tag:'寻物启事', tagCls:'warning' },
+  { title:'拾到黑色钱包', desc:'在食堂一楼拾到，内有现金和证件，请联系认领', tag:'失物招领', tagCls:'success' },
+  { title:'丢失银色U盘 32G', desc:'在教A201教室丢失，品牌金士顿，内有重要资料', tag:'寻物启事', tagCls:'warning' },
+];
+
+/* ═══════════════════════════════════════
+   State
+   ═══════════════════════════════════════ */
+let currentTab = 'index';
+let navStack = [];
+
+/* ═══════════════════════════════════════
+   Tab Switching
+   ═══════════════════════════════════════ */
+function switchTab(tab) {
+  if (currentTab === tab && navStack.length === 0) return;
+
+  // Update tab bar
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  const tabBtn = document.querySelector(`.tab-item[data-tab="${tab}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // Show target page
+  const targetPage = document.getElementById(`page-${tab}`);
+  if (targetPage) targetPage.classList.add('active');
+
+  // Reset sub-page stack when switching main tabs
+  navStack = [];
+  currentTab = tab;
+
+  // Render dynamic content
+  if (tab === 'product') renderProducts();
+  if (tab === 'chat') renderChatList();
+  if (tab === 'ai') initAiPage();
+
+  // Scroll to top
+  document.getElementById('contentArea').scrollTop = 0;
+}
+
+/* ═══════════════════════════════════════
+   Navigation (push/pop sub-pages)
+   ═══════════════════════════════════════ */
+function navigateTo(page, data) {
+  // Hide current top page
+  const current = document.querySelector('.page.active');
+  if (current) current.classList.remove('active');
+
+  // Push to stack
+  navStack.push({ page: currentTab, data: null });
+
+  // Show target sub-page
+  const target = document.getElementById(`page-${page}`);
+  if (target) {
+    target.classList.add('active');
+    document.getElementById('contentArea').scrollTop = 0;
+  }
+
+  // Prepare sub-page data
+  if (page === 'product-detail' && data) {
+    document.getElementById('detailHero').innerHTML = `<button class="hero-back" onclick="goBack()">←</button><span style="font-size:80px;">${data.emoji}</span>`;
+    document.getElementById('detailHero').style.background = `linear-gradient(135deg, ${data.bg}, ${data.bg}88)`;
+    document.getElementById('detailPrice').textContent = data.price;
+    document.getElementById('detailOriginal').textContent = '¥' + data.original;
+    document.getElementById('detailTitle').textContent = data.title;
+    document.getElementById('detailTags').innerHTML = `<span class="chip chip-primary">${data.tag}</span><span class="chip chip-success">九成新</span>`;
+    document.getElementById('detailTime').textContent = '2026-' + data.time;
+    document.getElementById('detailLoc').textContent = data.loc;
+    document.getElementById('detailSeller').textContent = data.seller;
+  }
+  if (page === 'chat-detail' && data) {
+    document.getElementById('chatWithName').textContent = data.name;
+    chatMessages = [
+      { me:false, text:`${data.msg}`, time:data.time },
+      { me:true, text:'好的，没问题！', time:'10:33' },
+    ];
+    renderChatMessages();
+  }
+  if (page === 'schedule') renderSchedule();
+  if (page === 'empty-room') renderRooms();
+  if (page === 'lost-found') renderLostFounds();
+  if (page === 'club') renderClubsSub();
+}
+
+function goBack() {
+  if (navStack.length === 0) return;
+
+  // Hide current sub-page
+  const current = document.querySelector('.page.active');
+  if (current) current.classList.remove('active');
+
+  // Pop from stack
+  const prev = navStack.pop();
+
+  // Show previous page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const prevPage = document.getElementById(`page-${prev.page}`);
+  if (prevPage) prevPage.classList.add('active');
+
+  // Update tab bar if needed
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  const tabBtn = document.querySelector(`.tab-item[data-tab="${prev.page}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+  currentTab = prev.page;
+}
+
+/* ═══════════════════════════════════════
+   Render Functions
+   ═══════════════════════════════════════ */
+function renderProducts(filter = 'all') {
+  const grid = document.getElementById('productGrid');
+  const filtered = filter === 'all' ? products : products.filter(p => p.tag === filter);
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card" onclick="navigateTo('product-detail', ${JSON.stringify(p).replace(/"/g, '&quot;')})">
+      <div class="p-img" style="background:${p.bg}22;">${p.emoji}</div>
+      <div class="p-info">
+        <div class="p-title">${p.title}</div>
+        <div class="p-price"><span class="yuan">¥</span>${p.price}</div>
+        <div class="p-meta">
+          <span class="chip chip-primary" style="font-size:10px;padding:2px 8px;">${p.tag}</span>
+          <span class="p-loc">${p.loc}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterProducts(tag, btn) {
+  document.querySelectorAll('#productFilters .chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderProducts(tag);
+}
+
+function renderClubsSub() {
+  document.getElementById('clubSubList').innerHTML = activities.map(a => `
+    <div class="activity-card" style="margin-bottom:10px;" onclick="showToast('组局详情 - ${a.title}')">
+      <div class="ac-header">
+        <div class="ac-host">
+          <div class="ac-host-avatar" style="background:${a.avatarBg};">${a.emoji}</div>
+          <div><div class="ac-host-name">${a.host}</div><div class="ac-time">${a.time}</div></div>
+        </div>
+        <span class="chip chip-${a.tagColor}">${a.tag}</span>
+      </div>
+      <div class="ac-body">
+        <div class="ac-title">${a.title}</div>
+        <div class="ac-detail-row">
+          <span class="ac-detail">📍 ${a.loc}</span>
+        </div>
+      </div>
+      <div class="ac-footer">
+        <div class="ac-joined">
+          <div class="ac-avatars">
+            ${Array.from({length:Math.min(a.joined,4)}, (_,i)=>`<span style="background:${['#F97316','#4F46E5','#10B981','#EF4444'][i]};">${String.fromCharCode(65+i)}</span>`).join('')}
+          </div>
+          <span>${a.joined}/${a.max}人</span>
+        </div>
+        <button class="chip chip-primary" onclick="event.stopPropagation();showToast('已报名参加！')">我要参加</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderChatList() {
+  document.getElementById('chatList').innerHTML = chatList.map(c => `
+    <div class="chat-item" onclick="navigateTo('chat-detail', ${JSON.stringify(c).replace(/"/g, '&quot;')})">
+      <div class="ci-avatar" style="background:${c.bg};">
+        ${c.emoji}
+        ${c.online ? '<div class="online-dot"></div>' : ''}
+      </div>
+      <div class="ci-info">
+        <div class="ci-top">
+          <span class="ci-name">${c.name}</span>
+          <span class="ci-time">${c.time}</span>
+        </div>
+        <div class="ci-msg">${c.msg}</div>
+      </div>
+      ${c.unread > 0 ? `<div class="ci-badge">${c.unread}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderChatMessages() {
+  document.getElementById('chatMessages').innerHTML = chatMessages.map((m,i) => `
+    <div class="chat-bubble ${m.me ? 'me' : 'other'}">
+      ${m.text}
+      <div style="font-size:10px;opacity:.6;margin-top:4px;">${m.time}</div>
+    </div>
+  `).join('');
+  // Scroll to bottom
+  setTimeout(() => {
+    const el = document.getElementById('chatMessages');
+    el.scrollTop = el.scrollHeight;
+  }, 100);
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  chatMessages.push({ me:true, text, time });
+  input.value = '';
+  renderChatMessages();
+  // Auto reply
+  setTimeout(() => {
+    const replies = ['好的收到！','OK~','嗯嗯，没问题','哈哈，可以可以','那就这么说定了'];
+    const reply = replies[Math.floor(Math.random()*replies.length)];
+    chatMessages.push({ me:false, text:reply, time:new Date().toTimeString().slice(0,5) });
+    renderChatMessages();
+  }, 800);
+}
+
+function renderSchedule() {
+  const colors = [
+    ['var(--schedule-0-bg)','var(--schedule-0-fg)'],
+    ['var(--schedule-1-bg)','var(--schedule-1-fg)'],
+    ['var(--schedule-2-bg)','var(--schedule-2-fg)'],
+    ['var(--schedule-3-bg)','var(--schedule-3-fg)'],
+  ];
+  const times = ['1-2','3-4','5-6','7-8'];
+  let html = '';
+  scheduleData.forEach((row, ri) => {
+    html += '<div style="display:flex;gap:4px;margin-bottom:4px;">';
+    html += `<div style="width:32px;text-align:center;font-size:11px;color:var(--text-3);padding:6px 0;">${times[ri]}</div>`;
+    row.forEach((cell, ci) => {
+      if (cell.name) {
+        const colorIdx = ci % colors.length;
+        html += `<div style="flex:1;padding:8px 4px;border-radius:6px;background:${colors[colorIdx][0]};color:${colors[colorIdx][1]};font-size:11px;font-weight:600;text-align:center;line-height:1.4;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;">${cell.name}<span style="font-size:10px;opacity:.7;font-weight:400;">${cell.loc}</span></div>`;
+      } else {
+        html += '<div style="flex:1;min-height:48px;"></div>';
+      }
+    });
+    html += '</div>';
+  });
+  document.getElementById('scheduleGrid').innerHTML = html;
+}
+
+function renderRooms(filter = 'all') {
+  const grid = document.getElementById('roomGrid');
+  const filtered = filter === 'all' ? rooms : rooms.filter(r => r.bld === filter);
+  grid.innerHTML = filtered.map(r => `
+    <div class="room-card" onclick="showToast('${r.bld} ${r.num} - 空闲')">
+      <div class="room-num">${r.num}</div>
+      <div class="room-bld">${r.bld}</div>
+      <div class="room-stat">🟢 空闲</div>
+    </div>
+  `).join('');
+}
+
+function filterRooms(bld, btn) {
+  document.querySelectorAll('#roomFilter .chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderRooms(bld);
+}
+
+function renderLostFounds() {
+  document.getElementById('lostFoundList').innerHTML = lostFounds.map(l => `
+    <div class="card" style="cursor:pointer;" onclick="showToast('${l.title}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:15px;font-weight:600;color:var(--text-1);">${l.title}</span>
+        <span class="chip chip-${l.tagCls}">${l.tag}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.5;">${l.desc}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════
+   Detail Interactions
+   ═══════════════════════════════════════ */
+function toggleCollect() {
+  const btn = document.getElementById('btnCollect');
+  btn.classList.toggle('liked');
+  if (btn.classList.contains('liked')) {
+    btn.textContent = '♥';
+    showToast('已收藏 ❤️');
+  } else {
+    btn.textContent = '♡';
+    showToast('已取消收藏');
+  }
+}
+
+/* ═══════════════════════════════════════
+   Toast
+   ═══════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+/* ═══════════════════════════════════════
+   AI Assistant
+   ═══════════════════════════════════════ */
+const aiResponses = {
+  '今天有什么课？': '📅 今天的课表：\n• 1-2节 高等数学 (教A201)\n• 3-4节 大学英语 (教B103)\n• 5-6节 数据结构 (教A305)\n• 7-8节 体育 (体育馆)\n\n下午体育课记得带运动鞋哦~',
+  '帮我查一下空教室': '🏫 当前第3-4节空闲教室：\n• 教学楼A: A201, A305, A407\n• 教学楼B: B103, B210\n• 实验楼: 实305\n\n需要我帮你筛选某一栋楼吗？',
+  '推荐二手好物': '🛒 最近的热门二手好物：\n• ⌨️ 机械键盘 Cherry轴 ¥129\n• 📚 高等数学上下册 ¥25\n• 🏸 羽毛球拍一对 ¥180\n\n点击下方"二手"标签查看更多~',
+  '怎么发布二手商品': '📝 发布二手商品很简单：\n1. 切换到"二手"标签\n2. 点击右下角"+"按钮\n3. 填写商品信息并上传图片\n4. 发布即可\n\n需要我现在帮你发布吗？',
+};
+const defaultAiReply = '好的，我理解了你的问题。让我想想...🤔\n\n这是一个很好的问题！建议你可以：\n• 在"二手"板块搜索相关物品\n• 查看"失物招领"是否有相关信息\n• 或者问问我关于课表、空教室的问题\n\n还有其他需要帮你的吗？';
+
+function sendAiMsg(msg) {
+  const input = document.getElementById('aiInput');
+  const text = msg || input.value.trim();
+  if (!text) return;
+  if (input) input.value = '';
+
+  const container = document.getElementById('aiMessages');
+  // User bubble
+  const userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble me';
+  userBubble.innerHTML = text + '<div style="font-size:10px;opacity:.6;margin-top:4px;">刚刚</div>';
+  container.appendChild(userBubble);
+
+  // AI typing indicator
+  const typingBubble = document.createElement('div');
+  typingBubble.className = 'chat-bubble other';
+  typingBubble.innerHTML = '思考中...<div style="font-size:10px;opacity:.6;margin-top:4px;">刚刚</div>';
+  container.appendChild(typingBubble);
+  container.scrollTop = container.scrollHeight;
+
+  // Simulate AI response
+  setTimeout(() => {
+    const reply = aiResponses[text] || defaultAiReply;
+    typingBubble.innerHTML = reply.replace(/\n/g, '<br>') + '<div style="font-size:10px;opacity:.6;margin-top:4px;">刚刚</div>';
+    container.scrollTop = container.scrollHeight;
+  }, 600 + Math.random() * 800);
+}
+
+function initAiPage() {
+  // Reset AI chat to initial state if needed
+  const container = document.getElementById('aiMessages');
+  if (container.children.length <= 1) return; // Already in initial state
+}
+
+/* ═══════════════════════════════════════
+   Init
+   ═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderProducts();
+  renderChatList();
+  renderChatMessages();
+});
+
+/* ═══════════════════════════════════════
+   Theme Toggle
+   ═══════════════════════════════════════ */
+function toggleTheme() {
+  const root = document.documentElement;
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    root.removeAttribute('data-theme');
+    document.getElementById('themeToggle').textContent = '🌙 暗色';
+  } else {
+    root.setAttribute('data-theme', 'dark');
+    document.getElementById('themeToggle').textContent = '☀️ 浅色';
+  }
+  syncSettingToggle();
+}
+function toggleThemeFromSetting(el) {
+  el.classList.toggle('on');
+  toggleTheme();
+}
+function syncSettingToggle() {
+  const el = document.getElementById('darkModeSetting');
+  if (!el) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) el.classList.add('on');
+  else el.classList.remove('on');
+}
+</script>
+
+</body>
+</html>
