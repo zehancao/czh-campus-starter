@@ -609,6 +609,53 @@ export class ApiService {
     return `ERROR:code_${result.code}_msg_${result.msg}`;
   }
 
+  static async uploadClubCover(uri: string): Promise<string> {
+    const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
+    const srcPath: string = srcUri.path;
+    if (srcPath.length === 0) {
+      return 'ERROR:srcPath_empty';
+    }
+    const store: AppStore = AppStore.getInstance();
+    if (store.context === undefined) {
+      return 'ERROR:context_undefined';
+    }
+    const cacheDir: string = store.context.cacheDir;
+    const fileName: string = `cover_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+    const destPath: string = `${cacheDir}/${fileName}`;
+    fileIo.copyFileSync(srcPath, destPath);
+    const url: string = `${ApiService.baseUrl}/api/club-activity/upload-cover`;
+    const req: http.HttpRequest = http.createHttp();
+      const response: http.HttpResponse = await req.request(url, {
+        method: http.RequestMethod.POST,
+        header: {
+          'content-type': 'multipart/form-data',
+          'Authorization': `Bearer ${store.token}`
+        },
+      multiFormDataList: [
+        {
+          name: 'file',
+          filePath: destPath,
+          contentType: 'image/jpeg',
+          remoteFileName: fileName
+        }
+      ]
+    });
+    req.destroy();
+    const resultStr: string = response.result as string;
+    const result: ApiResult = JSON.parse(resultStr) as ApiResult;
+    if (result.code === 200 && result.data !== undefined) {
+      return result.data as string;
+    }
+    return `ERROR:code_${result.code}_msg_${result.msg}`;
+  }
+
+  static async updateAvatar(avatar: string): Promise<ApiResult> {
+    const body: Record<string, Object> = {
+      'avatar': avatar,
+    };
+    return ApiService.request(http.RequestMethod.POST, '/api/user/update-avatar', body, true);
+  }
+
   static async getClubActivityList(club: string, status: number): Promise<ApiResult> {
     let path: string = '/api/club-activity/list?';
     if (club.length > 0) {

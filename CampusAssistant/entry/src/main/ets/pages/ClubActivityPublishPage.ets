@@ -13,6 +13,7 @@ struct ClubActivityPublishPage {
   @State activityTime: string = '';
   @State maxParticipants: number = 20;
   @State isSubmitting: boolean = false;
+  @State coverImage: string = '';
   @State selectedYear: number = 2026;
   @State selectedMonth: number = 1;
   @State selectedDay: number = 1;
@@ -156,7 +157,8 @@ struct ClubActivityPublishPage {
       'description': this.description.trim(),
       'venue': this.venue.trim(),
       'activityTime': this.activityTime.trim(),
-      'maxParticipants': this.maxParticipants
+      'maxParticipants': this.maxParticipants,
+      'coverImage': this.coverImage
     } as Record<string, Object>;
     const result: ApiResult = await ApiService.publishClubActivity(params);
     if (result.code === 200) {
@@ -166,6 +168,24 @@ struct ClubActivityPublishPage {
       this.showToast(result.msg.length > 0 ? result.msg : '发布失败');
     }
     this.isSubmitting = false;
+  }
+
+  private async pickCover(): Promise<void> {
+    try {
+      const uris: string[] = await ApiService.pickImages();
+      if (uris.length === 0) {
+        return;
+      }
+      const url: string = await ApiService.uploadClubCover(uris[0]);
+      if (url.length > 0 && !url.startsWith('ERROR:')) {
+        this.coverImage = url;
+        this.showToast('封面上传成功');
+      } else {
+        this.showToast('封面上传失败');
+      }
+    } catch (_err) {
+      this.showToast('选择图片失败');
+    }
   }
 
   private decreaseParticipants(): void {
@@ -226,6 +246,48 @@ struct ClubActivityPublishPage {
           .padding(16)
           .backgroundColor(Theme.bgCard)
           .borderRadius(10)
+          .shadow(ShadowStyle.sm)
+
+          Column() {
+            Text('活动封面')
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Theme.textPrimary)
+              .width('100%')
+              .margin({ bottom: 12 })
+            Stack() {
+              if (this.coverImage.length > 0) {
+                Image(`${ApiService.baseUrl}${this.coverImage}`)
+                  .width('100%')
+                  .height(160)
+                  .borderRadius(10)
+                  .objectFit(ImageFit.Cover)
+              } else {
+                Column() {
+                  Text('🖼️').fontSize(32)
+                  Text('点击上传活动封面')
+                    .fontSize(13)
+                    .fontColor(Theme.textTertiary)
+                    .margin({ top: 8 })
+                }
+                .width('100%')
+                .height(160)
+                .backgroundColor(Theme.bgInput)
+                .borderRadius(10)
+                .border({ width: 1, color: Theme.border, style: BorderStyle.Dashed })
+                .justifyContent(FlexAlign.Center)
+              }
+            }
+            .width('100%')
+            .onClick(() => {
+              this.pickCover();
+            })
+          }
+          .width('100%')
+          .padding(16)
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(10)
+          .margin({ top: 12 })
           .shadow(ShadowStyle.sm)
 
           Column() {

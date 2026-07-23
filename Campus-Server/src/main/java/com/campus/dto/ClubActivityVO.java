@@ -17,6 +17,7 @@ public class ClubActivityVO {
     private String createTime;
     private boolean registered;
     private List<String> participantNames;
+    private String coverImage;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,4 +47,7 @@ public class ClubActivityVO {
     public void setRegistered(boolean registered) { this.registered = registered; }
     public List<String> getParticipantNames() { return participantNames; }
     public void setParticipantNames(List<String> participantNames) { this.participantNames = participantNames; }
+
+    public String getCoverImage() { return coverImage; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
 }

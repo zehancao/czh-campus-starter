@@ -74,6 +74,7 @@ struct ClubActivityListPage {
     item.currentParticipants = (obj['currentParticipants'] as number) ?? 0;
     item.status = (obj['status'] as number) ?? 1;
     item.createTime = (obj['createTime'] as string) ?? '';
+    item.coverImage = (obj['coverImage'] as string) ?? '';
     item.registered = (obj['registered'] as boolean) ?? false;
     const namesObj: Object = obj['participantNames'];
     if (namesObj !== null && namesObj !== undefined) {
@@ -317,6 +318,14 @@ struct ClubActivityListPage {
   @Builder
   ActivityCard(item: ClubActivityItem) {
     Column() {
+      if (item.coverImage.length > 0) {
+        Image(`${ApiService.baseUrl}${item.coverImage}`)
+          .width('100%')
+          .height(150)
+          .objectFit(ImageFit.Cover)
+          .borderRadius(10)
+          .margin({ bottom: 12 })
+      }
       Row() {
         Text(item.club)
           .fontSize(12)

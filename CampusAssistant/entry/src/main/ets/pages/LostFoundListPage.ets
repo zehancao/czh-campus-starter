@@ -15,13 +15,18 @@ struct LFListCard {
   build() {
     Row() {
       Column() {
-        Text(this.itemData.type === 1 ? '🔍' : '📢')
-          .fontSize(28)
-        Text(this.itemData.type === 1 ? '寻物' : '招领')
-          .fontSize(11).fontColor(Theme.secondary).margin({ top: 2 })
+        if (this.getFirstImageUrl().length > 0) {
+          Image(`${ApiService.baseUrl}${this.getFirstImageUrl()}`)
+            .width(60).height(60).borderRadius(10).objectFit(ImageFit.Cover)
+        } else {
+          Text(this.itemData.type === 1 ? '🔍' : '📢')
+            .fontSize(28)
+          Text(this.itemData.type === 1 ? '寻物' : '招领')
+            .fontSize(11).fontColor(Theme.secondary).margin({ top: 2 })
+        }
       }
       .width(60).height(60)
-        .backgroundColor(Theme.secondaryLight)
+      .backgroundColor(Theme.secondaryLight)
       .borderRadius(10)
       .justifyContent(FlexAlign.Center)
 
@@ -95,6 +100,26 @@ struct LFListCard {
       return t.substring(0, 16);
     }
     return t;
+  }
+
+  private getFirstImageUrl(): string {
+    const raw: string = this.itemData.images;
+    if (raw.length === 0) {
+      return '';
+    }
+    let s: string = raw.trim();
+    if (s.startsWith('[')) {
+      s = s.substring(1);
+    }
+    if (s.endsWith(']')) {
+      s = s.substring(0, s.length - 1);
+    }
+    s = s.replace(new RegExp('"', 'g'), '').replace(new RegExp("'", 'g'), '');
+    s = s.trim();
+    if (s.length === 0) {
+      return '';
+    }
+    return s.split(',')[0].trim();
   }
 }
 

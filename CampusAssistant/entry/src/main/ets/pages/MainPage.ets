@@ -4,6 +4,7 @@ import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSock
 import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { AvatarView } from '../common/AvatarView';
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
@@ -100,7 +101,21 @@ struct MainPage {
 
   onPageShow(): void {
     const store: AppStore = AppStore.getInstance();
-    this.userInfo = store.userInfo;
+    const freshInfo: UserInfo = new UserInfo();
+    freshInfo.id = store.userInfo.id;
+    freshInfo.studentId = store.userInfo.studentId;
+    freshInfo.name = store.userInfo.name;
+    freshInfo.avatar = store.userInfo.avatar;
+    freshInfo.college = store.userInfo.college;
+    freshInfo.major = store.userInfo.major;
+    freshInfo.grade = store.userInfo.grade;
+    freshInfo.classId = store.userInfo.classId;
+    freshInfo.className = store.userInfo.className;
+    freshInfo.hometown = store.userInfo.hometown;
+    freshInfo.phone = store.userInfo.phone;
+    freshInfo.role = store.userInfo.role;
+    freshInfo.creditScore = store.userInfo.creditScore;
+    this.userInfo = freshInfo;
     this.loadSemester();
     this.loadProducts();
     this.loadMyActivities();
@@ -607,22 +622,7 @@ struct MainPage {
             Blank()
 
             Stack({ alignContent: Alignment.Center }) {
-              if (this.userInfo.avatar.length > 0) {
-                Image(`${ApiService.baseUrl}${this.userInfo.avatar}`)
-                  .width(40)
-                  .height(40)
-                  .borderRadius(20)
-                  .objectFit(ImageFit.Cover)
-              } else {
-                Text(this.userInfo.name.length > 0 ? this.userInfo.name[0] : 'U')
-                  .fontSize(20)
-                  .fontColor(Color.White)
-                  .textAlign(TextAlign.Center)
-                  .width(40)
-                  .height(40)
-                  .borderRadius(20)
-                  .backgroundColor(Theme.primary)
-              }
+              AvatarView({ avatar: this.userInfo.avatar, name: this.userInfo.name, avatarSize: 40 })
             }
             .width(56).height(56)
             .borderRadius(28)
@@ -2336,22 +2336,7 @@ struct MainPage {
       Column() {
         Row() {
           Column() {
-            if (this.userInfo.avatar.length > 0) {
-              Image(`${ApiService.baseUrl}${this.userInfo.avatar}`)
-                .width(72)
-                .height(72)
-                .borderRadius(36)
-                .objectFit(ImageFit.Cover)
-            } else {
-              Text(this.userInfo.name.length > 0 ? this.userInfo.name[0] : 'U')
-                .fontSize(30)
-                .fontColor(Color.White)
-                .textAlign(TextAlign.Center)
-                .width(72)
-                .height(72)
-                .borderRadius(36)
-                .backgroundColor(Theme.primary)
-            }
+            AvatarView({ avatar: this.userInfo.avatar, name: this.userInfo.name, avatarSize: 72 })
           }
           .padding(6)
           .backgroundColor(Theme.bgCard)

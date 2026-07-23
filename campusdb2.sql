@@ -301,6 +301,7 @@ CREATE TABLE `club_activities` (
   `current_participants` int NOT NULL DEFAULT '0' COMMENT '已报名人数',
   `status` tinyint DEFAULT '1' COMMENT '1=报名中,2=已满,3=已结束',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `cover_image` varchar(500) DEFAULT NULL COMMENT '活动封面图',
   PRIMARY KEY (`id`),
   KEY `idx_club` (`club`),
   KEY `idx_status` (`status`)

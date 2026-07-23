@@ -156,6 +156,7 @@ public class ClubActivityService {
         vo.setMaxParticipants(a.getMaxParticipants());
         vo.setCurrentParticipants(a.getCurrentParticipants());
         vo.setStatus(a.getStatus());
+        vo.setCoverImage(a.getCoverImage());
         vo.setCreateTime(a.getCreateTime() != null ? a.getCreateTime().format(FMT) : "");
 
         if (userId != null) {

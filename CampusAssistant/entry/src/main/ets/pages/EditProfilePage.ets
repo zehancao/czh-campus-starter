@@ -4,6 +4,7 @@ import { UserInfo } from '../model/Models';
 import { router } from '@kit.ArkUI';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
+import { AvatarView } from '../common/AvatarView';
 
 @Entry
 @Component
@@ -15,6 +16,7 @@ struct EditProfilePage {
   @State private isSavingName: boolean = false;
   @State private showAvatarSheet: boolean = false;
   @State private errorMsg: string = '';
+  private emojiList: string[] = ['🐱','🐶','🦊','🐼','🐨','🦁','🐯','🐸','🦉','🐲','🌸','🌻','🍀','🌙','⭐','💎','🦋','🐝','🐙','🐧'];
 
   aboutToAppear(): void {
     this.initUser();
@@ -82,6 +84,28 @@ struct EditProfilePage {
     }
   }
 
+  private async selectEmoji(emoji: string): Promise<void> {
+    if (this.isUploading) {
+      return;
+    }
+    this.showAvatarSheet = false;
+    this.isUploading = true;
+    try {
+      const result: ApiResult = await ApiService.updateAvatar(emoji);
+      if (result.code === 200) {
+        this.avatar = emoji;
+        this.updateLocalUser(this.userName, this.avatar);
+        this.getUIContext().getPromptAction().showToast({ message: '头像已更新' });
+      } else {
+        this.errorMsg = result.msg.length > 0 ? result.msg : '设置失败';
+      }
+    } catch (_err) {
+      this.errorMsg = '头像设置失败';
+    } finally {
+      this.isUploading = false;
+    }
+  }
+
   private async saveUserName(): Promise<void> {
     if (this.isSavingName) {
       return;
@@ -113,22 +137,7 @@ struct EditProfilePage {
           Column() {
             Column() {
               Stack() {
-                if (this.avatar.length > 0) {
-                  Image(`${ApiService.baseUrl}${this.avatar}`)
-                    .width(96)
-                    .height(96)
-                    .borderRadius(48)
-                    .objectFit(ImageFit.Cover)
-                } else {
-                  Text(this.userName.length > 0 ? this.userName[0] : 'U')
-                    .fontSize(38)
-                    .fontColor(Color.White)
-                    .textAlign(TextAlign.Center)
-                    .width(96)
-                    .height(96)
-                    .borderRadius(48)
-                    .backgroundColor(Theme.primary)
-                }
+                AvatarView({ avatar: this.avatar, name: this.userName, avatarSize: 96 })
                 Column() {
                   Text('📷').fontSize(13)
                 }
@@ -291,6 +300,30 @@ struct EditProfilePage {
         .onClick(() => {
           this.uploadFromAlbum();
         })
+
+        Text('选择表情做头像')
+          .fontSize(13)
+          .fontColor(Theme.textSecondary)
+          .width('100%')
+          .padding({ left: 24, right: 24, top: 12, bottom: 8 })
+
+        Flex({ wrap: FlexWrap.Wrap }) {
+          ForEach(this.emojiList, (emoji: string) => {
+            Text(emoji)
+              .fontSize(26)
+              .width(44)
+              .height(44)
+              .textAlign(TextAlign.Center)
+              .backgroundColor(Theme.bgInput)
+              .borderRadius(10)
+              .margin({ right: 10, bottom: 10 })
+              .onClick(() => {
+                this.selectEmoji(emoji);
+              })
+          }, (emoji: string) => emoji)
+        }
+        .width('100%')
+        .padding({ left: 24, right: 24, bottom: 12 })
 
         Row()
           .width('100%')

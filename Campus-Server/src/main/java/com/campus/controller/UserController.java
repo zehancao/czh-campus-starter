@@ -97,4 +97,15 @@ public class UserController {
         userService.updateName(userId, name.trim());
         return Result.ok();
     }
+
+    @PostMapping("/update-avatar")
+    public Result<Void> updateAvatar(HttpServletRequest request, @RequestBody Map<String, String> body) {
+        Long userId = (Long) request.getAttribute("userId");
+        String avatar = body.get("avatar");
+        if (avatar == null || avatar.isEmpty()) {
+            return Result.error(400, "头像不能为空");
+        }
+        userService.updateAvatar(userId, avatar);
+        return Result.ok();
+    }
 }

@@ -19,6 +19,7 @@ public class ClubActivity {
     private Integer currentParticipants;
     private Integer status;
     private LocalDateTime createTime;
+    private String coverImage;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -42,4 +43,7 @@ public class ClubActivity {
     public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+
+    public String getCoverImage() { return coverImage; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
 }

@@ -71,6 +71,7 @@ struct ClubActivityDetailPage {
     item.currentParticipants = (obj['currentParticipants'] as number) ?? 0;
     item.status = (obj['status'] as number) ?? 1;
     item.createTime = (obj['createTime'] as string) ?? '';
+    item.coverImage = (obj['coverImage'] as string) ?? '';
     item.registered = (obj['registered'] as boolean) ?? false;
     const namesObj: Object = obj['participantNames'];
     if (namesObj !== null && namesObj !== undefined) {
@@ -256,6 +257,14 @@ struct ClubActivityDetailPage {
         Scroll() {
           Column() {
             Column() {
+              if (this.activity.coverImage.length > 0) {
+                Image(`${ApiService.baseUrl}${this.activity.coverImage}`)
+                  .width('100%')
+                  .height(180)
+                  .objectFit(ImageFit.Cover)
+                  .borderRadius(10)
+                  .margin({ bottom: 14 })
+              }
               Row() {
                 Text(this.activity.club)
                   .fontSize(13)

@@ -158,6 +158,7 @@ export class ClubActivityItem {
   currentParticipants: number = 0;
   status: number = 1;
   createTime: string = '';
+  coverImage: string = '';
   registered: boolean = false;
   participantNames: string[] = [];
 }
