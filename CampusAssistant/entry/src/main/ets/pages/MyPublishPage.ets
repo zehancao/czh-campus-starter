@@ -4,6 +4,7 @@ import { ApiService, ApiResult } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { Product } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const STATUS_LABELS: string[] = ['', '在售', '已售', '下架'];
 const STATUS_COLORS: string[] = [Theme.bgCard, Theme.success, Theme.textSecondary, Theme.danger];
@@ -212,34 +213,14 @@ struct MyPublishPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16)
-          .fontColor(Theme.textSecondary)
-          .onClick(() => { router.back(); })
-
-        Blank()
-
-        Text('我的发布')
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-
-        Blank()
-
+      NavHeader({ title: '我的发布' }) {
         if (this.products.length > 0) {
           Text(`${this.products.length}`)
-            .fontSize(13)
-            .fontColor(Theme.textTertiary)
-            .backgroundColor(Theme.bgPage)
-            .borderRadius(10)
+            .fontSize(13).fontColor(Theme.textTertiary)
+            .backgroundColor(Theme.bgPage).borderRadius(10)
             .padding({ left: 8, right: 8, top: 2, bottom: 2 })
-        } else {
-          Blank().width(40)
         }
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       if (!this.isLoggedIn) {
         Column() {

@@ -6,6 +6,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const STATUS_LABELS: string[] = ['进行中', '已找到/已归还'];
 const STATUS_COLORS: string[] = [Theme.warning, Theme.success];
@@ -190,23 +191,11 @@ struct LostFoundDetailPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16).fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-        Blank()
-        Text(this.itemData.type === 1 ? '寻物信息' : '招领信息')
-          .fontSize(18).fontWeight(FontWeight.Bold)
-        Blank()
+      NavHeader({ title: this.itemData.type === 1 ? '寻物信息' : '招领信息' }) {
         if (this.isMyPost && !this.isLoading) {
-          Text('删除')
-            .fontSize(15).fontColor(Theme.danger)
-            .onClick(() => { this.deletePost() })
+          Text('删除').fontSize(14).fontColor(Theme.danger).onClick(() => { this.deletePost() })
         }
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       if (this.isLoading) {
         Column() {

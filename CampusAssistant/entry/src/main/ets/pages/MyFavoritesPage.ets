@@ -22,6 +22,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { FavoriteItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 /** 状态映射 */
 const STATUS_LABELS: string[] = ['', '在售', '已售', '下架'];
@@ -193,34 +194,14 @@ struct MyFavoritesPage {
   build() {
     Column() {
       // ═══════════════ 顶部导航栏 ═══════════════
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16)
-          .fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-
-        Blank()
-
-        Text('我的收藏')
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-
-        Blank()
-
+      NavHeader({ title: '我的收藏' }) {
         if (this.favorites.length > 0) {
           Text(`${this.favorites.length}`)
-            .fontSize(13)
-            .fontColor(Theme.textTertiary)
-            .backgroundColor(Theme.bgPage)
-            .borderRadius(10)
+            .fontSize(13).fontColor(Theme.textTertiary)
+            .backgroundColor(Theme.bgPage).borderRadius(10)
             .padding({ left: 8, right: 8, top: 2, bottom: 2 })
-        } else {
-          Blank().width(40)
         }
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       // ═══════════════ 内容区 ═══════════════
       if (!this.isLoggedIn) {

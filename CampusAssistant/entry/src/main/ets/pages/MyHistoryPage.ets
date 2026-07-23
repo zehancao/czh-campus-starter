@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 class BrowseItem {
   id: number = 0;
@@ -188,24 +189,11 @@ struct MyHistoryPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16).fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-        Blank()
-        Text('浏览历史').fontSize(18).fontWeight(FontWeight.Bold)
-        Blank()
+      NavHeader({ title: '浏览历史' }) {
         if (this.historyList.length > 0) {
-          Text('清空')
-            .fontSize(14).fontColor(Theme.danger)
-            .onClick(() => { this.clearHistory() })
-        } else {
-          Blank().width(40)
+          Text('清空').fontSize(14).fontColor(Theme.danger).onClick(() => { this.clearHistory() })
         }
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 0 })
-      .backgroundColor('#FFFFFF')
 
       if (!this.isLoggedIn) {
         Column() {

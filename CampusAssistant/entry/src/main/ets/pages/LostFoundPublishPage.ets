@@ -5,6 +5,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const CATEGORIES_LIST: string[] = ['电子产品', '证件', '钥匙', '衣物', '其他'];
 
@@ -164,22 +165,12 @@ struct LostFoundPublishPage {
 
   build() {
     Column() {
-      Row() {
-        Text('取消')
-          .fontSize(16).fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-        Blank()
-        Text('发布信息')
-          .fontSize(18).fontWeight(FontWeight.Bold)
-        Blank()
+      NavHeader({ title: '发布信息' }) {
         Text(this.isSubmitting ? '提交中…' : '发布')
-          .fontSize(16)
+          .fontSize(14)
           .fontColor(this.canSubmitNow() ? Theme.secondary : Theme.textDisabled)
           .onClick(() => { this.submitPublish() })
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       if (this.isLoading) {
         Column() {

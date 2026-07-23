@@ -4,6 +4,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { ProductCategory } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const CONDITION_OPTIONS: string[] = ['全新', '几乎全新', '轻微使用痕迹', '明显使用痕迹', '成色一般'];
 const LOCATION_OPTIONS: string[] = ['一食堂', '二食堂', '图书馆', '宿舍区', '教学楼', '操场', '快递站', '校门口'];
@@ -157,19 +158,12 @@ struct PublishPage {
 
   build() {
     Column() {
-      Row() {
-        Text('取消').fontSize(16).fontColor(Theme.textSecondary).onClick(() => { router.back() })
-        Blank()
-        Text('发布商品').fontSize(18).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
-        Blank()
+      NavHeader({ title: '发布商品' }) {
         Text(this.isSubmitting ? '提交中' : '发布')
-          .fontSize(16)
+          .fontSize(14)
           .fontColor(this.canSubmitNow() ? Theme.primary : Theme.textTertiary)
           .onClick(() => { this.submitPublish() })
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       if (this.isLoading) {
         Column() {

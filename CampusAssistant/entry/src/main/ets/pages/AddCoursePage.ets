@@ -9,6 +9,7 @@ import { ApiService, ApiResult } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { router } from '@kit.ArkUI';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const WEEK_DAY_LABELS: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
@@ -210,41 +211,13 @@ struct AddCoursePage {
     Stack() {
       Column() {
         // Keep custom header - has save action on right side
-        Row() {
-          Text('<')
-            .fontSize(26)
-            .fontColor(Theme.textPrimary)
-            .width(44)
-            .height(44)
-            .textAlign(TextAlign.Center)
-            .onClick(() => {
-              router.back();
-            })
-          Text('添加课程')
-            .fontSize(20)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(Theme.textPrimary)
-            .layoutWeight(1)
-            .textAlign(TextAlign.Center)
+        NavHeader({ title: '添加课程' }) {
           Text(this.isSaving ? '保存中' : '保存')
-            .fontSize(15)
-            .fontColor(Theme.primary)
-            .width(64)
-            .height(34)
-            .textAlign(TextAlign.Center)
-            .backgroundColor(Theme.primaryLight)
-            .borderRadius(17)
-            .onClick(() => {
-              this.saveAndBack();
-            })
+            .fontSize(14).fontColor(Theme.primary)
+            .width(64).height(34).textAlign(TextAlign.Center)
+            .backgroundColor(Theme.primaryLight).borderRadius(17)
+            .onClick(() => { this.saveAndBack() })
         }
-        .width('100%')
-        .height(62)
-        .padding({ left: 10, right: 14 })
-        .backgroundColor(Theme.bgCard)
-        .borderRadius(Theme.cardRadius)
-        .shadow(ShadowStyle.nmRaised)
-        .margin({ left: 12, right: 12, top: 8, bottom: 8 })
 
         Scroll() {
           Column() {

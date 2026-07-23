@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI'
 import { ApiService } from '../service/ApiService'
 import { AppStore } from '../service/AppStore'
 import { Theme, ShadowStyle } from '../common/Theme'
+import { NavHeader } from '../common/NavHeader'
 
 const STATUS: string[] = ['待处理', '已处理']
 
@@ -221,30 +222,12 @@ struct MyComplaintsPage {
   build() {
     Column() {
       // 顶部导航栏 - custom header with count, keep it
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16)
-          .fontColor(Theme.textSecondary)
-          .onClick(() => {
-            router.back()
-          })
-        Blank()
-        Text('投诉与信用')
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(Theme.textPrimary)
-        Blank()
+      NavHeader({ title: '投诉与信用' }) {
         if (this.myItems.length + this.agItems.length > 0) {
           Text('共' + (this.myItems.length + this.agItems.length) + '条')
-            .fontSize(13)
-            .fontColor(Theme.textTertiary)
-        } else {
-          Blank().width(48)
+            .fontSize(13).fontColor(Theme.textTertiary)
         }
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor(Theme.bgCard)
 
       if (!AppStore.getInstance().isLoggedIn) {
         Column() {

@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI';
 import { ApiService } from '../service/ApiService';
 import { LostFoundItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const TYPE_TABS: string[] = ['全部', '寻物', '招领'];
 const STATUS_LABELS: string[] = ['进行中', '已找到'];
@@ -155,21 +156,9 @@ struct LostFoundListPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16).fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-        Blank()
-        Text('失物招领')
-          .fontSize(18).fontWeight(FontWeight.Bold)
-        Blank()
-        Text('发布')
-          .fontSize(16).fontColor(Theme.secondary)
-          .onClick(() => { this.goToPublish() })
+      NavHeader({ title: '失物招领' }) {
+        Text('发布').fontSize(14).fontColor(Theme.secondary).onClick(() => { this.goToPublish() })
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-      .backgroundColor('#FFFFFF')
 
       Row() {
         TextInput({ placeholder: '搜索失物或招领…', text: this.keywordValue })

@@ -5,6 +5,7 @@ import { ApiService } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
 import { LostFoundItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const STATUS_OPTIONS: string[] = ['进行中', '已找到/已归还'];
 const STATUS_COLORS: string[] = [Theme.warning, Theme.success];
@@ -248,21 +249,9 @@ struct MyLostFoundPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹ 返回')
-          .fontSize(16).fontColor(Theme.textSecondary)
-          .onClick(() => { router.back() })
-        Blank()
-        Text('我的失物招领')
-          .fontSize(18).fontWeight(FontWeight.Bold)
-        Blank()
-        Text('发布')
-          .fontSize(16).fontColor(Theme.secondary)
-          .onClick(() => { this.goToPublish() })
+      NavHeader({ title: '我的失物招领' }) {
+        Text('发布').fontSize(14).fontColor(Theme.secondary).onClick(() => { this.goToPublish() })
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
 
       if (!this.isLoggedIn) {
         Column() {

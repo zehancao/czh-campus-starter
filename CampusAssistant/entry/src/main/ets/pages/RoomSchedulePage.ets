@@ -2,6 +2,7 @@ import { ApiService } from '../service/ApiService';
 import { CourseSchedule } from '../model/Models';
 import { Constants } from '../common/Constants';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 const ROOM_DAY_LABELS: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
@@ -125,46 +126,13 @@ struct RoomSchedulePage {
   build() {
     Column() {
       // Keep custom header - has special elements (classroom title + day picker)
-      Row() {
-        Text('<')
-          .fontSize(24)
-          .fontColor(Theme.textPrimary)
-          .width(44)
-          .height(44)
-          .textAlign(TextAlign.Center)
-          .onClick(() => {
-            this.getUIContext().getRouter().back();
-          })
-        Column() {
-          Text(this.classroom.length > 0 ? this.classroom : '教室课表')
-            .fontSize(20)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(Theme.textPrimary)
-          Text('教室课表')
-            .fontSize(12)
-            .fontColor(Theme.textTertiary)
-            .margin({ top: 2 })
-        }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start)
+      NavHeader({ title: this.classroom.length > 0 ? this.classroom : '教室课表' }) {
         Text(this.dayText())
-          .fontSize(14)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(Theme.primary)
+          .fontSize(14).fontWeight(FontWeight.Medium).fontColor(Theme.primary)
           .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-          .backgroundColor(Theme.primaryLight)
-          .borderRadius(Theme.radiusPill)
-          .onClick(() => {
-            this.showDayPicker();
-          })
+          .backgroundColor(Theme.primaryLight).borderRadius(Theme.radiusPill)
+          .onClick(() => { this.showDayPicker() })
       }
-      .width('100%')
-      .height(66)
-      .padding({ left: 10, right: 16 })
-      .backgroundColor(Theme.bgCard)
-      .borderRadius(Theme.cardRadius)
-      .shadow(ShadowStyle.nmRaised)
-      .margin({ left: 12, right: 12, top: 8, bottom: 8 })
 
       Column() {
         Row() {

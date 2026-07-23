@@ -5,6 +5,7 @@ import { AppStore } from '../service/AppStore';
 import { ChatMessage } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Entry
 @Component
@@ -372,32 +373,26 @@ struct ChatPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹').fontSize(28).fontColor(Theme.textPrimary).width(34).onClick(() => { router.back() })
-        Column() {
-          Text(this.otherUserName).fontSize(18).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
-          Row() {
-            Text('')
-              .width(7).height(7).borderRadius(4)
-              .backgroundColor(this.isOtherUserOnline ? Theme.success : Theme.textTertiary)
-              .margin({ right: 5 })
-            Text(this.isOtherUserOnline ? '在线' : '离线')
-              .fontSize(11)
-              .fontColor(this.isOtherUserOnline ? Theme.success : Theme.textSecondary)
-          }.margin({ top: 2 })
-          if (this.productId > 0) {
-            Text('商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary).margin({ top: 2 })
-          }
-        }.alignItems(HorizontalAlign.Start)
-        Blank()
+      NavHeader({ title: this.otherUserName }) {
         Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => {
           this.isLoading = true;
           this.loadOnlineStatus();
           this.loadMessages();
         })
       }
+      Row() {
+        Text('')
+          .width(7).height(7).borderRadius(4)
+          .backgroundColor(this.isOtherUserOnline ? Theme.success : Theme.textTertiary)
+          .margin({ right: 5 })
+        Text(this.isOtherUserOnline ? '在线' : '离线')
+          .fontSize(11).fontColor(this.isOtherUserOnline ? Theme.success : Theme.textSecondary)
+        if (this.productId > 0) {
+          Text('  商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary)
+        }
+      }
       .width('100%')
-      .padding({ left: 12, right: 16, top: 10, bottom: 10 })
+      .padding({ left: 16, right: 16, top: 4, bottom: 8 })
       .backgroundColor('#FFFFFF')
 
       if (!this.isLoggedIn) {

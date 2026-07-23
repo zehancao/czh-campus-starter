@@ -1,5 +1,5 @@
 import { AppStore } from '../service/AppStore';
-import { UserInfo, CourseSchedule, Product, Announcement, Semester, ProductCategory, ClubActivityItem } from '../model/Models';
+import { UserInfo, CourseSchedule, Product, Announcement, Semester, ProductCategory, ClubActivityItem, Conversation, ChatMessage } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
@@ -32,6 +32,12 @@ struct MainPage {
   @State semesterName: string = '';
   @State semesterStartDate: string = '';
   @State unreadCount: number = 0;
+  @State conversations: Conversation[] = [];
+  @State onlineUserIds: number[] = [];
+  @State conversationKeyword: string = '';
+  @State conversationLoading: boolean = true;
+  @State conversationError: string = '';
+  private conversationLoadedOnce: boolean = false;
   @State categories: ProductCategory[] = [];
   @State selectedCategoryId: number = 0;
   @State showAddCourseForm: boolean = false;
@@ -76,6 +82,18 @@ struct MainPage {
         const data: Record<string, Object> = msg.data as Record<string, Object>;
         this.unreadCount = (data['unreadCount'] as number) ?? 0;
       }
+      if (msg.type === 'message') {
+        this.handleConversationWsMessage(msg);
+      }
+      if (msg.type === 'user_status') {
+        const data: Record<string, Object> = msg.data as Record<string, Object>;
+        const uid: number = (data['userId'] as number) ?? 0;
+        const online: boolean = (data['online'] as boolean) ?? false;
+        this.updateOnlineUser(uid, online);
+      }
+      if (msg.type === 'online_users_loaded' || msg.type === 'connection_state') {
+        this.loadConversations(false);
+      }
     };
     WebSocketService.getInstance().onMessage(this.mainWsCallback);
   }
@@ -87,6 +105,9 @@ struct MainPage {
     this.loadProducts();
     this.loadMyActivities();
     this.loadUnreadCount();
+    if (store.isLoggedIn && this.conversationLoadedOnce) {
+      this.loadConversations(false);
+    }
   }
 
   aboutToDisappear(): void {
@@ -111,6 +132,160 @@ struct MainPage {
       const obj: Record<string, Object> = result.data as Record<string, Object>;
       this.unreadCount = (obj['unreadCount'] as number) ?? 0;
     }
+  }
+
+  private async loadConversations(showLoading: boolean = true): Promise<void> {
+    if (showLoading || !this.conversationLoadedOnce) {
+      this.conversationLoading = true;
+    }
+    if (showLoading) {
+      this.conversationError = '';
+    }
+    const result: ApiResult = await ApiService.getConversations();
+    if (result.code === 200 && result.data !== undefined) {
+      this.conversations = ApiService.parseConversationList(result.data);
+      this.conversationError = '';
+    } else if (showLoading) {
+      this.conversationError = result.msg;
+    }
+    const onlineResult: ApiResult = await ApiService.getOnlineUsers();
+    if (onlineResult.code === 200 && onlineResult.data !== undefined) {
+      this.onlineUserIds = onlineResult.data as number[];
+    }
+    this.conversationLoadedOnce = true;
+    this.conversationLoading = false;
+  }
+
+  private handleConversationWsMessage(msg: WsMessage): void {
+    const data: Record<string, Object> = msg.data as Record<string, Object>;
+    const item: ChatMessage = new ChatMessage();
+    item.id = (data['id'] as number) ?? 0;
+    item.conversationId = (data['conversationId'] as number) ?? 0;
+    item.senderId = (data['senderId'] as number) ?? 0;
+    item.content = (data['content'] as string) ?? '';
+    item.msgType = (data['msgType'] as string) ?? 'text';
+    item.createTime = (data['createTime'] as string) ?? '';
+    item.isMine = item.senderId === AppStore.getInstance().userInfo.id;
+    if (item.conversationId <= 0) {
+      return;
+    }
+    const next: Conversation[] = [];
+    let found: boolean = false;
+    for (let i: number = 0; i < this.conversations.length; i++) {
+      const source: Conversation = this.conversations[i];
+      if (source.id === item.conversationId) {
+        const updated: Conversation = new Conversation();
+        updated.id = source.id;
+        updated.otherUserId = source.otherUserId;
+        updated.otherUserName = source.otherUserName;
+        updated.otherUserAvatar = source.otherUserAvatar;
+        updated.lastMessage = item.content;
+        updated.lastTime = item.createTime;
+        updated.unreadCount = item.isMine ? source.unreadCount : source.unreadCount + 1;
+        updated.productId = source.productId;
+        next.unshift(updated);
+        found = true;
+      } else {
+        next.push(source);
+      }
+    }
+    if (found) {
+      this.conversations = next;
+    } else {
+      this.loadConversations(false);
+    }
+  }
+
+  private updateOnlineUser(userId: number, online: boolean): void {
+    if (userId <= 0) {
+      return;
+    }
+    const next: number[] = [];
+    let exists: boolean = false;
+    for (let i: number = 0; i < this.onlineUserIds.length; i++) {
+      if (this.onlineUserIds[i] === userId) {
+        exists = true;
+        if (online) {
+          next.push(this.onlineUserIds[i]);
+        }
+      } else {
+        next.push(this.onlineUserIds[i]);
+      }
+    }
+    if (online && !exists) {
+      next.push(userId);
+    }
+    this.onlineUserIds = next;
+  }
+
+  private isUserOnline(userId: number): boolean {
+    for (let i: number = 0; i < this.onlineUserIds.length; i++) {
+      if (this.onlineUserIds[i] === userId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private shouldShowConversation(item: Conversation): boolean {
+    const key: string = this.conversationKeyword.trim();
+    if (key.length === 0) {
+      return true;
+    }
+    return item.otherUserName.indexOf(key) >= 0 || item.lastMessage.indexOf(key) >= 0;
+  }
+
+  private formatConvTime(text: string): string {
+    if (text.length === 0) {
+      return '';
+    }
+    const value: string = text.replace('T', ' ');
+    if (value.length >= 16) {
+      return value.substring(5, 16);
+    }
+    return value;
+  }
+
+  private previewConvText(item: Conversation): string {
+    if (item.lastMessage.length === 0) {
+      return '暂无消息';
+    }
+    return item.lastMessage;
+  }
+
+  private markConversationReadLocally(conversationId: number): void {
+    const nextList: Conversation[] = [];
+    for (let i: number = 0; i < this.conversations.length; i++) {
+      const source: Conversation = this.conversations[i];
+      if (source.id === conversationId) {
+        const updated: Conversation = new Conversation();
+        updated.id = source.id;
+        updated.otherUserId = source.otherUserId;
+        updated.otherUserName = source.otherUserName;
+        updated.otherUserAvatar = source.otherUserAvatar;
+        updated.lastMessage = source.lastMessage;
+        updated.lastTime = source.lastTime;
+        updated.unreadCount = 0;
+        updated.productId = source.productId;
+        nextList.push(updated);
+      } else {
+        nextList.push(source);
+      }
+    }
+    this.conversations = nextList;
+  }
+
+  private goChat(item: Conversation): void {
+    this.markConversationReadLocally(item.id);
+    router.pushUrl({
+      url: 'pages/ChatPage',
+      params: {
+        'conversationId': item.id.toString(),
+        'otherUserId': item.otherUserId.toString(),
+        'otherUserName': item.otherUserName,
+        'productId': item.productId.toString()
+      } as Record<string, string>
+    });
   }
 
   private openEditProfilePage(): void {
@@ -323,13 +498,10 @@ struct MainPage {
     .height('100%')
     .backgroundColor(Theme.bgPage)
     .onChange((index: number) => {
-      if (index === 2) {
-        // 消息 tab 跳转到会话列表页面
-        this.currentTab = this.currentTab;
-        this.getUIContext().getRouter().pushUrl({ url: 'pages/ConversationListPage' });
-        return;
-      }
       this.currentTab = index;
+      if (index === 2 && !this.conversationLoadedOnce) {
+        this.loadConversations();
+      }
     })
   }
 
@@ -1623,7 +1795,7 @@ struct MainPage {
           .height(28)
           .onClick(() => {
             this.unreadCount = 0;
-            this.getUIContext().getRouter().pushUrl({ url: 'pages/ConversationListPage' });
+            this.currentTab = 2;
           })
         }
         .width('100%')
@@ -1776,7 +1948,7 @@ struct MainPage {
 
     const sIdx: number = this.aiStreamingIndex;
 
-    const baseUrl: string = 'http://192.168.1.3:8000';
+    const baseUrl: string = `${ApiService.baseUrl.substring(0, ApiService.baseUrl.lastIndexOf(':'))}:8000`;
     const url: string = `${baseUrl}/api/ai/chat`;
     const req: http.HttpRequest = http.createHttp();
     this.aiHttpRequest = req;
@@ -2002,10 +2174,160 @@ struct MainPage {
 
   @Builder
   MessageContent() {
-    Column()
+    Column() {
+      Row() {
+        Text('消息')
+          .fontSize(20)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.textPrimary)
+        Blank()
+        Text('刷新')
+          .fontSize(14)
+          .fontColor(Theme.primary)
+          .onClick(() => { this.loadConversations() })
+      }
       .width('100%')
-      .height('100%')
-      .backgroundColor(Theme.bgPage)
+      .padding({ left: 20, right: 20, top: 16, bottom: 12 })
+
+      if (!AppStore.getInstance().isLoggedIn) {
+        Column() {
+          Text('请先登录')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Theme.textPrimary)
+          Text('登录后可以查看买卖双方的会话')
+            .fontSize(14)
+            .fontColor(Theme.textSecondary)
+            .margin({ top: 8 })
+          Button('去登录')
+            .type(ButtonType.Capsule)
+            .backgroundColor(Theme.primary)
+            .fontColor('#FFFFFF')
+            .margin({ top: 20 })
+            .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+      } else if (this.conversationLoading) {
+        Column() {
+          LoadingProgress().width(40).height(40).color(Theme.primary)
+          Text('正在加载会话')
+            .fontSize(14)
+            .fontColor(Theme.textSecondary)
+            .margin({ top: 12 })
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+      } else if (this.conversationError.length > 0) {
+        Column() {
+          Text(this.conversationError)
+            .fontSize(16)
+            .fontColor(Theme.textSecondary)
+          Button('重试')
+            .type(ButtonType.Capsule)
+            .backgroundColor(Theme.primary)
+            .fontColor('#FFFFFF')
+            .margin({ top: 18 })
+            .onClick(() => { this.loadConversations() })
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+      } else {
+        Column() {
+          TextInput({ placeholder: '搜索联系人或消息', text: this.conversationKeyword })
+            .height(40)
+            .fontSize(14)
+            .backgroundColor(Theme.bgInput)
+            .borderRadius(20)
+            .margin({ left: 16, right: 16, top: 12, bottom: 12 })
+            .onChange((value: string) => { this.conversationKeyword = value })
+
+          if (this.conversations.length === 0) {
+            Column() {
+              Text('暂无会话')
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Theme.textPrimary)
+              Text('从商品详情页联系卖家后，会话会显示在这里')
+                .fontSize(14)
+                .fontColor(Theme.textSecondary)
+                .margin({ top: 8 })
+            }
+            .width('100%')
+            .padding({ top: 40, left: 16, right: 16 })
+            .alignItems(HorizontalAlign.Center)
+          } else {
+            List() {
+              ForEach(this.conversations, (item: Conversation) => {
+                ListItem() {
+                  if (this.shouldShowConversation(item)) {
+                    Column() {
+                      Row() {
+                        Stack({ alignContent: Alignment.BottomEnd }) {
+                          Text(item.otherUserName.length > 0 ? item.otherUserName.substring(0, 1) : '聊')
+                            .fontSize(20).fontWeight(FontWeight.Bold).fontColor('#FFFFFF')
+                            .width(48).height(48).borderRadius(24)
+                            .textAlign(TextAlign.Center)
+                            .backgroundColor(Theme.primary)
+                          if (this.isUserOnline(item.otherUserId)) {
+                            Text('')
+                              .width(11).height(11).borderRadius(6)
+                              .backgroundColor(Theme.success)
+                              .border({ width: 2, color: '#FFFFFF' })
+                          }
+                        }.width(50).height(50)
+
+                        Column() {
+                          Row() {
+                            Text(item.otherUserName.length > 0 ? item.otherUserName : '用户')
+                              .fontSize(16).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary)
+                              .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                              .layoutWeight(1)
+                            Text(this.formatConvTime(item.lastTime))
+                              .fontSize(12).fontColor(Theme.textTertiary)
+                          }.width('100%')
+                          Row() {
+                            Text(this.previewConvText(item))
+                              .fontSize(14).fontColor(item.unreadCount > 0 ? Theme.textPrimary : Theme.textTertiary)
+                              .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                              .layoutWeight(1)
+                            if (item.unreadCount > 0) {
+                              Text(item.unreadCount > 99 ? '99+' : item.unreadCount.toString())
+                                .fontSize(11).fontColor('#FFFFFF').textAlign(TextAlign.Center)
+                                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                                .borderRadius(10).backgroundColor(Theme.danger)
+                                .margin({ left: 8 })
+                            }
+                          }.width('100%').margin({ top: 6 })
+                        }.layoutWeight(1).margin({ left: 12 })
+                      }
+                      .width('100%')
+                      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+                      .backgroundColor('#FFFFFF')
+                      .onClick(() => { this.goChat(item) })
+                      Divider().height(1).color(Theme.divider).margin({ left: 78 })
+                    }.width('100%')
+                  }
+                }
+              }, (item: Conversation) => `${item.id}-${item.lastTime}-${item.unreadCount}-${item.lastMessage}`)
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .backgroundColor('#FFFFFF')
+          }
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Start)
+        .backgroundColor('#FFFFFF')
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Theme.bgPage)
   }
 
   @Builder
@@ -2292,7 +2614,7 @@ struct MainPage {
           .height(48)
           .padding({ left: 20, right: 20 })
           .onClick(() => {
-            this.getUIContext().getRouter().pushUrl({ url: 'pages/ConversationListPage' });
+            this.currentTab = 2;
           })
 
           Divider().margin({ left: 20, right: 20 })

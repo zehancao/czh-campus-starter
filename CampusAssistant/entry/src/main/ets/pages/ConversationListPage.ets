@@ -4,6 +4,7 @@ import { AppStore } from '../service/AppStore';
 import { Conversation, ChatMessage } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
 
 @Entry
 @Component
@@ -321,15 +322,9 @@ struct ConversationListPage {
 
   build() {
     Column() {
-      Row() {
-        Text('‹').fontSize(28).fontColor(Theme.textPrimary).width(34).onClick(() => { router.back() })
-        Text('会话').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
-        Blank()
+      NavHeader({ title: '会话' }) {
         Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => { this.loadData() })
       }
-      .width('100%')
-      .padding({ left: 12, right: 16, top: 12, bottom: 10 })
-      .backgroundColor('#FFFFFF')
 
       if (!this.isLoggedIn) {
         Column() {
