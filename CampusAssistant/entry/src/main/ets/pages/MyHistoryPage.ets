@@ -226,7 +226,7 @@ struct MyHistoryPage {
             .type(ButtonType.Capsule)
             .backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 28 })
-            .onClick(() => { router.back() })
+            .onClick(() => { router.pushUrl({ url: 'pages/MainPage', params: { 'tab': 1 } as Record<string, Object> }) })
         }
         .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
 

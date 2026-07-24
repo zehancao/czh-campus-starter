@@ -66,6 +66,11 @@ struct MainPage {
   private aiFlushTimer: number = -1;
 
   aboutToAppear(): void {
+    // 接收外部跳转传入的 tab 参数
+    const params: Record<string, Object> = router.getParams() as Record<string, Object>;
+    if (params !== null && params['tab'] !== undefined) {
+      this.currentTab = params['tab'] as number;
+    }
     const store: AppStore = AppStore.getInstance();
     this.userInfo = store.userInfo;
     const welcome: AiMsg = new AiMsg();
