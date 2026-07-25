@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 商品详情页 — 谢易霖
  *
  * 严格按 01-database.md + 02-api-doc.md + 商品详情页需求 实现
@@ -249,250 +249,268 @@ struct ProductDetailPage {
   }
 
   build() {
-    Column() {
-      if (this.isLoading) {
-        Column() {
-          LoadingProgress().color(Theme.primary).width(48).height(48)
-          Text('加载中…').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 12 })
-        }
-        .width('100%').height('100%')
-        .justifyContent(FlexAlign.Center)
-      } else if (this.errorMsg.length > 0) {
-        Column() {
-          Text('😕').fontSize(48)
-          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
-          Button('重试')
-            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
-            .margin({ top: 20 })
-            .onClick(() => {
-              this.errorMsg = '';
-              this.isLoading = true;
-              this.resolveId();
-              if (this.productId > 0) {
-                this.loadDetail();
-              } else {
-                this.errorMsg = '商品ID无效';
-                this.isLoading = false;
-              }
-            })
-        }
-        .width('100%').height('100%')
-        .justifyContent(FlexAlign.Center)
-      } else {
-        Scroll() {
+    Stack() {
+      Column() {
+        if (this.isLoading) {
           Column() {
-            // ══════ 图片轮播 ══════
-            if (this.parsedImages.length > 0) {
-              Swiper() {
-                ForEach(this.parsedImages, (img: string) => {
-                  Image(ApiService.baseUrl + img)
-                    .width('100%')
-                    .height(300)
-                    .objectFit(ImageFit.Cover)
-                }, (img: string) => img)
-              }
-              .width('100%')
-              .height(300)
-              .autoPlay(false)
-              .indicator(true)
-              .loop(false)
-            } else {
-              Column() {
-                Text('📷').fontSize(64)
-                Text('暂无图片').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 8 })
-              }
-              .width('100%').height(300)
-              .backgroundColor(Theme.bgInput)
-              .justifyContent(FlexAlign.Center)
-            }
-
-            // ══════ 基本信息 ══════
+            LoadingProgress().color(Theme.primary).width(48).height(48)
+            Text('加载中...').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 12 })
+          }
+          .width('100%').height('100%')
+          .justifyContent(FlexAlign.Center)
+        } else if (this.errorMsg.length > 0) {
+          Column() {
+            Text('???').fontSize(48)
+            Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary).margin({ top: 12 })
+            Button('重试')
+              .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
+              .margin({ top: 20 })
+              .onClick(() => {
+                this.errorMsg = '';
+                this.isLoading = true;
+                this.resolveId();
+                if (this.productId > 0) {
+                  this.loadDetail();
+                } else {
+                  this.errorMsg = '商品ID无效';
+                  this.isLoading = false;
+                }
+              })
+          }
+          .width('100%').height('100%')
+          .justifyContent(FlexAlign.Center)
+        } else {
+          Scroll() {
             Column() {
-              Row() {
-                Text(this.product.title)
-                  .fontSize(20).fontWeight(FontWeight.Bold)
-                  .layoutWeight(1)
-                  .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
-                Blank()
-              }
-              .width('100%')
-
-              Row() {
-                Text('¥' + this.product.price.toFixed(2))
-                  .fontSize(28).fontWeight(FontWeight.Bold).fontColor(Theme.primary)
-                if (this.product.originalPrice > 0) {
-                  Text('¥' + this.product.originalPrice.toFixed(2))
-                    .fontSize(14).fontColor(Theme.textTertiary)
-                    .decoration({ type: TextDecorationType.LineThrough })
-                    .margin({ left: 8 })
+              // 图片轮播
+              if (this.parsedImages.length > 0) {
+                Swiper() {
+                  ForEach(this.parsedImages, (img: string) => {
+                    Image(ApiService.baseUrl + img)
+                      .width('100%')
+                      .height(300)
+                      .objectFit(ImageFit.Cover)
+                  }, (img: string) => img)
                 }
-                Blank()
-              }
-              .width('100%').margin({ top: 6 })
-
-              Row() {
-                Text(STATUS_LABELS[Math.max(0, Math.min(this.product.status, 3))])
-                  .fontSize(12).fontColor('#FFFFFF')
-                  .backgroundColor(STATUS_COLORS[Math.max(0, Math.min(this.product.status, 3))])
-                  .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
-                Text(CONDITION_LABELS[Math.max(0, Math.min(this.product.conditionLevel, 3))])
-                  .fontSize(12).fontColor(Theme.primary)
-                  .backgroundColor(Theme.primaryLight)
-                  .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
-                  .margin({ left: 8 })
-                if (this.product.categoryName.length > 0) {
-                  Text(this.product.categoryName)
-                    .fontSize(12).fontColor(Theme.textSecondary)
-                    .backgroundColor(Theme.bgPage)
-                    .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
-                    .margin({ left: 8 })
-                }
-                Blank()
-              }
-              .width('100%').margin({ top: 8 })
-            }
-            .width('100%').padding(18).backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
-            .margin({ left: 14, right: 14, top: 12 })
-
-            Blank().height(12)
-
-            // ══════ 卖家信息 + 电话 ══════
-            Row() {
-              Column() {
-                Text(this.product.sellerName).fontSize(16).fontWeight(FontWeight.Medium)
-                Text('卖家').fontSize(12).fontColor(Theme.textTertiary).margin({ top: 2 })
-                if (this.sellerPhoneText.length > 0) {
-                  Text('📞 ' + this.sellerPhoneText)
-                    .fontSize(13).fontColor(Theme.primary)
-                    .margin({ top: 4 })
-                }
-              }
-              .alignItems(HorizontalAlign.Start)
-              .margin({ right: 20 })
-
-              if (this.product.campusLocation.length > 0) {
-                Divider().vertical(true).height(30).color(Theme.border)
+                .width('100%')
+                .height(300)
+                .autoPlay(false)
+                .indicator(true)
+                .loop(false)
+              } else {
                 Column() {
-                  Text('交易地点').fontSize(12).fontColor(Theme.textTertiary)
-                  Text(this.product.campusLocation).fontSize(14).fontColor(Theme.textPrimary).margin({ top: 2 })
+                  Text('???').fontSize(64)
+                  Text('暂无图片').fontSize(14).fontColor(Theme.textTertiary).margin({ top: 8 })
                 }
-                .alignItems(HorizontalAlign.Center).margin({ left: 16 })
+                .width('100%').height(300)
+                .backgroundColor(Theme.bgInput)
+                .justifyContent(FlexAlign.Center)
               }
-              Blank()
-              Column() {
-                Text('浏览量').fontSize(12).fontColor(Theme.textTertiary)
-                Text(this.product.viewCount.toString())
-                  .fontSize(16).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).margin({ top: 2 })
-              }
-              .alignItems(HorizontalAlign.Center)
-            }
-            .width('100%').padding(18).backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
-            .margin({ left: 14, right: 14 })
 
-            Blank().height(12)
-
-            // ══════ 商品描述 ══════
-            Column() {
-              Row() {
-                Text('商品描述').fontSize(16).fontWeight(FontWeight.Bold)
-                Blank()
-              }
-              .width('100%')
-              Text(this.product.description.length > 0 ? this.product.description : '暂无描述')
-                .fontSize(14).fontColor(Theme.textSecondary).width('100%').margin({ top: 8 })
-            }
-            .width('100%').padding(18).backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
-            .margin({ left: 14, right: 14 })
-
-            Blank().height(12)
-
-            // ══════ 标签 ══════
-            if (this.parsedTags.length > 0) {
+              // 基本信息
               Column() {
                 Row() {
-                  Text('标签').fontSize(16).fontWeight(FontWeight.Bold)
-                  Blank()
-                }
-                .width('100%').margin({ bottom: 8 })
-                Flex({ wrap: FlexWrap.Wrap }) {
-                  ForEach(this.parsedTags, (tag: string) => {
-                    Text(tag)
-                      .fontSize(12).fontColor(Theme.primary)
-                      .backgroundColor(Theme.primaryLight)
-                      .borderRadius(12)
-                      .padding({ left: 10, right: 10, top: 3, bottom: 3 })
-                      .margin({ right: 8, bottom: 4 })
-                  }, (tag: string) => tag)
+                  Text(this.product.title)
+                    .fontSize(20).fontWeight(FontWeight.Bold)
+                    .layoutWeight(1)
+                    .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                   Blank()
                 }
                 .width('100%')
+
+                Row() {
+                  Text(('$') + this.product.price.toFixed(2))
+                    .fontSize(28).fontWeight(FontWeight.Bold).fontColor(Theme.primary)
+                  if (this.product.originalPrice > 0) {
+                    Text(('$') + this.product.originalPrice.toFixed(2))
+                      .fontSize(14).fontColor(Theme.textTertiary)
+                      .decoration({ type: TextDecorationType.LineThrough })
+                      .margin({ left: 8 })
+                  }
+                  Blank()
+                }
+                .width('100%').margin({ top: 6 })
+
+                Row() {
+                  Text(STATUS_LABELS[Math.max(0, Math.min(this.product.status, 3))])
+                    .fontSize(12).fontColor('#FFFFFF')
+                    .backgroundColor(STATUS_COLORS[Math.max(0, Math.min(this.product.status, 3))])
+                    .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
+                  Text(CONDITION_LABELS[Math.max(0, Math.min(this.product.conditionLevel, 3))])
+                    .fontSize(12).fontColor(Theme.primary)
+                    .backgroundColor(Theme.primaryLight)
+                    .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
+                    .margin({ left: 8 })
+                  if (this.product.categoryName.length > 0) {
+                    Text(this.product.categoryName)
+                      .fontSize(12).fontColor(Theme.textSecondary)
+                      .backgroundColor(Theme.bgPage)
+                      .borderRadius(4).padding({ left: 8, right: 8, top: 2, bottom: 2 })
+                      .margin({ left: 8 })
+                  }
+                  Blank()
+                }
+                .width('100%').margin({ top: 8 })
+              }
+              .width('100%').padding(18).backgroundColor(Theme.bgCard)
+              .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+              .margin({ left: 14, right: 14, top: 12 })
+
+              Blank().height(12)
+
+              // 卖家信息 + 电话
+              Row() {
+                Column() {
+                  Text(this.product.sellerName).fontSize(16).fontWeight(FontWeight.Medium)
+                  Text('卖家').fontSize(12).fontColor(Theme.textTertiary).margin({ top: 2 })
+                  if (this.sellerPhoneText.length > 0) {
+                    Text('??? ' + this.sellerPhoneText)
+                      .fontSize(13).fontColor(Theme.primary)
+                      .margin({ top: 4 })
+                  }
+                }
+                .alignItems(HorizontalAlign.Start)
+                .margin({ right: 20 })
+
+                if (this.product.campusLocation.length > 0) {
+                  Divider().vertical(true).height(30).color(Theme.border)
+                  Column() {
+                    Text('交易地点').fontSize(12).fontColor(Theme.textTertiary)
+                    Text(this.product.campusLocation).fontSize(14).fontColor(Theme.textPrimary).margin({ top: 2 })
+                  }
+                  .alignItems(HorizontalAlign.Center).margin({ left: 16 })
+                }
+                Blank()
+                Column() {
+                  Text('浏览量').fontSize(12).fontColor(Theme.textTertiary)
+                  Text(this.product.viewCount.toString())
+                    .fontSize(16).fontWeight(FontWeight.Medium).fontColor(Theme.textPrimary).margin({ top: 2 })
+                }
+                .alignItems(HorizontalAlign.Center)
               }
               .width('100%').padding(18).backgroundColor(Theme.bgCard)
               .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
               .margin({ left: 14, right: 14 })
+
               Blank().height(12)
-            }
 
-            // ══════ 时间信息 ══════
-            Column() {
-              Row() {
-                Text('发布时间').fontSize(14).fontColor(Theme.textTertiary).width(80)
-                Text(this.formatTime(this.product.createTime)).fontSize(14).fontColor(Theme.textPrimary)
-                Blank()
+              // 商品描述
+              Column() {
+                Row() {
+                  Text('商品描述').fontSize(16).fontWeight(FontWeight.Bold)
+                  Blank()
+                }
+                .width('100%')
+                Text(this.product.description.length > 0 ? this.product.description : '暂无描述')
+                  .fontSize(14).fontColor(Theme.textSecondary).width('100%').margin({ top: 8 })
               }
-              .width('100%').padding({ top: 4, bottom: 4 })
+              .width('100%').padding(18).backgroundColor(Theme.bgCard)
+              .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+              .margin({ left: 14, right: 14 })
+
+              Blank().height(12)
+
+              // 标签
+              if (this.parsedTags.length > 0) {
+                Column() {
+                  Row() {
+                    Text('标签').fontSize(16).fontWeight(FontWeight.Bold)
+                    Blank()
+                  }
+                  .width('100%').margin({ bottom: 8 })
+                  Flex({ wrap: FlexWrap.Wrap }) {
+                    ForEach(this.parsedTags, (tag: string) => {
+                      Text(tag)
+                        .fontSize(12).fontColor(Theme.primary)
+                        .backgroundColor(Theme.primaryLight)
+                        .borderRadius(12)
+                        .padding({ left: 10, right: 10, top: 3, bottom: 3 })
+                        .margin({ right: 8, bottom: 4 })
+                    }, (tag: string) => tag)
+                    Blank()
+                  }
+                  .width('100%')
+                }
+                .width('100%').padding(18).backgroundColor(Theme.bgCard)
+                .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+                .margin({ left: 14, right: 14 })
+                Blank().height(12)
+              }
+
+              // 时间信息
+              Column() {
+                Row() {
+                  Text('发布时间').fontSize(14).fontColor(Theme.textTertiary).width(80)
+                  Text(this.formatTime(this.product.createTime)).fontSize(14).fontColor(Theme.textPrimary)
+                  Blank()
+                }
+                .width('100%').padding({ top: 4, bottom: 4 })
+              }
+              .width('100%').padding(18).backgroundColor(Theme.bgCard)
+              .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
+              .margin({ left: 14, right: 14 })
+
+              Blank().height(16)
             }
-            .width('100%').padding(18).backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius).shadow(ShadowStyle.nmRaised)
-            .margin({ left: 14, right: 14 })
-
-            Blank().height(16)
           }
+          .layoutWeight(1).width('100%')
+
+          Row() {
+            Column() {
+              Text(this.isFavorite ? '❤️' : '🤍').fontSize(22)
+            }
+            .width(48).height(48)
+            .backgroundColor(this.isFavorite ? Theme.primaryLight : Theme.bgPage)
+            .borderRadius(24)
+            .justifyContent(FlexAlign.Center)
+            .onClick(() => { this.toggleFavorite() })
+
+            Column() {
+              Text('⚠️').fontSize(20)
+            }
+            .width(48).height(48)
+            .backgroundColor(Theme.bgPage)
+            .borderRadius(24)
+            .margin({ left: 10 })
+            .justifyContent(FlexAlign.Center)
+            .onClick(() => { this.reportProduct() })
+
+            Blank()
+
+            Button('联系卖家')
+              .type(ButtonType.Capsule)
+              .backgroundColor(Theme.primary)
+              .fontColor('#FFFFFF')
+              .borderRadius(22)
+              .height(44)
+              .padding({ left: 28, right: 28 })
+              .onClick(() => { this.contactSeller() })
+          }
+          .width('100%').height(64)
+          .padding({ left: 16, right: 16 })
+          .backgroundColor(Theme.bgCard)
+          .shadow(ShadowStyle.nmRaised)
         }
-        .layoutWeight(1).width('100%')
-
-        Row() {
-          Column() {
-            Text(this.isFavorite ? '❤️' : '🤍').fontSize(22)
-          }
-          .width(48).height(48)
-          .backgroundColor(this.isFavorite ? Theme.primaryLight : Theme.bgPage)
-          .borderRadius(24)
-          .justifyContent(FlexAlign.Center)
-          .onClick(() => { this.toggleFavorite() })
-
-          Column() {
-            Text('⚠️').fontSize(20)
-          }
-          .width(48).height(48)
-          .backgroundColor(Theme.bgPage)
-          .borderRadius(24)
-          .margin({ left: 10 })
-          .justifyContent(FlexAlign.Center)
-          .onClick(() => { this.reportProduct() })
-
-          Blank()
-
-          Button('联系卖家')
-            .type(ButtonType.Capsule)
-            .backgroundColor(Theme.primary)
-            .fontColor('#FFFFFF')
-            .borderRadius(22)
-            .height(44)
-            .padding({ left: 28, right: 28 })
-            .onClick(() => { this.contactSeller() })
-        }
-        .width('100%').height(64)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor(Theme.bgCard)
-        .shadow(ShadowStyle.nmRaised)
       }
+      .width('100%').height('100%')
+      .backgroundColor(Theme.bgPage)
+
+      // 左上角悬浮返回按钮
+      Row() {
+        Text('<')
+          .fontSize(28)
+          .fontColor('#FFFFFF')
+          .fontWeight(FontWeight.Bold)
+      }
+      .width(36).height(36)
+      .backgroundColor('rgba(0,0,0,0.3)')
+      .borderRadius(18)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .position({ x: 15, y: 44 })
+      .onClick(() => { router.back() })
     }
     .width('100%').height('100%')
-    .backgroundColor(Theme.bgPage)
   }
 
   private formatTime(timeStr: string): string {

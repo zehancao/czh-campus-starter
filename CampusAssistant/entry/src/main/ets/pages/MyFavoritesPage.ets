@@ -252,13 +252,13 @@ struct MyFavoritesPage {
             .fontSize(13)
             .fontColor(Theme.textTertiary)
             .margin({ top: 6 })
-          Button('去交易')
+          Button('去逛逛')
             .type(ButtonType.Capsule)
             .backgroundColor(Theme.secondary)
             .fontColor('#FFFFFF')
             .margin({ top: 28 })
             .onClick(() => {
-              router.back()
+              router.pushUrl({ url: 'pages/MainPage', params: { 'tab': 1 } as Record<string, Object> })
             })
         }
         .width('100%')

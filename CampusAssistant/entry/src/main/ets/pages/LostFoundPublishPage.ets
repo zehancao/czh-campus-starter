@@ -22,30 +22,16 @@ struct LostFoundPublishPage {
   @State private imageUrlList: string[] = [];
   @State private isUploading: boolean = false;
   @State private isSubmitting: boolean = false;
-  @State private creditScore: number = 100;
-  @State private canPublish: boolean = true;
+
   @State private isLoading: boolean = true;
   @State private isLoggedIn: boolean = false;
 
   aboutToAppear(): void {
     const store: AppStore = AppStore.getInstance();
     this.isLoggedIn = store.isLoggedIn;
-    if (this.isLoggedIn) {
-      this.checkCredit();
-    } else {
-      this.isLoading = false;
-    }
-  }
-
-  private async checkCredit(): Promise<void> {
-    const result = await ApiService.getCreditScore();
-    if (result.code === 200 && result.data !== undefined) {
-      const d: Record<string, Object> = result.data as Record<string, Object>;
-      this.creditScore = (d['creditScore'] as number) ?? 100;
-      this.canPublish = (d['canTrade'] as boolean) ?? true;
-    }
     this.isLoading = false;
   }
+
 
   private async pickImagesFromAlbum(): Promise<void> {
     if (this.imageUrlList.length >= 5) {
@@ -102,13 +88,7 @@ struct LostFoundPublishPage {
       });
       return;
     }
-    if (!this.canPublish) {
-      AlertDialog.show({
-        message: '信用分 ' + this.creditScore + '，低于85分无法发布',
-        confirm: { value: '知道了', action: () => {} }
-      });
-      return;
-    }
+
     if (this.titleInput.length === 0) {
       AlertDialog.show({
         message: '请输入标题',
@@ -119,6 +99,13 @@ struct LostFoundPublishPage {
     if (this.phoneInput.length === 0) {
       AlertDialog.show({
         message: '请输入联系方式',
+        confirm: { value: '好的', action: () => {} }
+      });
+      return;
+    }
+    if (this.phoneInput.length !== 11 || !/^1\d{10}$/.test(this.phoneInput)) {
+      AlertDialog.show({
+        message: '请输入正确的11位手机号',
         confirm: { value: '好的', action: () => {} }
       });
       return;
@@ -190,19 +177,7 @@ struct LostFoundPublishPage {
         }
         .width('100%').layoutWeight(1)
         .justifyContent(FlexAlign.Center)
-      } else if (!this.canPublish) {
-        Column() {
-          Text('😕').fontSize(48)
-          Text('信用分不足').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.danger)
-          Text('当前信用分：' + this.creditScore + '，低于85分无法发布')
-            .fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
-          Button('我知道了')
-            .type(ButtonType.Capsule).backgroundColor(Theme.textTertiary).fontColor('#FFFFFF')
-            .margin({ top: 20 })
-            .onClick(() => { router.back() })
-        }
-        .width('100%').layoutWeight(1)
-        .justifyContent(FlexAlign.Center)
+
       } else {
         Scroll() {
           Column() {
@@ -355,13 +330,17 @@ struct LostFoundPublishPage {
               }
               .width('100%')
               .margin({ bottom: 6 })
-              TextInput({ placeholder: '手机号', text: this.phoneInput })
+              TextInput({ placeholder: '请输入11位手机号', text: this.phoneInput })
                 .width('100%').height(46).fontSize(15)
                 .type(InputType.Number)
                 .backgroundColor(Theme.bgInput)
                 .borderRadius(8)
                 .padding({ left: 12, right: 12 })
                 .onChange((val: string) => { this.phoneInput = val })
+              Text('手机号需为11位，以1开头')
+                .fontSize(12).fontColor(Theme.textTertiary)
+                .width('100%')
+                .margin({ top: 4 })
             }
             .width('100%')
             .backgroundColor('#FFFFFF')
@@ -398,16 +377,7 @@ struct LostFoundPublishPage {
 
             Blank().height(10)
 
-            Row() {
-              Text('💳').fontSize(16)
-              Text('当前信用分：' + this.creditScore + '  |  发布需 ≥85分')
-                .fontSize(13).fontColor(this.canPublish ? Theme.success : Theme.danger)
-                .margin({ left: 6 })
-              Blank()
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-            .backgroundColor('#FFFFFF')
+
 
             Blank().height(16)
             Button(this.isSubmitting ? '发布中…' : '提交' + (this.publishType === 1 ? '寻物' : '招领') + '信息')
