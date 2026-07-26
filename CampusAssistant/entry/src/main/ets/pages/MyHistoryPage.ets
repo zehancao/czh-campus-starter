@@ -182,7 +182,7 @@ struct MyHistoryPage {
 
   private goToDetail(item: BrowseItem): void {
     router.pushUrl({
-      url: 'pages/MainPage',
+      url: 'pages/ProductDetailPage',
       params: { 'productId': item.productId } as Record<string, Object>
     });
   }
@@ -226,7 +226,7 @@ struct MyHistoryPage {
             .type(ButtonType.Capsule)
             .backgroundColor(Theme.secondary).fontColor('#FFFFFF')
             .margin({ top: 28 })
-            .onClick(() => { router.pushUrl({ url: 'pages/MainPage', params: { 'tab': 1 } as Record<string, Object> }) })
+            .onClick(() => { AppStore.getInstance().pendingTab = 1; router.pushUrl({ url: 'pages/MainPage' }) })
         }
         .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
 

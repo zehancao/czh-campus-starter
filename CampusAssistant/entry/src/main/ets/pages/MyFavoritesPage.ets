@@ -179,7 +179,7 @@ struct MyFavoritesPage {
   // ── 跳转商品详情 ──
   private goToDetail(item: FavoriteItem): void {
     router.pushUrl({
-      url: 'pages/MainPage',
+      url: 'pages/ProductDetailPage',
       params: { 'productId': item.productId } as Record<string, Object>
     });
   }
@@ -258,7 +258,7 @@ struct MyFavoritesPage {
             .fontColor('#FFFFFF')
             .margin({ top: 28 })
             .onClick(() => {
-              router.pushUrl({ url: 'pages/MainPage', params: { 'tab': 1 } as Record<string, Object> })
+              AppStore.getInstance().pendingTab = 1; router.pushUrl({ url: 'pages/MainPage' })
             })
         }
         .width('100%')

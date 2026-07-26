@@ -53,7 +53,7 @@ struct MessageCenterPage {
               .alignItems(HorizontalAlign.Start)
             }
             .width('90%').padding(12)
-            .backgroundColor(Theme.bgCard).borderRadius(8)
+            .backgroundColor(Theme.bgCard).borderRadius(Theme.cardRadius)
             .margin({ top: 8, bottom: 4 })
             .shadow(ShadowStyle.sm)
           }

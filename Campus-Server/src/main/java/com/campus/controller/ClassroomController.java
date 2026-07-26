@@ -21,6 +21,11 @@ public class ClassroomController {
         return Result.ok(classroomService.getBuildings());
     }
 
+    @GetMapping("/rooms")
+    public Result<List<String>> getRoomsByBuilding(@RequestParam String building) {
+        return Result.ok(classroomService.getRoomsByBuilding(building));
+    }
+
     @GetMapping("/empty")
     public Result<List<EmptyRoomVO>> getEmptyRooms(
             @RequestParam(required = false) String building,

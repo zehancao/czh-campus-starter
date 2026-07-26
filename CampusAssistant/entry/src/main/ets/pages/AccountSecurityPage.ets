@@ -22,7 +22,7 @@ struct AccountSecurityPage {
         this.MenuItem('切换账号', () => { this.switchAccount() })
       }
       .width('90%').padding(12)
-      .backgroundColor(Theme.bgCard).borderRadius(12).margin({ top: 12 })
+      .backgroundColor(Theme.bgCard).borderRadius(Theme.cardRadius).margin({ top: 12 })
       .shadow(ShadowStyle.sm)
 
       // 退出登录

@@ -8,7 +8,8 @@
 
 逐项对照当前代码复核，结论：
 
-- ✅ **确认存在、建议修复**：#1 #2 #3 #4 #5 #7 #8 #9 #10 #11 #12 #13 #15 #16 #18 #20 #21 #22 #23 #24 #25 #26 #27 #28（共 24 项）
+- ✅ **确认存在、建议修复**：#3 #8 #9 #10 #11 #12 #13 #15 #16 #18 #20 #22 #23 #24 #25 #26 #27（共 17 项）
+- ✅ **已修复**：#1、#1b、#2、#3、#4（改密码去副作用验证）、#5（AppStore 桥接 AppStorage 响应式）、#7（管理端用户列表去密码）、#10、#11（投诉审核通过再扣分）、#12（查询不再物理删除过期活动）、#13、#15、#16、#18、#21（切回本周按钮去硬编码）、#22、#23
 - ⚠️ **误报 / 已规避（不要照清单改）**：
   - ~~**#14 teacher vs teacherName —— 误报**~~。链路自洽（前端传 `teacher`、后端读 `teacher`、实体字段 `teacher`、Service 再映射 `teacherName`），照清单改成 `teacherName` 反而保存空教师。
   - ~~**#17 商品图片 `as string[]` —— 已规避**~~。后端 `ProductService.toVO` 已把 JSON 拆成 `String[]` 返回，前端 `as string[]` 正确。
@@ -20,17 +21,22 @@
 
 ## 一、商品模块
 
-### Bug #1 — MyHistoryPage 跳转错误 🔴高危 
+### ~~Bug #1 — MyHistoryPage 跳转错误~~ 🔴高危 ✅**已修复（2026-07-25）** 
 - **文件**: `CampusAssistant/entry/src/main/ets/pages/MyHistoryPage.ets:184-188`
 - **问题**: `goToDetail()` 跳转到 `pages/MainPage` 而非 `pages/ProductDetailPage`，浏览历史点击后进入主页
-- **修复**: 改为 `router.pushUrl({ url: 'pages/ProductDetailPage', params: { id: item.id.toString() } })`
+- **修复确认**: 已改为 `router.pushUrl({ url: 'pages/ProductDetailPage', params: { productId: item.productId } })`（`ProductDetailPage.resolveId()` 读取 `productId`/`id`，详情正常打开）。
 
-### Bug #13 — ProductVO 缺少 categoryName 🔴高危 
+### ~~Bug #1b — MyFavoritesPage 跳转错误~~ 🔴高危 ✅**已修复（2026-07-25）** 
+- **文件**: `CampusAssistant/entry/src/main/ets/pages/MyFavoritesPage.ets:180-184`
+- **问题**: `goToDetail()` 跳转到 `pages/MainPage` 而非 `pages/ProductDetailPage`，收藏列表点击商品后进入主页（与 Bug #1 同源问题）
+- **修复确认**: 已改为 `router.pushUrl({ url: 'pages/ProductDetailPage', params: { productId: item.productId } })`，详情正常打开。
+
+### ~~Bug #13 — ProductVO 缺少 categoryName~~ 🔴高危 ✅**已修复（2026-07-25）**  
 - **文件**: `Campus-Server/src/main/java/com/campus/dto/ProductVO.java`
 - **问题**: 前端商品模型有 `categoryName` 但后端 ProductVO 不返回，分类名始终为空
 - **修复**: ProductVO 增加 `categoryName` 字段，在 ProductService 中查询时关联 product_categories 表填充
 
-### Bug #16 — viewCount 竞态条件 🔴高危 
+### ~~Bug #16 — viewCount 竞态条件~~ 🔴高危 ✅**已修复（2026-07-25）**  
 - **文件**: `Campus-Server/src/main/java/com/campus/service/ProductService.java:76-77`
 - **问题**: read-then-update 模式，并发请求丢失计数
 - **修复**: 改为 `UPDATE products SET view_count = view_count + 1 WHERE id = #{id}`
@@ -41,17 +47,17 @@
 - **复核结论（2026-07-24）**: **已规避**。后端 `ProductService.toVO` 已把 JSON 字符串拆成 `String[]` 再返回，前端 `as string[]` 在此时是正确的，不会崩。
 - **处理**: 保持现状，不修复。
 
-### Bug #18 — parseFavoriteList 解析脆弱 🟡中危 
+### ~~Bug #18 — parseFavoriteList 解析脆弱~~ 🟡中危 ✅**已修复（2026-07-25）**  
 - **文件**: `CampusAssistant/entry/src/main/ets/service/ApiService.ets:415-423`
 - **问题**: 用 `replace('[','').replace(']','')` 解析 JSON 数组，URL 含逗号/方括号时崩溃
 - **修复**: 统一用 `JSON.parse()` 解析 images 字段，与 Bug #17 合并处理
 
-### Bug #22 — 三个上传方法代码重复 🟡中危 
+### ~~Bug #22 — 三个上传方法代码重复~~ 🟡中危 ✅**已修复（2026-07-25）**  
 - **文件**: `CampusAssistant/entry/src/main/ets/service/ApiService.ets:170-208, 573-610, 612-650`
 - **问题**: uploadImage/uploadAvatar/uploadClubCover 代码几乎完全重复
 - **修复**: 抽取通用 `uploadFile(endpoint: string, srcPath: string)` 方法，三个上传方法调用它
 
-### Bug #23 — searchProducts 全表内存过滤 🟡中危 
+### ~~Bug #23 — searchProducts 全表内存过滤~~ 🟡中危 ✅**已修复（2026-07-25）**  
 - **文件**: `Campus-Server/src/main/java/com/campus/service/ProductService.java:40-53`
 - **问题**: 先加载全部商品再 Java 过滤，数据量大时性能差
 - **修复**: 用 MyBatis-Plus QueryWrapper 加 WHERE 条件在数据库层过滤
@@ -70,24 +76,24 @@
 
 ## 三、社团活动模块
 
-### Bug #12 — 每次查询删除过期活动 🔴高危 
+### ~~Bug #12 — 每次查询删除过期活动~~ 🔴高危 ✅**已修复（2026-07-25）** 
 - **文件**: `Campus-Server/src/main/java/com/campus/service/ClubActivityService.java:133-143`
 - **问题**: `cleanExpiredActivities` 在每次 getList/getMyActivities 时调用，直接删除过期活动及报名记录
-- **修复**: 改为逻辑删除（status=0 标记过期）或用定时任务清理，查询时用 WHERE 过滤过期数据
+- **修复**: 删除 getList/getMyActivities 中的调用并移除该方法；getList 改为 `activity_time >= now()` 过滤过期活动（数据保留仅列表不展示），getMyActivities 本就按时间过滤，不再误删数据
 
-### Bug #24 — ClubActivityService N+1 查询 🟡中危 
-- **文件**: `Campus-Server/src/main/java/com/campus/service/ClubActivityService.java:145-179`
-- **问题**: toVO 中每条活动查 User，再查所有 Registration，每条 Registration 再查 User
-- **修复**: 批量查询 User（按 userId 列表），批量查询 Registration，在内存中组装
+### ~~Bug #24 — ClubActivityService N+1 查询~~ 🟡中危 ✅**已修复（2026-07-25）** 
+- **文件**: `Campus-Server/src/main/java/com/campus/service/ClubActivityService.java`
+- **问题**: toVO 中每条活动查 User，再查所有 Registration，每条 Registration 再查 User，SQL 数量随活动数线性膨胀（O(N×M)），列表接口在高数据量下响应慢、易打满数据库连接
+- **修复**: 新增 `toVOList()` 批量方法——先收集所有活动/用户的 id，用 `userMapper.selectBatchIds` 和 `activityRegistrationMapper.selectList(w.in(activityId, ids))` 各查一次，在内存按 id 组装；`getList`/`getMyActivities` 直接调用 `toVOList`，`toVO(单条)` 委托 `toVOList(单元素列表)`，`getMyActivities` 的活动查询也改为 `selectBatchIds` 批量。SQL 由 O(N×M) 降至约 3 次
 
 ---
 
 ## 四、投诉/信用模块
 
-### Bug #11 — 投诉提交即扣信用分 🔴高危 
-- **文件**: `Campus-Server/src/main/java/com/campus/service/ComplaintService.java:27-42`
-- **问题**: 提交投诉立即扣被投诉人 -5 信用分，恶意投诉可攻击他人
-- **修复**: 提交时仅记录投诉，扣分移到 `processComplaint` 管理员审核通过后再执行
+### ~~Bug #11 — 投诉提交即扣信用分~~ 🔴高危 ✅**已修复（2026-07-25）** 
+- **文件**: `Campus-Server/src/main/java/com/campus/service/ComplaintService.java`
+- **问题**: 提交投诉立即扣被投诉人 -5 信用分，恶意投诉可攻击他人；且管理端"处理"按钮只改 status 不扣分，审核形同虚设
+- **修复确认**: 提交仅插入 `status=0` 待审核记录（加防重复校验防刷投诉），扣分移到 `processComplaint` 管理员审核通过（status 0→1）时执行并保持幂等（status≠0 不重复处理）；前端 ChatPage 新增「投诉」入口跳 MyComplaintsPage 复用弹窗，提交文案改为"等待管理员审核"
 
 ---
 
@@ -103,39 +109,37 @@
   - 若照清单改成 `teacherName`，后端读不到值，反而保存空教师。
 - **处理**: 保持现状，不修复。
 
-### Bug #21 — 课表页"切回本周"按钮位置硬编码 🟡中危 
-- **文件**: `CampusAssistant/entry/src/main/ets/pages/SchedulePage.ets:264`
-- **问题**: `Button('切回本周')` 使用 `position({ x: 292, y: 610 })` 硬编码，在不同屏幕尺寸设备上位置偏移，可能超出可视区域
-- **修复方案**: 去掉 position 硬编码，改用相对定位方案（如放在课表网格下方的 Row 中靠右对齐，或用 Stack + `.alignContent(Alignment.BottomEnd)` + margin）
-- **验证**: 在不同宽度设备/模拟器上查看课表页，按钮应始终可见且位置合理
-
-### Bug #28 — SchedulePage 课程网格动态高度 Stack 撑满问题 🟢低危 
+### ~~Bug #21 — 课表页"切回本周"按钮位置硬编码~~ 🟡中危 ✅**已修复（2026-07-25）** 
 - **文件**: `CampusAssistant/entry/src/main/ets/pages/SchedulePage.ets`
-- **背景**: 此前多次修复过动态高度 Stack 内子元素 height('100%') 撑爆问题，但课表网格中课程卡片的高度计算仍可能在不同设备上出问题
-- **修复方案**: 确保课程卡片不用 `height('100%')`，改用 `constraintSize({ minHeight: ... })` 或由父容器固定高度
-- **验证**: 在不同屏幕尺寸设备上查看课表页，课程卡片不应超出网格区域
+- **问题**: `Button('切回本周')` 使用 `position({ x: 292, y: 610 })` 硬编码，在不同屏幕尺寸设备上位置偏移，可能超出可视区域
+- **修复确认**: 去掉 `position` 硬编码，把按钮包进一个全尺寸浮层 `Row`（`.width('100%').height('100%').justifyContent(FlexAlign.End).alignItems(VerticalAlign.Bottom)`）底部右对齐，并加 `.hitTestBehavior(HitTestMode.None)` 让点击穿透到课表，按钮固定在课表区右下角、不受屏幕宽度影响，且不干扰课表网格的显示与滚动。按钮去掉固定 `.width(88)`（ArkUI 的 `width` 含 padding，导致内容区被压成 40px 截成只显示“切”），改为按内容自适应宽度，确保“切回本周”四字完整显示
+- **验证**: 在不同宽度设备/模拟器上查看课表页，按钮始终可见且在右下角
+
+### Bug #28 — SchedulePage 课程网格动态高度 Stack 撑满问题 🟢低危 ✅**已验证无需修改（2026-07-25）**
+- **文件**: `CampusAssistant/entry/src/main/ets/pages/SchedulePage.ets`
+- **背景**: 此前多次修复过动态高度 Stack 内子元素 height('100%') 撑爆问题，课表网格中课程卡片高度用 `courseDuration * SCHEDULE_SECTION_HEIGHT - 8` 的 `height()` 计算
+- **验证结论**: 原 `.height(...)` 显式像素高度是连堂大课跨节显示的正确做法——卡片强制设高 `courseDuration * 66 - 8` 后溢出父 ScheduleCell（高 66），实现跨两节的大课卡片渲染。课程卡片从未使用 `height('100%')`，无撑爆风险。原清单建议的 `constraintSize({ minHeight, maxHeight })` 方案在此场景下不适用：constraintSize 受父容器约束限制，会被父 ScheduleCell（高 66）夹住，导致连堂课程不再跨节（实测确认），因此保留原 `.height()` 方案，不修改代码。
+- **处理**: 保持现状，不修复代码。
 
 ---
 
 ## 六、用户/认证模块
 
-### Bug #4 — 修改密码页用 changePassword(old, old) 验证旧密码 🔴高危 
-- **文件**: `CampusAssistant/entry/src/main/ets/pages/PasswordChangePage.ets:42`
+### ~~Bug #4 — 修改密码页用 changePassword(old, old) 验证旧密码~~ 🔴高危 ✅**已修复（2026-07-25）** 
+- **文件**: `CampusAssistant/entry/src/main/ets/pages/PasswordChangePage.ets`
 - **问题**: `verifyOldPassword()` 调用 `ApiService.changePassword(old, old)` 来验证旧密码，实际触发了密码修改操作（虽然改成自身，但有副作用风险：如后端两次密码相同时返回错误则验证逻辑失效）
-- **修复方案**:
-  1. 前端不在提交前调用 changePassword 验证旧密码，改为仅在"确认修改"时一次调用 `changePassword(old, new)`
-  2. 或后端新增 `POST /api/user/verify-password` 专用于旧密码校验，前端调用该接口验证后再修改
-- **验证**: 修改后测试——输入正确旧密码+新密码应成功；输入错误旧密码应提示失败
+- **修复确认**: 去掉提交前用 `changePassword(old, old)` 验证旧密码的副作用调用，Step1 仅做非空校验后进入 Step2；真正的原密码校验在 `submitNewPassword` 调用 `changePassword(old, new)` 时由后端一次性完成，避免把密码改成自身的风险
+- **验证**: 输入正确原密码+新密码应成功；输入错误原密码在提交时由后端返回失败提示
 
-### Bug #5 — AppStore 属性非响应式 🔴高危 
-- **文件**: `CampusAssistant/entry/src/main/ets/service/AppStore.ets:7-10`
+### ~~Bug #5 — AppStore 属性非响应式~~ 🔴高危 ✅**已修复（2026-07-25）** 
+- **文件**: `CampusAssistant/entry/src/main/ets/service/AppStore.ets`
 - **问题**: `token`, `userInfo`, `isLoggedIn` 为普通属性，非 `@State`，页面读取时不触发 UI 刷新
-- **修复**: AppStore 本身无法用 @State（非组件），需在各页面用 `@State` 本地变量 + `onPageShow` 同步；或改用 AppStorageV2 / LocalStorage
+- **修复确认**: 经核实现有页面（MainPage 的 `aboutToAppear`+`onPageShow`、EditProfilePage 等）均在页面生命周期从 AppStore 同步到本地 `@State`，登录态/用户信息变更后会在页面重新展示时刷新，已规避该症状；同时 AppStore 在 `setToken`/`setUserInfo`/`logout` 时把状态同步进 `AppStorage`（key：`appToken`/`appIsLoggedIn`/`appUserInfo`），提供可观察通道，需要实时响应登录态的页面可用 `@StorageLink` 读取，真正意义上支持响应式
 
-### Bug #7 — AdminController 返回含 password 的 User 实体 🔴高危 
-- **文件**: `Campus-Server/src/main/java/com/campus/controller/AdminController.java:166-169`
-- **问题**: `getAllUsers()` 返回完整 User 实体，包含 BCrypt 哈希密码
-- **修复**: 创建 AdminUserVO（不含 password），在 service 层做转换后返回
+### ~~Bug #7 — AdminController 返回含 password 的 User 实体~~ 🔴高危 ✅**已修复（2026-07-25）** 
+- **文件**: `Campus-Server/src/main/java/com/campus/controller/AdminController.java`、`AdminService.java`、`dto/AdminUserVO.java`
+- **问题**: `/api/admin/user/list` 返回完整 User 实体，包含 BCrypt 哈希密码，敏感信息泄露
+- **修复确认**: 新增 `AdminUserVO`（不含 `password` 字段，含其余用户字段），`AdminService.getAllUsers` 查询后逐字段转换为 `AdminUserVO` 列表，`AdminController` 返回 `Result<List<AdminUserVO>>`，管理端用户列表不再暴露密码哈希
 
 ---
 
@@ -171,32 +175,32 @@
 
 ## 八、网络请求基础设施
 
-### Bug #2 — JSON.parse 无 try-catch 🔴高危 
-- **文件**: `CampusAssistant/entry/src/main/ets/service/ApiService.ets:42-43`
-- **问题**: `JSON.parse(resultStr)` 无保护，后端返回非 JSON 时直接崩溃
-- **修复**: 包裹 try-catch，catch 中返回 `{ code: -1, msg: '数据解析失败' }`
+### ~~Bug #2 — JSON.parse 无 try-catch~~ 🔴高危 ✅**已修复（2026-07-25）**
+- **文件**: `CampusAssistant/entry/src/main/ets/service/ApiService.ets:38-48`
+- **原问题**: `JSON.parse(resultStr)` 无保护，后端返回非 JSON 时直接崩溃
+- **修复确认**: 已在 `try {…} catch (err) {…}` 中包裹，`JSON.parse` 异常时 catch 返回 `{ code: -1, msg: '网络错误，请检查后端是否启动' }`，崩溃问题已消除（提示语措辞与清单略有出入，不影响功能）。
 
-### Bug #3 — 网络错误无用户提示 🔴高危 
+### ~~Bug #3 — 网络错误无用户提示~~ 🔴高危 ✅**已修复（2026-07-25）** 
 - **文件**: `CampusAssistant/entry/src/main/ets/service/ApiService.ets:45-48`
 - **问题**: catch 块返回 `{code:-1, msg:'网络错误'}`，调用方只检查 `code===200`，用户看到空页面
-- **修复**: 各页面调用方在 `code !== 200` 时用 `promptAction.showToast({ msg: result.msg || '请求失败' })` 提示用户
+- **修复**: 在 `ApiService.request` 的 catch 块中直接 `promptAction.showToast({ message: '网络错误，请检查后端是否启动' })`，引入 `@kit.ArkUI` 的 `promptAction`，所有经 request 的网络异常都会统一弹 Toast（无需逐页面改动）
 
 ---
 
 ## 九、安全/配置模块
 
-### Bug #10 — 三个上传接口无文件类型校验 🔴高危 
+### ~~Bug #10 — 三个上传接口无文件类型校验~~ 🔴高危 ✅**已修复（2026-07-25）** 
 - **文件**:
-  - `Campus-Server/src/main/java/com/campus/controller/UserController.java:64-88`
-  - `Campus-Server/src/main/java/com/campus/controller/ProductController.java:93-115`
-  - `Campus-Server/src/main/java/com/campus/controller/ClubActivityController.java:49-72`
+  - `Campus-Server/src/main/java/com/campus/controller/UserController.java:64-90`
+  - `Campus-Server/src/main/java/com/campus/controller/ProductController.java:93-117`
+  - `Campus-Server/src/main/java/com/campus/controller/ClubActivityController.java:49-74`
 - **问题**: 无扩展名白名单，可上传 .jsp/.exe 等危险文件
-- **修复**: 在三个方法中添加扩展名校验：`Set<String> ALLOWED = Set.of("jpg","jpeg","png","gif","webp"); if (!ALLOWED.contains(ext)) return Result.error("不支持的文件类型");`
+- **修复**: 三个上传方法均增加 `Set<String> ALLOWED = Set.of("jpg","jpeg","png","gif","webp")`，取扩展名（去点小写）后 `if (!ALLOWED.contains(ext)) return Result.error("不支持的文件类型")`，拦截非法文件类型（每个文件补 `import java.util.Set`）
 
-### Bug #15 — 反馈内容 XSS 漏洞 🔴高危 
+### ~~Bug #15 — 反馈内容 XSS 漏洞~~ 🔴高危 ✅**已修复（2026-07-25）** 
 - **文件**: `Campus-Server/src/main/java/com/campus/service/FeedbackService.java:29-35`
 - **问题**: 用户输入直接嵌入 HTML 邮件，可注入脚本
-- **修复**: 对 userName/contact/content 做 HTML 转义（`<` → `&lt;` 等）或使用模板引擎
+- **修复**: 在 `sendFeedback` 中对 userName/contact/content 经私有 `escapeHtml` 做 HTML 转义（`&` `<` `>` `"` `'` → 实体），再拼入邮件 HTML，阻断脚本注入
 
 ### Bug #25 — CORS 允许任意源+凭证 🟡中危 
 - **文件**: `Campus-Server/src/main/java/com/campus/config/CorsConfig.java:15`
@@ -262,10 +266,10 @@
 
 | 分类 | 数量（原清单待修复） | 数量（含新发现 N1–N7） |
 |------|------|------|
-| 🔴高危 | 15 | 15 |
+| 🔴高危 | 13 | 13 |
 | 🟡中危 | 9 | 12 |
 | 🟢低危 | 1 | 5 |
-| **合计（待修复）** | **25** | **32** |
+| **合计（待修复）** | **23** | **30** |
 | ⚪误报/已规避（不修） | — | #14 #17 #19（3 项） |
 
 ---

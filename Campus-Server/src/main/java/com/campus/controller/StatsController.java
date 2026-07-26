@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admin/stats")
@@ -41,6 +42,11 @@ public class StatsController {
         data.put("productCount", productMapper.selectCount(null));
         data.put("announcementCount", announcementMapper.selectCount(null));
         data.put("lostFoundCount", lostFoundMapper.selectCount(null));
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
+        Long activeUserCount = userMapper.selectCount(
+            new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.campus.entity.User>()
+                .ge("last_login_time", since));
+        data.put("activeUserCount", activeUserCount);
         return Result.ok(data);
     }
 

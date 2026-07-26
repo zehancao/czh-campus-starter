@@ -24,6 +24,7 @@ public class User {
     private Integer status;
     private java.time.LocalDateTime createTime;
     private java.time.LocalDateTime updateTime;
+    private java.time.LocalDateTime lastLoginTime;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -59,4 +60,6 @@ public class User {
     public void setCreateTime(java.time.LocalDateTime createTime) { this.createTime = createTime; }
     public java.time.LocalDateTime getUpdateTime() { return updateTime; }
     public void setUpdateTime(java.time.LocalDateTime updateTime) { this.updateTime = updateTime; }
+    public java.time.LocalDateTime getLastLoginTime() { return lastLoginTime; }
+    public void setLastLoginTime(java.time.LocalDateTime lastLoginTime) { this.lastLoginTime = lastLoginTime; }
 }

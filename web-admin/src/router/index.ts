@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('../views/login/Index.vue'),
     },
     {
+      path: '/screen',
+      name: 'Screen',
+      component: () => import('../views/dashboard/Screen.vue'),
+    },
+    {
       path: '/',
       component: () => import('../components/Layout.vue'),
       redirect: '/dashboard',
@@ -26,9 +31,10 @@ const router = createRouter({
   ],
 })
 
+const publicPaths = ['/login', '/screen']
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  if (to.path !== '/login' && !userStore.token) {
+  if (!publicPaths.includes(to.path) && !userStore.token) {
     next('/login')
   } else {
     next()

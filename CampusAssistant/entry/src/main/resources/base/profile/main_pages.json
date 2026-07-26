@@ -25,6 +25,10 @@
     "pages/ClubActivityPublishPage",
     "pages/ClubActivityDetailPage",
     "pages/MyComplaintsPage",
-    "pages/SettingsPage"
+    "pages/SettingsPage",
+    "pages/CarpoolPage",
+    "pages/ConfessionWallPage",
+    "pages/CampusSafetyPage",
+    "pages/StudySharePage"
   ]
 }

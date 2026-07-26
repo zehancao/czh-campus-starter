@@ -28,12 +28,23 @@ public class FeedbackService {
         helper.setSubject("智能校园助手 - 用户反馈");
         String html = "<div style='padding:20px;font-family:sans-serif;'>"
                 + "<h3>用户反馈</h3>"
-                + "<p><b>用户：</b>" + userName + "</p>"
-                + "<p><b>联系方式：</b>" + contact + "</p>"
+                + "<p><b>用户：</b>" + escapeHtml(userName) + "</p>"
+                + "<p><b>联系方式：</b>" + escapeHtml(contact) + "</p>"
                 + "<p><b>反馈内容：</b></p>"
-                + "<div style='background:#f5f5f5;padding:12px;border-radius:8px;'>" + content + "</div>"
+                + "<div style='background:#f5f5f5;padding:12px;border-radius:8px;'>" + escapeHtml(content) + "</div>"
                 + "</div>";
         helper.setText(html, true);
         mailSender.send(message);
+    }
+
+    private static String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
     }
 }

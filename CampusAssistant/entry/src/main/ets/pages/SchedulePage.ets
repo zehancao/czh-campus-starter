@@ -4,6 +4,7 @@ import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
+import { WidgetDataHelper } from '../service/WidgetDataHelper';
 import { router } from '@kit.ArkUI';
 import { calcSemesterWeek, semesterWeekDate } from '../common/utils';
 
@@ -25,8 +26,16 @@ struct SchedulePage {
   @State selectedCourse: CourseSchedule = new CourseSchedule();
   @State todayCourses: CourseSchedule[] = [];
 
+  @State isLoadingSchedule: boolean = false;
+
   aboutToAppear(): void {
     this.loadSemester();
+  }
+
+  onPageShow(): void {
+    if (this.semesterId > 0 && !this.isLoadingSchedule) {
+      this.loadSchedule();
+    }
   }
 
   private async loadSemester(): Promise<void> {
@@ -48,6 +57,10 @@ struct SchedulePage {
   }
 
   private async loadSchedule(): Promise<void> {
+    if (this.isLoadingSchedule) {
+      return;
+    }
+    this.isLoadingSchedule = true;
     const sid: number = this.semesterId > 0 ? this.semesterId : 1;
     const result: ApiResult = await ApiService.getMySchedule(sid);
     if (result.code === 200) {
@@ -58,6 +71,7 @@ struct SchedulePage {
       }
       this.updateScheduleGrid();
     }
+    this.isLoadingSchedule = false;
   }
 
   private updateScheduleGrid(): void {
@@ -75,6 +89,10 @@ struct SchedulePage {
         dayList.push(found ?? new CourseSchedule());
       }
       this.scheduleGrid.push(dayList);
+    }
+    const store: AppStore = AppStore.getInstance();
+    if (store.context !== undefined) {
+      WidgetDataHelper.saveTodayCourses(store.context, this.todayCourses, this.currentWeek);
     }
   }
 
@@ -252,19 +270,25 @@ struct SchedulePage {
         .backgroundColor(Theme.bgPage)
 
         if (this.currentWeek !== this.todayWeek) {
-          Button('切回本周')
-            .width(88)
-            .height(42)
-            .fontSize(15)
-            .fontColor(Color.White)
-            .backgroundColor(Theme.primary)
-            .borderRadius(24)
-            .padding({ left: 24, right: 24 })
-            .shadow(ShadowStyle.sm)
-            .position({ x: 292, y: 610 })
-            .onClick(() => {
-              this.backToCurrentWeek();
-            })
+          Row() {
+            Button('切回本周')
+              .height(42)
+              .fontSize(15)
+              .fontColor(Color.White)
+              .backgroundColor(Theme.primary)
+              .borderRadius(24)
+              .padding({ left: 24, right: 24 })
+              .shadow(ShadowStyle.sm)
+              .margin({ right: 16, bottom: 16 })
+              .onClick(() => {
+                this.backToCurrentWeek();
+              })
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.End)
+          .alignItems(VerticalAlign.Bottom)
+          .hitTestBehavior(HitTestMode.None)
         }
 
         if (this.showCourseDetail) {
@@ -318,6 +342,7 @@ struct SchedulePage {
           router.pushUrl({
             url: 'pages/AddCoursePage',
             params: {
+              semesterId: this.semesterId,
               semesterWeekCount: this.semesterWeekCount,
               semesterTitle: this.semesterTitle()
             }

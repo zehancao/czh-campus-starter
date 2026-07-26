@@ -7,6 +7,7 @@ import com.campus.dto.ClassVO;
 import com.campus.dto.ProductVO;
 import com.campus.dto.SemesterVO;
 import com.campus.dto.TimetableVO;
+import com.campus.dto.AdminUserVO;
 import com.campus.entity.*;
 import com.campus.mapper.*;
 import org.apache.poi.ss.usermodel.*;
@@ -447,9 +448,32 @@ public class AdminService {
         }
     }
 
-    public List<User> getAllUsers() {
-        return userMapper.selectList(
+    public List<AdminUserVO> getAllUsers() {
+        List<User> users = userMapper.selectList(
                 new LambdaQueryWrapper<User>().orderByDesc(User::getCreateTime));
+        List<AdminUserVO> vos = new ArrayList<>();
+        for (User u : users) {
+            AdminUserVO vo = new AdminUserVO();
+            vo.setId(u.getId());
+            vo.setStudentId(u.getStudentId());
+            vo.setName(u.getName());
+            vo.setAvatar(u.getAvatar());
+            vo.setCollege(u.getCollege());
+            vo.setMajor(u.getMajor());
+            vo.setGrade(u.getGrade());
+            vo.setClassId(u.getClassId());
+            vo.setClassName(u.getClassName());
+            vo.setPhone(u.getPhone());
+            vo.setHometown(u.getHometown());
+            vo.setRole(u.getRole());
+            vo.setCreditScore(u.getCreditScore());
+            vo.setStatus(u.getStatus());
+            vo.setCreateTime(u.getCreateTime());
+            vo.setUpdateTime(u.getUpdateTime());
+            vo.setLastLoginTime(u.getLastLoginTime());
+            vos.add(vo);
+        }
+        return vos;
     }
 
     public List<LostFound> getAllLostFound() {

@@ -160,6 +160,7 @@ struct LoginPage {
     this.isLoading = false;
     if (result.code === 200) {
       this.getUIContext().getPromptAction().showToast({ message: '登录成功' });
+      AppStore.getInstance().pendingTab = 0;
       this.getUIContext().getRouter().replaceUrl({ url: 'pages/MainPage' });
     } else {
       this.errorMsg = result.msg.length > 0 ? result.msg : '登录失败';

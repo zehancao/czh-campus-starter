@@ -11,6 +11,22 @@
     {
       "name": "EntryAbility_label",
       "value": "CampusAssistant"
+    },
+    {
+      "name": "EntryFormAbility_label",
+      "value": "校园π"
+    },
+    {
+      "name": "EntryFormAbility_desc",
+      "value": "今日课程卡片"
+    },
+    {
+      "name": "widget_today_schedule_display_name",
+      "value": "今日课程"
+    },
+    {
+      "name": "widget_today_schedule_desc",
+      "value": "显示今日课程安排"
     }
   ]
 }

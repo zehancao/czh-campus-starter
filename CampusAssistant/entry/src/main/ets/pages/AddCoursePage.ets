@@ -1,9 +1,3 @@
-/**
- * 添加课程页
- * 课程周期：周数方格选择（单周/双周/全选 + 逐格点选）
- * 课程节数：三栏滚动选择（周几 ｜ 开始节 — 结束节）
- */
-
 import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
 import { AppStore } from '../service/AppStore';
@@ -27,14 +21,18 @@ struct AddCoursePage {
   @State private semesterTitle: string = '';
   @State private showWeekSheet: boolean = false;
   @State private showPeriodSheet: boolean = false;
+  @State private showClassroomSheet: boolean = false;
   @State private weekParityMode: string = 'all';
   @State private tempDayIndex: number = 0;
   @State private tempStartIndex: number = 0;
   @State private tempEndIndex: number = 1;
   @State private isSaving: boolean = false;
+  @State private buildings: string[] = [];
+  @State private roomsInBuilding: string[] = [];
+  @State private selectedBuildingIndex: number = 0;
+  @State private selectedRoomIndex: number = 0;
   private semesterId: number = 1;
 
-  // ---- 工具：生成周数数组 ----
   private makeWeekNumbers(): number[] {
     const arr: number[] = [];
     for (let i = 1; i <= this.semesterWeekCount; i++) {
@@ -43,7 +41,6 @@ struct AddCoursePage {
     return arr;
   }
 
-  // ---- 工具：生成节数标签数组 ----
   private makeSectionLabels(): string[] {
     const arr: string[] = [];
     for (let i = 1; i <= Constants.SECTION_TIMES.length; i++) {
@@ -74,6 +71,16 @@ struct AddCoursePage {
       weeks.push(true);
     }
     this.selectedWeeks = weeks;
+    this.loadBuildings();
+  }
+
+  private async loadBuildings(): Promise<void> {
+    this.buildings = await ApiService.getBuildings();
+  }
+
+  private async loadRooms(building: string): Promise<void> {
+    this.roomsInBuilding = await ApiService.getRoomsByBuilding(building);
+    this.selectedRoomIndex = 0;
   }
 
   private computeWeekLabel(): string {
@@ -150,6 +157,24 @@ struct AddCoursePage {
     this.showPeriodSheet = false;
   }
 
+  private openClassroomSheet(): void {
+    if (this.buildings.length === 0) {
+      return;
+    }
+    this.selectedBuildingIndex = 0;
+    this.selectedRoomIndex = 0;
+    const building: string = this.buildings[0];
+    this.loadRooms(building);
+    this.showClassroomSheet = true;
+  }
+
+  private confirmClassroom(): void {
+    if (this.roomsInBuilding.length > 0) {
+      this.classroom = this.roomsInBuilding[this.selectedRoomIndex];
+    }
+    this.showClassroomSheet = false;
+  }
+
   private async saveAndBack(): Promise<void> {
     if (this.isSaving) {
       return;
@@ -188,7 +213,7 @@ struct AddCoursePage {
     const params: Record<string, Object> = {
       'semesterId': this.semesterId,
       'courseName': this.courseName.trim(),
-      'classroom': this.classroom.trim(),
+      'classroom': this.classroom,
       'teacher': this.teacherName.trim(),
       'dayOfWeek': this.dayOfWeek,
       'startSection': this.startSection,
@@ -207,243 +232,339 @@ struct AddCoursePage {
     this.isSaving = false;
   }
 
-  build() {
-    Stack() {
-      Column() {
-        // Keep custom header - has save action on right side
-        NavHeader({ title: '添加课程' }) {
-          Text(this.isSaving ? '保存中' : '保存')
-            .fontSize(14).fontColor(Theme.primary)
-            .width(64).height(34).textAlign(TextAlign.Center)
-            .backgroundColor(Theme.primaryLight).borderRadius(17)
-            .onClick(() => { this.saveAndBack() })
-        }
-
-        Scroll() {
-          Column() {
-            Row() {
-              Column() {
-                Text('当前学期为')
-                  .fontSize(Theme.fsSubtitle)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor(Theme.textPrimary)
-                Text('返回课程表页面即可切换学期')
-                  .fontSize(Theme.fsCaption)
-                  .fontColor(Theme.textTertiary)
-                  .margin({ top: 6 })
-              }
-              .alignItems(HorizontalAlign.Start)
-              .layoutWeight(1)
-              Text(this.semesterTitle)
-                .fontSize(Theme.fsCaption)
-                .fontWeight(FontWeight.Medium)
-                .fontColor(Theme.primary)
-                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                .backgroundColor(Theme.primaryLight)
-                .borderRadius(Theme.chipRadius)
-            }
-            .width('100%')
-            .padding({ left: 18, right: 18, top: 16, bottom: 16 })
-            .backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius)
-            .margin({ bottom: 16 })
-            .shadow(ShadowStyle.nmRaised)
-
-            Column() {
-              this.FormInputRow('课程名称', '请输入课程名称', 1)
-              this.RowDivider()
-              this.FormSelectRow('课程周期', this.computeWeekLabel(), false, () => {
-                this.showWeekSheet = true;
-              })
-              this.RowDivider()
-              this.FormSelectRow('课程节数', this.computePeriodLabel(), true, () => {
-                this.openPeriodSheet();
-              })
-              this.RowDivider()
-              this.FormInputRow('教室地点', '请输入教室地点', 2)
-              this.RowDivider()
-              this.FormInputRow('任课老师', '请输入任课老师', 3)
-            }
-            .width('100%')
-            .backgroundColor(Theme.bgCard)
-            .borderRadius(Theme.cardRadius)
-            .shadow(ShadowStyle.nmRaised)
-          }
-          .width('100%')
-          .padding({ left: 16, right: 16, top: 8, bottom: 40 })
-        }
-        .layoutWeight(1)
-        .scrollBar(BarState.Off)
+  @Builder
+  WeekSheetContent(): void {
+    Column() {
+      Row() {
+        Text('取消')
+          .fontSize(16)
+          .fontColor(Theme.textSecondary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.showWeekSheet = false;
+          })
+        Blank()
+        Text('周数')
+          .fontSize(17)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Theme.textPrimary)
+        Blank()
+        Text('完成')
+          .fontSize(16)
+          .fontColor(Theme.primary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.showWeekSheet = false;
+          })
       }
       .width('100%')
-      .height('100%')
-      .backgroundColor(Theme.bgPage)
 
-      // 周数选择底部弹窗
-      if (this.showWeekSheet) {
-        Stack() {
-          // 遮罩
-          Column()
-            .width('100%')
-            .height('100%')
-            .backgroundColor('rgba(0,0,0,0.4)')
-            .onClick(() => {
-              this.showWeekSheet = false;
-            })
-          // 弹窗内容
-          Column() {
-            Row() {
-              Text('取消')
-                .fontSize(16)
-                .fontColor(Theme.textSecondary)
-                .padding({ left: 20, right: 20, top: 14, bottom: 14 })
-                .onClick(() => {
-                  this.showWeekSheet = false;
-                })
-              Blank()
-              Text('周数')
-                .fontSize(17)
-                .fontWeight(FontWeight.Medium)
-                .fontColor(Theme.textPrimary)
-              Blank()
-              Text('完成')
-                .fontSize(16)
-                .fontColor(Theme.primary)
-                .padding({ left: 20, right: 20, top: 14, bottom: 14 })
-                .onClick(() => {
-                  this.showWeekSheet = false;
-                })
-            }
-            .width('100%')
-
-            // 单周/双周/全选
-            Row() {
-              this.ParityOption('单周', 'odd')
-              this.ParityOption('双周', 'even')
-              this.ParityOption('全选', 'all')
-            }
-            .width('100%')
-            .justifyContent(FlexAlign.SpaceEvenly)
-            .padding({ top: 14, bottom: 18 })
-
-            // 周数方格
-            Grid() {
-              ForEach(this.makeWeekNumbers(), (week: number, idx: number) => {
-                GridItem() {
-                  Text(`${week}`)
-                    .width('100%')
-                    .aspectRatio(1)
-                    .fontSize(14)
-                    .fontColor(this.selectedWeeks[week - 1] ? Color.White : Theme.textSecondary)
-                    .textAlign(TextAlign.Center)
-                    .backgroundColor(this.selectedWeeks[week - 1] ? Theme.primary : Theme.bgInput)
-                    .borderRadius(8)
-                }
-                .padding(5)
-                .onClick(() => {
-                  this.toggleWeek(week);
-                })
-              }, (week: number) => `week_${week}`)
-            }
-            .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
-            .width('100%')
-            .padding({ left: 14, right: 14, bottom: 28 })
-          }
-          .width('100%')
-          .backgroundColor(Theme.bgCard)
-          .borderRadius({ topLeft: 28, topRight: 28 })
-          .shadow(ShadowStyle.nmRaisedLg)
-          .position({ x: 0, y: '100%' })
-          .translate({ y: '-100%' })
-        }
-        .width('100%')
-        .height('100%')
+      Row() {
+        this.ParityOption('单周', 'odd')
+        this.ParityOption('双周', 'even')
+        this.ParityOption('全选', 'all')
       }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceEvenly)
+      .padding({ top: 14, bottom: 18 })
 
-      // 节数选择底部弹窗
-      if (this.showPeriodSheet) {
-        Stack() {
-          Column()
-            .width('100%')
-            .height('100%')
-            .backgroundColor('rgba(0,0,0,0.4)')
-            .onClick(() => {
-              this.showPeriodSheet = false;
-            })
-          Column() {
-            Row() {
-              Text('取消')
-                .fontSize(16)
-                .fontColor(Theme.textSecondary)
-                .padding({ left: 20, right: 20, top: 14, bottom: 14 })
-                .onClick(() => {
-                  this.showPeriodSheet = false;
-                })
-              Blank()
-              Text(`${WEEK_DAY_LABELS[this.tempDayIndex]} 第${this.tempStartIndex + 1}-${this.tempEndIndex + 1}节`)
-                .fontSize(16)
-                .fontWeight(FontWeight.Medium)
-                .fontColor(Theme.textPrimary)
-              Blank()
-              Text('完成')
-                .fontSize(16)
-                .fontColor(Theme.primary)
-                .padding({ left: 20, right: 20, top: 14, bottom: 14 })
-                .onClick(() => {
-                  this.confirmPeriod();
-                })
-            }
-            .width('100%')
-
-            Row() {
-              TextPicker({ range: WEEK_DAY_LABELS, selected: this.tempDayIndex })
-                .layoutWeight(3)
-                .onChange((value: string | string[], index: number | number[]) => {
-                  this.tempDayIndex = index as number;
-                })
-              TextPicker({ range: this.makeSectionLabels(), selected: this.tempStartIndex })
-                .layoutWeight(3)
-                .onChange((value: string | string[], index: number | number[]) => {
-                  this.tempStartIndex = index as number;
-                  if (this.tempEndIndex < this.tempStartIndex) {
-                    this.tempEndIndex = this.tempStartIndex;
-                  }
-                })
-              Text('—')
-                .layoutWeight(1)
-                .fontSize(18)
-                .fontColor(Theme.textSecondary)
-                .textAlign(TextAlign.Center)
-              TextPicker({ range: this.makeSectionLabels(), selected: this.tempEndIndex })
-                .layoutWeight(3)
-                .onChange((value: string | string[], index: number | number[]) => {
-                  this.tempEndIndex = index as number;
-                  if (this.tempEndIndex < this.tempStartIndex) {
-                    this.tempStartIndex = this.tempEndIndex;
-                  }
-                })
-            }
-            .width('100%')
-            .height(200)
-            .padding({ left: 8, right: 8, bottom: 24 })
+      Grid() {
+        ForEach(this.makeWeekNumbers(), (week: number, idx: number) => {
+          GridItem() {
+            Text(`${week}`)
+              .width('100%')
+              .aspectRatio(1)
+              .fontSize(14)
+              .fontColor(this.selectedWeeks[week - 1] ? Color.White : Theme.textSecondary)
+              .textAlign(TextAlign.Center)
+              .backgroundColor(this.selectedWeeks[week - 1] ? Theme.primary : Theme.bgInput)
+              .borderRadius(8)
           }
-          .width('100%')
-          .backgroundColor(Theme.bgCard)
-          .borderRadius({ topLeft: 28, topRight: 28 })
-          .shadow(ShadowStyle.nmRaisedLg)
-          .position({ x: 0, y: '100%' })
-          .translate({ y: '-100%' })
-        }
-        .width('100%')
-        .height('100%')
+          .padding(5)
+          .onClick(() => {
+            this.toggleWeek(week);
+          })
+        }, (week: number) => `week_${week}`)
       }
+      .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
+      .width('100%')
+      .padding({ left: 14, right: 14, bottom: 28 })
     }
     .width('100%')
-    .height('100%')
+    .backgroundColor(Theme.bgCard)
+    .borderRadius({ topLeft: 28, topRight: 28 })
   }
 
   @Builder
-  FormInputRow(label: string, placeholder: string, fieldType: number) {
+  PeriodSheetContent(): void {
+    Column() {
+      Row() {
+        Text('取消')
+          .fontSize(16)
+          .fontColor(Theme.textSecondary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.showPeriodSheet = false;
+          })
+        Blank()
+        Text(`${WEEK_DAY_LABELS[this.tempDayIndex]} 第${this.tempStartIndex + 1}-${this.tempEndIndex + 1}节`)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Theme.textPrimary)
+        Blank()
+        Text('完成')
+          .fontSize(16)
+          .fontColor(Theme.primary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.confirmPeriod();
+          })
+      }
+      .width('100%')
+
+      Row() {
+        TextPicker({ range: WEEK_DAY_LABELS, selected: $$this.tempDayIndex })
+          .layoutWeight(3)
+        TextPicker({ range: this.makeSectionLabels(), selected: $$this.tempStartIndex })
+          .layoutWeight(3)
+          .onChange((value: string | string[], index: number | number[]) => {
+            if (this.tempEndIndex < this.tempStartIndex) {
+              this.tempEndIndex = this.tempStartIndex;
+            }
+          })
+        Text('—')
+          .layoutWeight(1)
+          .fontSize(18)
+          .fontColor(Theme.textSecondary)
+          .textAlign(TextAlign.Center)
+        TextPicker({ range: this.makeSectionLabels(), selected: $$this.tempEndIndex })
+          .layoutWeight(3)
+          .onChange((value: string | string[], index: number | number[]) => {
+            if (this.tempEndIndex < this.tempStartIndex) {
+              this.tempStartIndex = this.tempEndIndex;
+            }
+          })
+      }
+      .width('100%')
+      .height(200)
+      .padding({ left: 8, right: 8, bottom: 24 })
+    }
+    .width('100%')
+    .backgroundColor(Theme.bgCard)
+    .borderRadius({ topLeft: 28, topRight: 28 })
+  }
+
+  @Builder
+  ClassroomSheetContent(): void {
+    Column() {
+      Row() {
+        Text('取消')
+          .fontSize(16)
+          .fontColor(Theme.textSecondary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.showClassroomSheet = false;
+          })
+        Blank()
+        Text('选择教室')
+          .fontSize(17)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Theme.textPrimary)
+        Blank()
+        Text('完成')
+          .fontSize(16)
+          .fontColor(Theme.primary)
+          .padding({ left: 20, right: 20, top: 14, bottom: 14 })
+          .onClick(() => {
+            this.confirmClassroom();
+          })
+      }
+      .width('100%')
+
+      Row() {
+        TextPicker({ range: this.buildings, selected: $$this.selectedBuildingIndex })
+          .layoutWeight(1)
+          .onChange((value: string | string[], index: number | number[]) => {
+            const idx: number = index as number;
+            if (idx >= 0 && idx < this.buildings.length) {
+              this.loadRooms(this.buildings[idx]);
+            }
+          })
+        TextPicker({ range: this.roomsInBuilding, selected: $$this.selectedRoomIndex })
+          .layoutWeight(1)
+      }
+      .width('100%')
+      .height(200)
+      .padding({ left: 8, right: 8, bottom: 24 })
+    }
+    .width('100%')
+    .backgroundColor(Theme.bgCard)
+    .borderRadius({ topLeft: 28, topRight: 28 })
+  }
+
+  build() {
+    Column() {
+      NavHeader({ title: '添加课程' }) {
+        Text(this.isSaving ? '保存中' : '保存')
+          .fontSize(14).fontColor(Theme.primary)
+          .width(64).height(34).textAlign(TextAlign.Center)
+          .backgroundColor(Theme.primaryLight).borderRadius(17)
+          .onClick(() => { this.saveAndBack() })
+      }
+
+      Scroll() {
+        Column() {
+          Row() {
+            Column() {
+              Text('当前学期为')
+                .fontSize(Theme.fsSubtitle)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Theme.textPrimary)
+              Text('返回课程表页面即可切换学期')
+                .fontSize(Theme.fsCaption)
+                .fontColor(Theme.textTertiary)
+                .margin({ top: 6 })
+            }
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+            Text(this.semesterTitle)
+              .fontSize(Theme.fsCaption)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Theme.primary)
+              .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+              .backgroundColor(Theme.primaryLight)
+              .borderRadius(Theme.chipRadius)
+          }
+          .width('100%')
+          .padding({ left: 18, right: 18, top: 16, bottom: 16 })
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(Theme.cardRadius)
+          .margin({ bottom: 16 })
+          .shadow(ShadowStyle.nmRaised)
+
+          Column() {
+            this.FormInputRow('课程名称', '请输入课程名称', 1)
+            this.RowDivider()
+
+            Row() {
+              Text('课程周期')
+                .fontSize(15)
+                .fontColor(Theme.textPrimary)
+                .width(80)
+              Blank()
+              Text(this.computeWeekLabel())
+                .fontSize(14)
+                .fontColor(Theme.textSecondary)
+                .padding({ left: 10, right: 8, top: 5, bottom: 5 })
+                .backgroundColor(Theme.bgInput)
+                .borderRadius(Theme.chipRadius)
+              Text('›')
+                .fontSize(22)
+                .fontColor(Theme.textDisabled)
+                .margin({ left: 6 })
+            }
+            .width('100%')
+            .height(58)
+            .padding({ left: 16, right: 16 })
+            .onClick(() => {
+              this.showWeekSheet = true;
+            })
+            .bindSheet($$this.showWeekSheet, this.WeekSheetContent(), {
+              height: SheetSize.FIT_CONTENT,
+              showClose: false,
+              onDisappear: () => {
+                this.showWeekSheet = false;
+              }
+            })
+            this.RowDivider()
+
+            Row() {
+              Text('课程节数')
+                .fontSize(15)
+                .fontColor(Theme.textPrimary)
+                .width(80)
+              Blank()
+              Text(this.computePeriodLabel())
+                .fontSize(14)
+                .fontColor(Theme.danger)
+                .padding({ left: 10, right: 8, top: 5, bottom: 5 })
+                .backgroundColor(Theme.dangerLight)
+                .borderRadius(Theme.chipRadius)
+              Text('›')
+                .fontSize(22)
+                .fontColor(Theme.textDisabled)
+                .margin({ left: 6 })
+            }
+            .width('100%')
+            .height(58)
+            .padding({ left: 16, right: 16 })
+            .onClick(() => {
+              this.openPeriodSheet();
+            })
+            .bindSheet($$this.showPeriodSheet, this.PeriodSheetContent(), {
+              height: SheetSize.FIT_CONTENT,
+              showClose: false,
+              onDisappear: () => {
+                this.showPeriodSheet = false;
+              }
+            })
+            this.RowDivider()
+
+            Row() {
+              Text('选择教室')
+                .fontSize(15)
+                .fontColor(Theme.textPrimary)
+                .width(80)
+              Blank()
+              Text(this.classroom.length > 0 ? this.classroom : '教学楼+教室号')
+                .fontSize(14)
+                .fontColor(this.classroom.length > 0 ? Theme.textSecondary : Theme.textDisabled)
+                .padding({ left: 10, right: 8, top: 5, bottom: 5 })
+                .backgroundColor(Theme.bgInput)
+                .borderRadius(Theme.chipRadius)
+              Text('›')
+                .fontSize(22)
+                .fontColor(Theme.textDisabled)
+                .margin({ left: 6 })
+            }
+            .width('100%')
+            .height(58)
+            .padding({ left: 16, right: 16 })
+            .onClick(() => {
+              this.openClassroomSheet();
+            })
+            .bindSheet($$this.showClassroomSheet, this.ClassroomSheetContent(), {
+              height: SheetSize.FIT_CONTENT,
+              showClose: false,
+              onDisappear: () => {
+                this.showClassroomSheet = false;
+              }
+            })
+            this.RowDivider()
+
+            this.FormInputRow('手动填写', '操场/体育馆等', 2)
+            this.RowDivider()
+
+            this.FormInputRow('任课老师', '请输入任课老师', 3)
+          }
+          .width('100%')
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(Theme.cardRadius)
+          .shadow(ShadowStyle.nmRaised)
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 8, bottom: 40 })
+      }
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Theme.bgPage)
+  }
+
+  @Builder
+  FormInputRow(label: string, placeholder: string, fieldType: number): void {
     Row() {
       Text(label)
         .fontSize(15)
@@ -475,32 +596,7 @@ struct AddCoursePage {
   }
 
   @Builder
-  FormSelectRow(label: string, value: string, isHighlight: boolean, onTap: () => void) {
-    Row() {
-      Text(label)
-        .fontSize(15)
-        .fontColor(Theme.textPrimary)
-        .width(80)
-      Blank()
-      Text(value)
-        .fontSize(14)
-        .fontColor(isHighlight ? Theme.danger : Theme.textSecondary)
-        .padding({ left: 10, right: 8, top: 5, bottom: 5 })
-        .backgroundColor(isHighlight ? Theme.dangerLight : Theme.bgInput)
-        .borderRadius(Theme.chipRadius)
-      Text('›')
-        .fontSize(22)
-        .fontColor(Theme.textDisabled)
-        .margin({ left: 6 })
-    }
-    .width('100%')
-    .height(58)
-    .padding({ left: 16, right: 16 })
-    .onClick(onTap)
-  }
-
-  @Builder
-  RowDivider() {
+  RowDivider(): void {
     Row()
       .width('100%')
       .height(0.5)
@@ -509,7 +605,7 @@ struct AddCoursePage {
   }
 
   @Builder
-  ParityOption(label: string, mode: string) {
+  ParityOption(label: string, mode: string): void {
     Row() {
       Stack() {
         Row()

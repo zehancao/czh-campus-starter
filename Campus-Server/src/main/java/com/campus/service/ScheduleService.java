@@ -52,6 +52,14 @@ public class ScheduleService {
                 vo.setEndWeek(ct.getEndWeek());
                 vo.setTeacherName(ct.getTeacher());
                 vo.setSource("class");
+                String remark = ct.getRemark();
+                if (remark != null && (remark.contains("单周") || remark.equals("odd"))) {
+                    vo.setWeekParity("odd");
+                } else if (remark != null && (remark.contains("双周") || remark.equals("even"))) {
+                    vo.setWeekParity("even");
+                } else {
+                    vo.setWeekParity("all");
+                }
                 result.add(vo);
             }
         }
@@ -74,6 +82,14 @@ public class ScheduleService {
             vo.setEndWeek(pt.getEndWeek());
             vo.setTeacherName(pt.getTeacher());
             vo.setSource("personal");
+            String remark = pt.getRemark();
+            if (remark != null && (remark.contains("单周") || remark.equals("odd"))) {
+                vo.setWeekParity("odd");
+            } else if (remark != null && (remark.contains("双周") || remark.equals("even"))) {
+                vo.setWeekParity("even");
+            } else {
+                vo.setWeekParity("all");
+            }
             result.add(vo);
         }
 

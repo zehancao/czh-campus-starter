@@ -14,7 +14,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ClubActivityService {
@@ -39,7 +44,6 @@ public class ClubActivityService {
     }
 
     public List<ClubActivityVO> getList(String club, Integer status, Long userId) {
-        cleanExpiredActivities();
         LambdaQueryWrapper<ClubActivity> wrapper = new LambdaQueryWrapper<>();
         if (club != null && !club.isEmpty()) {
             wrapper.eq(ClubActivity::getClub, club);
@@ -47,14 +51,11 @@ public class ClubActivityService {
         if (status != null) {
             wrapper.eq(ClubActivity::getStatus, status);
         }
+        wrapper.ge(ClubActivity::getActivityTime, LocalDateTime.now());
         wrapper.orderByDesc(ClubActivity::getActivityTime);
         List<ClubActivity> list = clubActivityMapper.selectList(wrapper);
 
-        List<ClubActivityVO> result = new ArrayList<>();
-        for (ClubActivity a : list) {
-            result.add(toVO(a, userId));
-        }
-        return result;
+        return toVOList(list, userId);
     }
 
     public ClubActivityVO getDetail(Long id, Long userId) {
@@ -113,40 +114,42 @@ public class ClubActivityService {
     }
 
     public List<ClubActivityVO> getMyActivities(Long userId) {
-        cleanExpiredActivities();
         LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
         w.eq(ActivityRegistration::getUserId, userId);
         List<ActivityRegistration> regs = activityRegistrationMapper.selectList(w);
 
-        List<ClubActivityVO> result = new ArrayList<>();
+        Set<Long> activityIds = new HashSet<>();
         for (ActivityRegistration reg : regs) {
-            ClubActivity a = clubActivityMapper.selectById(reg.getActivityId());
-            if (a != null && a.getActivityTime() != null && a.getActivityTime().isAfter(LocalDateTime.now())) {
-                ClubActivityVO vo = toVO(a, userId);
-                vo.setRegistered(true);
-                result.add(vo);
+            activityIds.add(reg.getActivityId());
+        }
+        Map<Long, ClubActivity> activityMap = new HashMap<>();
+        if (!activityIds.isEmpty()) {
+            for (ClubActivity a : clubActivityMapper.selectBatchIds(activityIds)) {
+                activityMap.put(a.getId(), a);
             }
         }
-        return result;
-    }
 
-    public void cleanExpiredActivities() {
-        LambdaQueryWrapper<ClubActivity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.lt(ClubActivity::getActivityTime, LocalDateTime.now());
-        List<ClubActivity> expired = clubActivityMapper.selectList(wrapper);
-        for (ClubActivity a : expired) {
-            LambdaQueryWrapper<ActivityRegistration> rw = new LambdaQueryWrapper<>();
-            rw.eq(ActivityRegistration::getActivityId, a.getId());
-            activityRegistrationMapper.delete(rw);
-            clubActivityMapper.deleteById(a.getId());
+        List<ClubActivity> activities = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        for (ActivityRegistration reg : regs) {
+            ClubActivity a = activityMap.get(reg.getActivityId());
+            if (a != null && a.getActivityTime() != null && a.getActivityTime().isAfter(now)) {
+                activities.add(a);
+            }
         }
+        return toVOList(activities, userId);
     }
 
     private ClubActivityVO toVO(ClubActivity a, Long userId) {
+        return toVOList(Collections.singletonList(a), userId).get(0);
+    }
+
+    private ClubActivityVO toVO(ClubActivity a, Long userId, Map<Long, User> userMap,
+                                Set<Long> registeredActivityIds, List<ActivityRegistration> regs) {
         ClubActivityVO vo = new ClubActivityVO();
         vo.setId(a.getId());
         vo.setUserId(a.getUserId());
-        User user = userMapper.selectById(a.getUserId());
+        User user = a.getUserId() != null ? userMap.get(a.getUserId()) : null;
         if (user != null) vo.setUserName(user.getName());
         vo.setClub(a.getClub());
         vo.setTitle(a.getTitle());
@@ -159,22 +162,67 @@ public class ClubActivityService {
         vo.setCoverImage(a.getCoverImage());
         vo.setCreateTime(a.getCreateTime() != null ? a.getCreateTime().format(FMT) : "");
 
-        if (userId != null) {
-            LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
-            w.eq(ActivityRegistration::getActivityId, a.getId())
-             .eq(ActivityRegistration::getUserId, userId);
-            vo.setRegistered(activityRegistrationMapper.selectCount(w) > 0);
-        }
+        vo.setRegistered(registeredActivityIds.contains(a.getId()));
 
-        LambdaQueryWrapper<ActivityRegistration> pw = new LambdaQueryWrapper<>();
-        pw.eq(ActivityRegistration::getActivityId, a.getId());
-        List<ActivityRegistration> regs = activityRegistrationMapper.selectList(pw);
         List<String> names = new ArrayList<>();
         for (ActivityRegistration reg : regs) {
-            User u = userMapper.selectById(reg.getUserId());
+            User u = reg.getUserId() != null ? userMap.get(reg.getUserId()) : null;
             if (u != null) names.add(u.getName());
         }
         vo.setParticipantNames(names);
         return vo;
+    }
+
+    private List<ClubActivityVO> toVOList(List<ClubActivity> list, Long userId) {
+        List<ClubActivityVO> result = new ArrayList<>();
+        if (list.isEmpty()) return result;
+
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> activityIds = new HashSet<>();
+        for (ClubActivity a : list) {
+            if (a.getUserId() != null) userIds.add(a.getUserId());
+            activityIds.add(a.getId());
+        }
+
+        Map<Long, User> userMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            for (User u : userMapper.selectBatchIds(userIds)) {
+                userMap.put(u.getId(), u);
+            }
+        }
+
+        Map<Long, List<ActivityRegistration>> regsByActivity = new HashMap<>();
+        if (!activityIds.isEmpty()) {
+            LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
+            w.in(ActivityRegistration::getActivityId, activityIds);
+            for (ActivityRegistration r : activityRegistrationMapper.selectList(w)) {
+                regsByActivity.computeIfAbsent(r.getActivityId(), k -> new ArrayList<>()).add(r);
+                if (r.getUserId() != null) userIds.add(r.getUserId());
+            }
+        }
+
+        if (!userIds.isEmpty()) {
+            for (User u : userMapper.selectBatchIds(userIds)) {
+                userMap.put(u.getId(), u);
+            }
+        }
+
+        Set<Long> registeredActivityIds = new HashSet<>();
+        if (userId != null) {
+            for (Map.Entry<Long, List<ActivityRegistration>> e : regsByActivity.entrySet()) {
+                for (ActivityRegistration r : e.getValue()) {
+                    if (userId.equals(r.getUserId())) {
+                        registeredActivityIds.add(e.getKey());
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (ClubActivity a : list) {
+            List<ActivityRegistration> regs = regsByActivity.getOrDefault(a.getId(), new ArrayList<>());
+            result.add(toVO(a, userId, userMap, registeredActivityIds, regs));
+        }
+        return result;
     }
 }

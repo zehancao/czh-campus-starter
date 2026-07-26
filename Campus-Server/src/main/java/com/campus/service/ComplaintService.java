@@ -25,6 +25,16 @@ public class ComplaintService {
 
     @Transactional
     public void submitComplaint(Long complainantId, Long defendantId, Long productId, String reason) {
+        // 防重复：同一人对同一被投诉人的同一商品已存在待审核投诉则不允许重复提交，避免刷投诉攻击
+        LambdaQueryWrapper<Complaint> existWrapper = new LambdaQueryWrapper<>();
+        existWrapper.eq(Complaint::getComplainantId, complainantId)
+                    .eq(Complaint::getDefendantId, defendantId)
+                    .eq(productId != null, Complaint::getProductId, productId)
+                    .eq(Complaint::getStatus, 0);
+        if (complaintMapper.selectCount(existWrapper) > 0) {
+            throw new RuntimeException("已存在待审核的相同投诉，请等待管理员处理");
+        }
+
         Complaint complaint = new Complaint();
         complaint.setComplainantId(complainantId);
         complaint.setDefendantId(defendantId);
@@ -32,13 +42,6 @@ public class ComplaintService {
         complaint.setReason(reason);
         complaint.setStatus(0);
         complaintMapper.insert(complaint);
-
-        User defendant = userMapper.selectById(defendantId);
-        if (defendant != null) {
-            int newScore = Math.max(0, (defendant.getCreditScore() != null ? defendant.getCreditScore() : 100) - 5);
-            defendant.setCreditScore(newScore);
-            userMapper.updateById(defendant);
-        }
     }
 
     public List<Map<String, Object>> getMyComplaints(Long userId) {
@@ -101,9 +104,17 @@ public class ComplaintService {
     @Transactional
     public void processComplaint(Long id) {
         Complaint c = complaintMapper.selectById(id);
+        // 仅对待审核(status=0)的投诉处理，处理后置为已处理(status=1)；已处理的不会重复扣分，保证幂等
         if (c != null && c.getStatus() == 0) {
             c.setStatus(1);
             complaintMapper.updateById(c);
+
+            User defendant = userMapper.selectById(c.getDefendantId());
+            if (defendant != null) {
+                int newScore = Math.max(0, (defendant.getCreditScore() != null ? defendant.getCreditScore() : 100) - 5);
+                defendant.setCreditScore(newScore);
+                userMapper.updateById(defendant);
+            }
         }
     }
 

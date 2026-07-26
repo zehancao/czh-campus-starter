@@ -7,6 +7,7 @@ public class ProductVO {
     private Long sellerId;
     private String sellerName;
     private Long categoryId;
+    private String categoryName;
     private String title;
     private String description;
     private BigDecimal price;
@@ -26,6 +27,8 @@ public class ProductVO {
     public void setSellerName(String sellerName) { this.sellerName = sellerName; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }

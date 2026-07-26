@@ -390,6 +390,26 @@ struct ChatPage {
         if (this.productId > 0) {
           Text('  商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary)
         }
+        Blank()
+        if (this.otherUserId > 0 && this.otherUserId !== AppStore.getInstance().userInfo.id) {
+          Button('投诉')
+            .type(ButtonType.Capsule)
+            .fontSize(12)
+            .fontColor('#FFFFFF')
+            .backgroundColor(Theme.danger)
+            .height(28)
+            .padding({ left: 14, right: 14 })
+            .onClick(() => {
+              const params: Record<string, Object> = {
+                'defendantId': this.otherUserId,
+                'defendantName': this.otherUserName
+              }
+              if (this.productId > 0) {
+                params['productId'] = this.productId
+              }
+              router.pushUrl({ url: 'pages/MyComplaintsPage', params: params })
+            })
+        }
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 4, bottom: 8 })

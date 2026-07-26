@@ -1,5 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
+import { promptAction } from '@kit.ArkUI';
 import { picker } from '@kit.CoreFileKit';
 import { AppStore } from './AppStore';
 import { UserInfo, CourseSchedule, Product, Announcement, Conversation, ChatMessage, Semester, PickerOption, ProductCategory, FavoriteItem, EmptyRoom, LostFoundItem } from '../model/Models';
@@ -44,6 +45,7 @@ export class ApiService {
       return result;
     } catch (err) {
       const errResult: ApiResult = { code: -1, msg: '网络错误，请检查后端是否启动', data: undefined };
+      promptAction.showToast({ message: errResult.msg, duration: 2000 });
       return errResult;
     }
   }
@@ -167,7 +169,7 @@ export class ApiService {
     return result.photoUris;
   }
 
-  static async uploadImage(uri: string): Promise<string> {
+  private static async uploadFile(endpoint: string, uri: string): Promise<string> {
     const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
     const srcPath: string = srcUri.path;
     if (srcPath.length === 0) {
@@ -181,30 +183,37 @@ export class ApiService {
     const fileName: string = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
     const destPath: string = `${cacheDir}/${fileName}`;
     fileIo.copyFileSync(srcPath, destPath);
-    const url: string = `${ApiService.baseUrl}/api/product/upload-image`;
+    const url: string = `${ApiService.baseUrl}${endpoint}`;
     const req: http.HttpRequest = http.createHttp();
+    try {
       const response: http.HttpResponse = await req.request(url, {
         method: http.RequestMethod.POST,
         header: {
           'content-type': 'multipart/form-data',
           'Authorization': `Bearer ${store.token}`
         },
-      multiFormDataList: [
-        {
-          name: 'file',
-          filePath: destPath,
-          contentType: 'image/jpeg',
-          remoteFileName: fileName
-        }
-      ]
-    });
-    req.destroy();
-    const resultStr: string = response.result as string;
-    const result: ApiResult = JSON.parse(resultStr) as ApiResult;
-    if (result.code === 200 && result.data !== undefined) {
-      return result.data as string;
+        multiFormDataList: [
+          {
+            name: 'file',
+            filePath: destPath,
+            contentType: 'image/jpeg',
+            remoteFileName: fileName
+          }
+        ]
+      });
+      const resultStr: string = response.result as string;
+      const result: ApiResult = JSON.parse(resultStr) as ApiResult;
+      if (result.code === 200 && result.data !== undefined) {
+        return result.data as string;
+      }
+      return `ERROR:code_${result.code}_msg_${result.msg}`;
+    } finally {
+      req.destroy();
     }
-    return `ERROR:code_${result.code}_msg_${result.msg}`;
+  }
+
+  static async uploadImage(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/product/upload-image', uri);
   }
 
   static parseUser(obj: Record<string, Object>): UserInfo {
@@ -414,12 +423,13 @@ export class ApiService {
       item.createTime = (obj['createTime'] as string) ?? '';
       const imagesObj: Object = obj['productImages'];
       if (imagesObj !== null && imagesObj !== undefined) {
-        const imgs: string = imagesObj as string;
-        if (imgs.length > 0) {
-          const cleaned: string = imgs.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
-          if (cleaned.length > 0) {
-            item.productImages = cleaned.split(',');
+        try {
+          const imgs: string = imagesObj as string;
+          if (imgs.length > 0) {
+            item.productImages = JSON.parse(imgs) as string[];
           }
+        } catch (e) {
+          item.productImages = [];
         }
       }
       list.push(item);
@@ -429,6 +439,14 @@ export class ApiService {
 
   static async getBuildings(): Promise<string[]> {
     const result: ApiResult = await ApiService.request(http.RequestMethod.GET, '/api/classroom/buildings', undefined, false);
+    if (result.code === 200 && result.data !== undefined) {
+      return result.data as string[];
+    }
+    return [];
+  }
+
+  static async getRoomsByBuilding(building: string): Promise<string[]> {
+    const result: ApiResult = await ApiService.request(http.RequestMethod.GET, `/api/classroom/rooms?building=${encodeURIComponent(building)}`, undefined, false);
     if (result.code === 200 && result.data !== undefined) {
       return result.data as string[];
     }
@@ -570,83 +588,12 @@ export class ApiService {
     return ApiService.request(http.RequestMethod.POST, '/api/user/update-name', body, true);
   }
 
-  static async uploadAvatar(uri: string): Promise<string> {    const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
-    const srcPath: string = srcUri.path;
-    if (srcPath.length === 0) {
-      return 'ERROR:srcPath_empty';
-    }
-    const store: AppStore = AppStore.getInstance();
-    if (store.context === undefined) {
-      return 'ERROR:context_undefined';
-    }
-    const cacheDir: string = store.context.cacheDir;
-    const fileName: string = `avatar_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-    const destPath: string = `${cacheDir}/${fileName}`;
-    fileIo.copyFileSync(srcPath, destPath);
-    const url: string = `${ApiService.baseUrl}/api/user/upload-avatar`;
-    const req: http.HttpRequest = http.createHttp();
-      const response: http.HttpResponse = await req.request(url, {
-        method: http.RequestMethod.POST,
-        header: {
-          'content-type': 'multipart/form-data',
-          'Authorization': `Bearer ${store.token}`
-        },
-      multiFormDataList: [
-        {
-          name: 'file',
-          filePath: destPath,
-          contentType: 'image/jpeg',
-          remoteFileName: fileName
-        }
-      ]
-    });
-    req.destroy();
-    const resultStr: string = response.result as string;
-    const result: ApiResult = JSON.parse(resultStr) as ApiResult;
-    if (result.code === 200 && result.data !== undefined) {
-      return result.data as string;
-    }
-    return `ERROR:code_${result.code}_msg_${result.msg}`;
+  static async uploadAvatar(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/user/upload-avatar', uri);
   }
 
   static async uploadClubCover(uri: string): Promise<string> {
-    const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
-    const srcPath: string = srcUri.path;
-    if (srcPath.length === 0) {
-      return 'ERROR:srcPath_empty';
-    }
-    const store: AppStore = AppStore.getInstance();
-    if (store.context === undefined) {
-      return 'ERROR:context_undefined';
-    }
-    const cacheDir: string = store.context.cacheDir;
-    const fileName: string = `cover_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-    const destPath: string = `${cacheDir}/${fileName}`;
-    fileIo.copyFileSync(srcPath, destPath);
-    const url: string = `${ApiService.baseUrl}/api/club-activity/upload-cover`;
-    const req: http.HttpRequest = http.createHttp();
-      const response: http.HttpResponse = await req.request(url, {
-        method: http.RequestMethod.POST,
-        header: {
-          'content-type': 'multipart/form-data',
-          'Authorization': `Bearer ${store.token}`
-        },
-      multiFormDataList: [
-        {
-          name: 'file',
-          filePath: destPath,
-          contentType: 'image/jpeg',
-          remoteFileName: fileName
-        }
-      ]
-    });
-    req.destroy();
-    const resultStr: string = response.result as string;
-    const result: ApiResult = JSON.parse(resultStr) as ApiResult;
-    if (result.code === 200 && result.data !== undefined) {
-      return result.data as string;
-    }
-    return `ERROR:code_${result.code}_msg_${result.msg}`;
+    return ApiService.uploadFile('/api/club-activity/upload-cover', uri);
   }
 
   static async updateAvatar(avatar: string): Promise<ApiResult> {

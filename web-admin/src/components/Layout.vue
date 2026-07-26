@@ -62,6 +62,6 @@ function handleMenuClick(key: string) {
 
 function handleLogout() {
   userStore.logout()
-  router.push('/login')
+  router.push('/screen')
 }
 </script>

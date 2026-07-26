@@ -19,41 +19,18 @@ struct PasswordChangePage {
   @State private isLoading: boolean = false
   @State private errorMsg: string = ''
 
-  /** 验证原密码 —— 这里直接用 changePassword(old, old) 做存在性检测会有副作用，
-   *  改为 verifyPassword 接口；若后端无专门接口则先传占位新密码验证，
-   *  实际项目可替换为独立的 /user/verify-password 接口。
-   *  此处调用 ApiService.changePassword(old, '__VERIFY__') 不会真正改密码，
-   *  仅做演示；正式上线前请替换为后端专用验证接口。
+  /** 验证原密码环节不再调用 changePassword(old, old)（会把密码改成自身、有副作用），
+   *  仅做非空校验后进入第二步；真正的原密码校验在 submitNewPassword 调用
+   *  changePassword(old, new) 时由后端一次性完成。
    */
-  private async verifyOldPassword(): Promise<void> {
-    if (this.isLoading) return
+  private verifyOldPassword(): void {
     const old: string = this.oldPassword.trim()
     if (old.length === 0) {
       this.errorMsg = '请输入原密码'
       return
     }
     this.errorMsg = ''
-    this.isLoading = true
-    try {
-      // 用 changePassword 接口只传原密码来验证；
-      // 后端若原密码错误会返回非200，借此判断密码是否正确。
-      // 注意：此处用 '__PLACEHOLDER__' 作为新密码占位，只判断 code 是否因原密码错误而失败。
-      // 推荐后端提供独立 verify 接口替换此逻辑。
-      const result: ApiResult = await ApiService.changePassword(old, old)
-      // code===200 说明原密码正确（此时密码被改为自身，无实际影响）
-      // code!==200 且 msg 含密码错误提示则为原密码错误
-      if (result.code === 200 || result.msg.indexOf('相同') >= 0 || result.msg.indexOf('一致') >= 0) {
-        this.step = 1
-      } else if (result.code !== 200) {
-        this.errorMsg = result.msg.length > 0 ? result.msg : '原密码验证失败，请重试'
-      } else {
-        this.step = 1
-      }
-    } catch (_err) {
-      this.errorMsg = '网络异常，请重试'
-    } finally {
-      this.isLoading = false
-    }
+    this.step = 1
   }
 
   private async submitNewPassword(): Promise<void> {
@@ -164,7 +141,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(24)
+      .borderRadius(Theme.radiusPill)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
         this.oldPassword = value
@@ -177,7 +154,7 @@ struct PasswordChangePage {
       .fontSize(16)
       .fontColor(Color.White)
       .backgroundColor(Theme.primary)
-      .borderRadius(22)
+      .borderRadius(Theme.buttonRadius)
       .margin({ top: 20 })
       .shadow(ShadowStyle.sm)
       .enabled(!this.isLoading)
@@ -199,7 +176,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(24)
+      .borderRadius(Theme.radiusPill)
       .padding({ left: 14, right: 14 })
       .onChange((value: string) => {
         this.newPassword = value
@@ -213,7 +190,7 @@ struct PasswordChangePage {
       .fontColor(Theme.textPrimary)
       .placeholderColor(Theme.textDisabled)
       .backgroundColor(Theme.bgInput)
-      .borderRadius(24)
+      .borderRadius(Theme.radiusPill)
       .padding({ left: 14, right: 14 })
       .margin({ top: 12 })
       .onChange((value: string) => {
@@ -227,7 +204,7 @@ struct PasswordChangePage {
       .fontSize(16)
       .fontColor(Color.White)
       .backgroundColor(Theme.primary)
-      .borderRadius(22)
+      .borderRadius(Theme.buttonRadius)
       .margin({ top: 20 })
       .shadow(ShadowStyle.sm)
       .enabled(!this.isLoading)
@@ -239,7 +216,7 @@ struct PasswordChangePage {
       .fontSize(16)
       .fontColor(Theme.primary)
       .backgroundColor(Theme.bgCard)
-      .borderRadius(22)
+      .borderRadius(Theme.buttonRadius)
       .margin({ top: 10 })
       .shadow(ShadowStyle.sm)
       .onClick(() => {

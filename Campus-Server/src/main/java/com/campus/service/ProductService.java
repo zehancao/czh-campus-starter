@@ -6,6 +6,7 @@ import com.campus.entity.ProductCategory;
 import com.campus.mapper.ProductMapper;
 import com.campus.mapper.ProductCategoryMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,14 +42,8 @@ public class ProductService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getProductList(null);
         }
-        List<Product> list = productMapper.selectListWithSeller();
         String kw = keyword.trim().toLowerCase();
-        list.removeIf(p -> {
-            String title = p.getTitle() != null ? p.getTitle().toLowerCase() : "";
-            String desc = p.getDescription() != null ? p.getDescription().toLowerCase() : "";
-            return !title.contains(kw) && !desc.contains(kw);
-        });
-        list.removeIf(p -> p.getStatus() == null || p.getStatus() != 1);
+        List<Product> list = productMapper.selectSearchWithSeller(kw);
         return toVOList(list);
     }
 
@@ -69,12 +64,13 @@ public class ProductService {
     }
 
     public ProductVO getProductDetail(Long id) {
+        LambdaUpdateWrapper<Product> uw = new LambdaUpdateWrapper<>();
+        uw.eq(Product::getId, id).setSql("view_count = view_count + 1");
+        productMapper.update(null, uw);
         Product product = productMapper.selectDetailById(id);
         if (product == null) {
             throw new RuntimeException("商品不存在");
         }
-        product.setViewCount(product.getViewCount() != null ? product.getViewCount() + 1 : 1);
-        productMapper.updateById(product);
         return toVO(product);
     }
 
@@ -150,6 +146,10 @@ public class ProductService {
         vo.setSellerId(p.getSellerId());
         vo.setSellerName(p.getSellerName());
         vo.setCategoryId(p.getCategoryId());
+        if (p.getCategoryId() != null) {
+            ProductCategory cat = productCategoryMapper.selectById(p.getCategoryId());
+            vo.setCategoryName(cat != null ? cat.getName() : null);
+        }
         vo.setTitle(p.getTitle());
         vo.setDescription(p.getDescription());
         vo.setPrice(p.getPrice());

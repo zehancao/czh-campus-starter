@@ -8,6 +8,7 @@ export class AppStore {
   userInfo: UserInfo = new UserInfo();
   isLoggedIn: boolean = false;
   context: common.UIAbilityContext | undefined = undefined;
+  pendingTab: number = -1;
 
   static getInstance(): AppStore {
     if (AppStore.instance === undefined) {
@@ -23,6 +24,8 @@ export class AppStore {
   setToken(token: string): void {
     this.token = token;
     this.isLoggedIn = token.length > 0;
+    AppStorage.set('appToken', token);
+    AppStorage.set('appIsLoggedIn', this.isLoggedIn);
     if (this.isLoggedIn) {
       WebSocketService.getInstance().connect();
     }
@@ -30,6 +33,7 @@ export class AppStore {
 
   setUserInfo(info: UserInfo): void {
     this.userInfo = info;
+    AppStorage.set('appUserInfo', info);
   }
 
   logout(): void {
@@ -37,5 +41,8 @@ export class AppStore {
     this.token = '';
     this.isLoggedIn = false;
     this.userInfo = new UserInfo();
+    AppStorage.set('appToken', '');
+    AppStorage.set('appIsLoggedIn', false);
+    AppStorage.set('appUserInfo', new UserInfo());
   }
 }

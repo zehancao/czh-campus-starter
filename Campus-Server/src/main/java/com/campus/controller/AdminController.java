@@ -7,6 +7,7 @@ import com.campus.dto.ClassVO;
 import com.campus.dto.ProductVO;
 import com.campus.dto.SemesterVO;
 import com.campus.dto.TimetableVO;
+import com.campus.dto.AdminUserVO;
 import com.campus.entity.Announcement;
 import com.campus.entity.LostFound;
 import com.campus.entity.Product;
@@ -164,7 +165,7 @@ public class AdminController {
     }
 
     @GetMapping("/user/list")
-    public Result<List<User>> getUserList() {
+    public Result<List<AdminUserVO>> getUserList() {
         return Result.ok(adminService.getAllUsers());
     }
 

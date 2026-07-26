@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.campus.dto.EmptyRoomVO;
 import com.campus.entity.ClassTimetable;
 import com.campus.entity.Classroom;
+import com.campus.entity.PersonalTimetable;
 import com.campus.entity.Semester;
 import com.campus.mapper.ClassTimetableMapper;
 import com.campus.mapper.ClassroomMapper;
+import com.campus.mapper.PersonalTimetableMapper;
 import com.campus.mapper.SemesterMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,9 @@ public class ClassroomService {
     @Autowired
     private SemesterMapper semesterMapper;
 
+    @Autowired
+    private PersonalTimetableMapper personalTimetableMapper;
+
     private Long getCurrentSemesterId() {
         List<Semester> list = semesterMapper.selectList(
                 new QueryWrapper<Semester>().eq("is_current", 1).last("LIMIT 1"));
@@ -46,6 +51,14 @@ public class ClassroomService {
         wrapper.select("DISTINCT building");
         List<Classroom> list = classroomMapper.selectList(wrapper);
         return list.stream().map(Classroom::getBuilding).collect(Collectors.toList());
+    }
+
+    public List<String> getRoomsByBuilding(String building) {
+        QueryWrapper<Classroom> wrapper = new QueryWrapper<>();
+        wrapper.eq("building", building);
+        wrapper.orderByAsc("room_no");
+        List<Classroom> list = classroomMapper.selectList(wrapper);
+        return list.stream().map(Classroom::getRoomNo).collect(Collectors.toList());
     }
 
     public List<EmptyRoomVO> getEmptyRooms(String building, Integer dayOfWeek, Integer section, Integer week) {
@@ -76,6 +89,27 @@ public class ClassroomService {
                 .map(ClassTimetable::getClassroom)
                 .distinct()
                 .collect(Collectors.toList());
+
+        QueryWrapper<PersonalTimetable> ptWrapper = new QueryWrapper<>();
+        if (currentSemesterId != null) {
+            ptWrapper.eq("semester_id", currentSemesterId);
+        }
+        ptWrapper.eq("day_of_week", dayOfWeek);
+        ptWrapper.le("start_section", section);
+        ptWrapper.ge("end_section", section);
+        if (week != null) {
+            ptWrapper.le("start_week", week);
+            ptWrapper.ge("end_week", week);
+        }
+        ptWrapper.isNotNull("classroom");
+        ptWrapper.ne("classroom", "");
+        List<PersonalTimetable> personalOccupied = personalTimetableMapper.selectList(ptWrapper);
+
+        List<String> personalOccupiedRooms = personalOccupied.stream()
+                .map(PersonalTimetable::getClassroom)
+                .distinct()
+                .collect(Collectors.toList());
+        occupiedRooms.addAll(personalOccupiedRooms);
 
         List<EmptyRoomVO> result = new ArrayList<>();
         for (Classroom room : allRooms) {

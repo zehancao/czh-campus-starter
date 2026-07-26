@@ -36,6 +36,8 @@ public class UserService {
         if (user.getStatus() == 0) {
             throw new RuntimeException("账号已被禁用");
         }
+        user.setLastLoginTime(java.time.LocalDateTime.now());
+        userMapper.updateById(user);
         String token = jwtUtil.generateToken(user.getId(), user.getStudentId(), user.getRole());
         return Map.of("token", token, "user", toVO(user));
     }

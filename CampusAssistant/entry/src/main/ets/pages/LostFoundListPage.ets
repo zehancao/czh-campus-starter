@@ -17,7 +17,7 @@ struct LFListCard {
       Column() {
         if (this.getFirstImageUrl().length > 0) {
           Image(`${ApiService.baseUrl}${this.getFirstImageUrl()}`)
-            .width(60).height(60).borderRadius(10).objectFit(ImageFit.Cover)
+            .width(60).height(60).borderRadius(Theme.radiusMd).objectFit(ImageFit.Cover)
         } else {
           Text(this.itemData.type === 1 ? '🔍' : '📢')
             .fontSize(28)
@@ -27,7 +27,7 @@ struct LFListCard {
       }
       .width(60).height(60)
       .backgroundColor(Theme.secondaryLight)
-      .borderRadius(10)
+      .borderRadius(Theme.radiusMd)
       .justifyContent(FlexAlign.Center)
 
       Column() {
@@ -81,7 +81,7 @@ struct LFListCard {
     .width('100%')
     .padding(12)
     .backgroundColor('#FFFFFF')
-    .borderRadius(12)
+    .borderRadius(Theme.cardRadius)
     .margin({ bottom: 8 })
     .shadow(ShadowStyle.sm)
     .onClick(() => {
@@ -191,7 +191,7 @@ struct LostFoundListPage {
           .height(36)
           .fontSize(14)
           .backgroundColor(Theme.bgInput)
-          .borderRadius(18)
+          .borderRadius(Theme.radiusPill)
           .padding({ left: 16 })
           .onChange((val: string) => { this.keywordValue = val })
           .onSubmit(() => { this.loadList() })

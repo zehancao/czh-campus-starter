@@ -211,7 +211,7 @@ struct MyComplaintsPage {
     if (this.pId > 0) p['productId'] = this.pId
     const res = await ApiService.submitComplaint(p)
     if (res.code === 200) {
-      promptAction.showToast({ message: '投诉已提交，对方信用分 -5', duration: 2000 })
+      promptAction.showToast({ message: '投诉已提交，等待管理员审核', duration: 2000 })
       this.dId = 0; this.dName = ''; this.pId = 0
       this.loadAll()
     } else {
@@ -270,7 +270,7 @@ struct MyComplaintsPage {
             Row() {
               Text('⚠️')
                 .fontSize(14)
-              Text('每次有效投诉，被投诉人信用分 -5')
+              Text('投诉经管理员审核通过后，被投诉人信用分 -5')
                 .fontSize(12)
                 .fontColor(Theme.textTertiary)
                 .margin({ left: 4 })
