@@ -23,7 +23,7 @@ public class ProductService {
     @Autowired
     private ProductCategoryMapper productCategoryMapper;
 
-    public List<ProductVO> getProductList(Long categoryId) {
+    public List<ProductVO> getProductList(Long categoryId, int page, int size) {
         List<Product> list = productMapper.selectListWithSeller();
         if (categoryId != null && categoryId > 0) {
             List<Long> allowedIds = new ArrayList<>();
@@ -35,12 +35,17 @@ public class ProductService {
             }
             list.removeIf(p -> !allowedIds.contains(p.getCategoryId()));
         }
-        return toVOList(list);
+        int start = (page - 1) * size;
+        int end = Math.min(start + size, list.size());
+        if (start >= list.size()) {
+            return new ArrayList<>();
+        }
+        return toVOList(list.subList(start, end));
     }
 
     public List<ProductVO> searchProducts(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return getProductList(null);
+            return getProductList(null, 1, Integer.MAX_VALUE);
         }
         String kw = keyword.trim().toLowerCase();
         List<Product> list = productMapper.selectSearchWithSeller(kw);

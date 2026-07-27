@@ -41,7 +41,7 @@ struct WidgetCard {
         }
       }
       .width('100%')
-      .margin({ bottom: 8 })
+      .margin({ bottom: 4 })
 
       if (this.courseCount === 0) {
         Column() {
@@ -92,16 +92,16 @@ struct WidgetCard {
               .fontWeight(FontWeight.Medium)
           }
           .width('100%')
-          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .borderRadius(10)
+          .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+          .borderRadius(8)
           .backgroundColor('#F5F6FF')
-          .margin({ top: 8 })
+          .margin({ top: 4 })
         }
       }
     }
     .width('100%')
     .height('100%')
-    .padding({ left: 16, right: 16, top: 16, bottom: 12 })
+    .padding({ left: 14, right: 14, top: 12, bottom: 8 })
     .backgroundColor('#FFFFFF')
     .borderRadius(24)
     .onClick(() => {
@@ -133,27 +133,27 @@ struct WidgetCard {
           .backgroundColor('#4F6EF7')
           .borderRadius(2)
       }
-      .height(28)
+      .height(24)
 
       Blank().width(6)
 
       Column() {
         Text(name)
-          .fontSize(13)
+          .fontSize(12)
           .fontColor('#333333')
           .fontWeight(FontWeight.Medium)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(room.length > 0 ? room : '教室未定')
-          .fontSize(11)
+          .fontSize(10)
           .fontColor('#999999')
-          .margin({ top: 2 })
+          .margin({ top: 1 })
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
     }
     .width('100%')
     .alignItems(VerticalAlign.Center)
-    .margin({ bottom: 4 })
+    .margin({ bottom: 2 })
   }
 }

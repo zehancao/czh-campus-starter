@@ -3,7 +3,7 @@ import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { promptAction } from '@kit.ArkUI';
 import { picker } from '@kit.CoreFileKit';
 import { AppStore } from './AppStore';
-import { UserInfo, CourseSchedule, Product, Announcement, Conversation, ChatMessage, Semester, PickerOption, ProductCategory, FavoriteItem, EmptyRoom, LostFoundItem } from '../model/Models';
+import { UserInfo, CourseSchedule, Product, Announcement, Conversation, ChatMessage, Semester, PickerOption, ProductCategory, FavoriteItem, EmptyRoom, LostFoundItem, CarpoolOrder, PassengerItem, SafetyReport, SafetyContact, ClubActivityItem, ConfessionPost, StudyShareItem } from '../model/Models';
 
 export interface ApiResult {
   code: number;
@@ -12,7 +12,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.1.3:8080';
+  static baseUrl: string = 'http://192.168.1.12:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -31,7 +31,8 @@ export class ApiService {
       method: method,
       header: headerRecord,
       readTimeout: 15000,
-      connectTimeout: 15000
+      connectTimeout: 15000,
+      expectDataType: http.HttpDataType.STRING
     };
     if (data !== undefined) {
       options.extraData = JSON.stringify(data);
@@ -40,12 +41,13 @@ export class ApiService {
       const req: http.HttpRequest = http.createHttp();
       const response: http.HttpResponse = await req.request(url, options);
       req.destroy();
-      const resultStr: string = response.result as string;
+      const resultStr: string = typeof response.result === 'string' ? response.result : JSON.stringify(response.result);
       const result: ApiResult = JSON.parse(resultStr) as ApiResult;
       return result;
     } catch (err) {
-      const errResult: ApiResult = { code: -1, msg: '网络错误，请检查后端是否启动', data: undefined };
-      promptAction.showToast({ message: errResult.msg, duration: 2000 });
+      const errMsg: string = err !== null && err !== undefined ? String(err) : 'unknown';
+      const errResult: ApiResult = { code: -1, msg: `网络错误: ${errMsg}`, data: undefined };
+      promptAction.showToast({ message: errMsg, duration: 3000 });
       return errResult;
     }
   }
@@ -122,8 +124,8 @@ export class ApiService {
     return s;
   }
 
-  static async getProductList(categoryId: number): Promise<ApiResult> {
-    return await ApiService.request(http.RequestMethod.GET, `/api/product/list?categoryId=${categoryId}`, undefined, false);
+  static async getProductList(categoryId: number, page: number, size: number): Promise<ApiResult> {
+    return await ApiService.request(http.RequestMethod.GET, `/api/product/list?categoryId=${categoryId}&page=${page}&size=${size}`, undefined, false);
   }
 
   static async getProductDetail(id: number): Promise<ApiResult> {
@@ -169,6 +171,38 @@ export class ApiService {
     return result.photoUris;
   }
 
+  private static getExtFromUri(uri: string): string {
+    const segments: string[] = uri.split('/');
+    const last: string = segments.length > 0 ? segments[segments.length - 1] : '';
+    const dotParts: string[] = last.split('.');
+    if (dotParts.length > 1) {
+      const ext: string = dotParts[dotParts.length - 1].toLowerCase();
+      if (ext.length <= 5) return ext;
+    }
+    return 'bin';
+  }
+
+  private static getMimeType(ext: string): string {
+    const mimeMap: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'zip': 'application/zip',
+      'rar': 'application/x-rar-compressed'
+    };
+    const mime: string | undefined = mimeMap[ext];
+    return mime !== undefined ? mime : 'application/octet-stream';
+  }
+
   private static async uploadFile(endpoint: string, uri: string): Promise<string> {
     const srcUri: fileUri.FileUri = new fileUri.FileUri(uri);
     const srcPath: string = srcUri.path;
@@ -179,9 +213,11 @@ export class ApiService {
     if (store.context === undefined) {
       return 'ERROR:context_undefined';
     }
+    const ext: string = ApiService.getExtFromUri(uri);
     const cacheDir: string = store.context.cacheDir;
-    const fileName: string = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+    const fileName: string = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const destPath: string = `${cacheDir}/${fileName}`;
+    const mimeType: string = ApiService.getMimeType(ext);
     fileIo.copyFileSync(srcPath, destPath);
     const url: string = `${ApiService.baseUrl}${endpoint}`;
     const req: http.HttpRequest = http.createHttp();
@@ -196,7 +232,7 @@ export class ApiService {
           {
             name: 'file',
             filePath: destPath,
-            contentType: 'image/jpeg',
+            contentType: mimeType,
             remoteFileName: fileName
           }
         ]
@@ -377,7 +413,17 @@ export class ApiService {
       item.createTime = (obj['createTime'] as string) ?? '';
       const imagesObj: Object = obj['images'];
       if (imagesObj !== null && imagesObj !== undefined) {
-        item.images = imagesObj as string[];
+        if (typeof imagesObj === 'object') {
+          item.images = imagesObj as string[];
+        } else {
+          const raw: string = imagesObj as string;
+          if (raw.length > 0) {
+            const c: string = raw.replace('[', '').replace(']', '').replace(new RegExp('"', 'g'), '');
+            if (c.length > 0) {
+              item.images = c.split(',');
+            }
+          }
+        }
       }
       list.push(item);
     }
@@ -603,13 +649,13 @@ export class ApiService {
     return ApiService.request(http.RequestMethod.POST, '/api/user/update-avatar', body, true);
   }
 
-  static async getClubActivityList(club: string, status: number): Promise<ApiResult> {
-    let path: string = '/api/club-activity/list?';
+  static async getClubActivityList(club: string, status: number, page: number, size: number): Promise<ApiResult> {
+    let path: string = `/api/club-activity/list?page=${page}&size=${size}`;
     if (club.length > 0) {
-      path += `club=${encodeURIComponent(club)}&`;
+      path += `&club=${encodeURIComponent(club)}`;
     }
     if (status > 0) {
-      path += `status=${status}`;
+      path += `&status=${status}`;
     }
     return ApiService.request(http.RequestMethod.GET, path, undefined, true);
   }
@@ -630,8 +676,8 @@ export class ApiService {
     return ApiService.request(http.RequestMethod.POST, `/api/club-activity/cancel?activityId=${activityId}`, undefined, true);
   }
 
-  static async getMyClubActivities(): Promise<ApiResult> {
-    return ApiService.request(http.RequestMethod.GET, '/api/club-activity/my-activities', undefined, true);
+  static async getMyClubActivities(page: number, size: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, `/api/club-activity/my-activities?page=${page}&size=${size}`, undefined, true);
   }
 
   static async getCreditScore(): Promise<ApiResult> {
@@ -657,5 +703,347 @@ export class ApiService {
       'content': content
     };
     return ApiService.request(http.RequestMethod.POST, '/api/feedback/submit', body, false);
+  }
+
+  static async getConfessionList(category: string, page: number, size: number): Promise<ApiResult> {
+    let url: string = `/api/confession-wall/list?page=${page}&size=${size}`;
+    if (category.length > 0) {
+      url = `${url}&category=${encodeURIComponent(category)}`;
+    }
+    return ApiService.request(http.RequestMethod.GET, url, undefined, true);
+  }
+
+  static async getConfessionDetail(id: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, `/api/confession-wall/detail?id=${id}`, undefined, true);
+  }
+
+  static async publishConfession(params: Record<string, Object>): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, '/api/confession-wall/publish', params, true);
+  }
+
+  static async deleteConfession(postId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/confession-wall/delete?postId=${postId}`, undefined, true);
+  }
+
+  static async likeConfession(postId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/confession-wall/like?postId=${postId}`, undefined, true);
+  }
+
+  static async commentConfession(postId: number, content: string, isAnonymous: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/confession-wall/comment?postId=${postId}&content=${encodeURIComponent(content)}&isAnonymous=${isAnonymous}`, undefined, true);
+  }
+
+  static async reportConfession(postId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/confession-wall/report?postId=${postId}`, undefined, true);
+  }
+
+  static async getMyConfessionPosts(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/confession-wall/my-posts', undefined, true);
+  }
+
+  static async uploadConfessionImage(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/confession-wall/upload', uri);
+  }
+
+  static async getStudyShareList(courseName: string, category: string, page: number, size: number): Promise<ApiResult> {
+    let url: string = `/api/study-share/list?page=${page}&size=${size}`;
+    if (courseName.length > 0) {
+      url = `${url}&courseName=${encodeURIComponent(courseName)}`;
+    }
+    if (category.length > 0) {
+      url = `${url}&category=${encodeURIComponent(category)}`;
+    }
+    return ApiService.request(http.RequestMethod.GET, url, undefined, true);
+  }
+
+  static async getStudyShareDetail(id: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, `/api/study-share/detail?id=${id}`, undefined, true);
+  }
+
+  static async publishStudyShare(params: Record<string, Object>): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, '/api/study-share/publish', params, true);
+  }
+
+  static async deleteStudyShare(shareId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/study-share/delete?shareId=${shareId}`, undefined, true);
+  }
+
+  static async likeStudyShare(shareId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/study-share/like?shareId=${shareId}`, undefined, true);
+  }
+
+  static async favoriteStudyShare(shareId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/study-share/favorite?shareId=${shareId}`, undefined, true);
+  }
+
+  static async downloadStudyShare(shareId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/study-share/download?shareId=${shareId}`, undefined, true);
+  }
+
+  static async reportStudyShare(shareId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/study-share/report?shareId=${shareId}`, undefined, true);
+  }
+
+  static async getMyStudyShares(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/study-share/my-shares', undefined, true);
+  }
+
+  static async getMyStudyShareFavorites(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/study-share/my-favorites', undefined, true);
+  }
+
+  static async uploadStudyShareFile(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/study-share/upload', uri);
+  }
+
+  static async uploadStudyShareCover(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/study-share/upload-cover', uri);
+  }
+
+  static async getCarpoolList(destination: string, status: number, page: number, size: number): Promise<ApiResult> {
+    let path: string = `/api/carpool/list?page=${page}&size=${size}`;
+    if (destination.length > 0) {
+      path += `&destination=${encodeURIComponent(destination)}`;
+    }
+    if (status >= 0) {
+      path += `&status=${status}`;
+    }
+    return ApiService.request(http.RequestMethod.GET, path, undefined, true);
+  }
+
+  static async getCarpoolDetail(id: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, `/api/carpool/detail?id=${id}`, undefined, true);
+  }
+
+  static async publishCarpool(params: Record<string, Object>): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, '/api/carpool/publish', params, true);
+  }
+
+  static async joinCarpool(orderId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/carpool/join?orderId=${orderId}`, undefined, true);
+  }
+
+  static async cancelJoinCarpool(orderId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/carpool/cancel-join?orderId=${orderId}`, undefined, true);
+  }
+
+  static async cancelCarpool(orderId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/carpool/cancel?orderId=${orderId}`, undefined, true);
+  }
+
+  static async getMyCarpoolOrders(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/carpool/my-orders', undefined, true);
+  }
+
+  static parseCarpoolOrders(data: Object): CarpoolOrder[] {
+    const arr: Object[] = data as Object[];
+    const list: CarpoolOrder[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: CarpoolOrder = new CarpoolOrder();
+      item.id = (obj['id'] as number) ?? 0;
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.publisherName = (obj['publisherName'] as string) ?? '';
+      item.publisherAvatar = (obj['publisherAvatar'] as string) ?? '';
+      item.departure = (obj['departure'] as string) ?? '';
+      item.destination = (obj['destination'] as string) ?? '';
+      item.departureTime = (obj['departureTime'] as string) ?? '';
+      item.maxPassengers = (obj['maxPassengers'] as number) ?? 4;
+      item.currentPassengers = (obj['currentPassengers'] as number) ?? 0;
+      item.contactPhone = (obj['contactPhone'] as string) ?? '';
+      item.remark = (obj['remark'] as string) ?? '';
+      item.status = (obj['status'] as number) ?? 0;
+      item.joined = (obj['joined'] as boolean) ?? false;
+      item.createTime = (obj['createTime'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
+  }
+
+  static parsePassengers(data: Object): PassengerItem[] {
+    const arr: Object[] = data as Object[];
+    const list: PassengerItem[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: PassengerItem = new PassengerItem();
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.nickname = (obj['nickname'] as string) ?? '';
+      item.avatar = (obj['avatar'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
+  }
+
+  static parseClubActivityList(data: Object): ClubActivityItem[] {
+    const arr: Object[] = data as Object[];
+    const list: ClubActivityItem[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: ClubActivityItem = new ClubActivityItem();
+      item.id = (obj['id'] as number) ?? 0;
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.userName = (obj['userName'] as string) ?? '';
+      item.club = (obj['club'] as string) ?? '';
+      item.title = (obj['title'] as string) ?? '';
+      item.description = (obj['description'] as string) ?? '';
+      item.venue = (obj['venue'] as string) ?? '';
+      item.activityTime = (obj['activityTime'] as string) ?? '';
+      item.maxParticipants = (obj['maxParticipants'] as number) ?? 20;
+      item.currentParticipants = (obj['currentParticipants'] as number) ?? 0;
+      item.status = (obj['status'] as number) ?? 1;
+      item.createTime = (obj['createTime'] as string) ?? '';
+      item.coverImage = (obj['coverImage'] as string) ?? '';
+      item.registered = (obj['registered'] as boolean) ?? false;
+      const namesObj: Object = obj['participantNames'];
+      if (namesObj !== null && namesObj !== undefined) {
+        item.participantNames = namesObj as string[];
+      }
+      list.push(item);
+    }
+    return list;
+  }
+
+  static parseConfessionPostList(data: Object): ConfessionPost[] {
+    const arr: Object[] = data as Object[];
+    const list: ConfessionPost[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: ConfessionPost = new ConfessionPost();
+      item.id = (obj['id'] as number) ?? 0;
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.publisherName = (obj['publisherName'] as string) ?? '';
+      item.publisherAvatar = (obj['publisherAvatar'] as string) ?? '';
+      item.content = (obj['content'] as string) ?? '';
+      const imgObj: Object = obj['images'];
+      if (imgObj !== null && imgObj !== undefined) {
+        const imgArr: Object[] = imgObj as Object[];
+        item.images = [];
+        for (let j = 0; j < imgArr.length; j++) {
+          item.images.push(imgArr[j] as string);
+        }
+      }
+      item.category = (obj['category'] as string) ?? '树洞';
+      item.isAnonymous = (obj['isAnonymous'] as number) ?? 0;
+      item.likeCount = (obj['likeCount'] as number) ?? 0;
+      item.commentCount = (obj['commentCount'] as number) ?? 0;
+      item.liked = (obj['liked'] as boolean) ?? false;
+      item.status = (obj['status'] as number) ?? 0;
+      item.createTime = (obj['createTime'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
+  }
+
+  static parseStudyShareList(data: Object): StudyShareItem[] {
+    const arr: Object[] = data as Object[];
+    const list: StudyShareItem[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: StudyShareItem = new StudyShareItem();
+      item.id = (obj['id'] as number) ?? 0;
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.uploaderName = (obj['uploaderName'] as string) ?? '';
+      item.uploaderAvatar = (obj['uploaderAvatar'] as string) ?? '';
+      item.title = (obj['title'] as string) ?? '';
+      item.description = (obj['description'] as string) ?? '';
+      item.courseName = (obj['courseName'] as string) ?? '';
+      item.category = (obj['category'] as string) ?? '其他';
+      item.fileUrl = (obj['fileUrl'] as string) ?? '';
+      item.fileType = (obj['fileType'] as string) ?? '';
+      item.fileSize = (obj['fileSize'] as number) ?? 0;
+      item.coverImage = (obj['coverImage'] as string) ?? '';
+      item.likeCount = (obj['likeCount'] as number) ?? 0;
+      item.favoriteCount = (obj['favoriteCount'] as number) ?? 0;
+      item.downloadCount = (obj['downloadCount'] as number) ?? 0;
+      item.liked = (obj['liked'] as boolean) ?? false;
+      item.favorited = (obj['favorited'] as boolean) ?? false;
+      item.status = (obj['status'] as number) ?? 0;
+      item.createTime = (obj['createTime'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
+  }
+
+  static async submitSafetyReport(params: Record<string, Object>): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, '/api/safety/report', params, true);
+  }
+
+  static async getSafetyList(status: number, page: number, size: number): Promise<ApiResult> {
+    let path: string = `/api/safety/list?page=${page}&size=${size}`;
+    if (status >= 0) {
+      path += `&status=${status}`;
+    }
+    return ApiService.request(http.RequestMethod.GET, path, undefined, true);
+  }
+
+  static async getSafetyDetail(id: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, `/api/safety/detail?id=${id}`, undefined, true);
+  }
+
+  static async handleSafetyReport(id: number, status: number, remark: string): Promise<ApiResult> {
+    let path: string = `/api/safety/handle?id=${id}&status=${status}`;
+    if (remark.length > 0) {
+      path += `&remark=${encodeURIComponent(remark)}`;
+    }
+    return ApiService.request(http.RequestMethod.POST, path, undefined, true);
+  }
+
+  static async getMySafetyReports(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/safety/my-reports', undefined, true);
+  }
+
+  static async getSafetyContacts(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/safety/contacts', undefined, false);
+  }
+
+  static async uploadSafetyImage(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/safety/upload', uri);
+  }
+
+  static parseSafetyReports(data: Object): SafetyReport[] {
+    const arr: Object[] = data as Object[];
+    const list: SafetyReport[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: SafetyReport = new SafetyReport();
+      item.id = (obj['id'] as number) ?? 0;
+      item.userId = (obj['userId'] as number) ?? 0;
+      item.reporterName = (obj['reporterName'] as string) ?? '';
+      item.reporterPhone = (obj['reporterPhone'] as string) ?? '';
+      item.type = (obj['type'] as string) ?? '';
+      item.location = (obj['location'] as string) ?? '';
+      item.description = (obj['description'] as string) ?? '';
+      const imgObj: Object = obj['images'];
+      if (imgObj !== null && imgObj !== undefined) {
+        const imgArr: Object[] = imgObj as Object[];
+        item.images = [];
+        for (let j = 0; j < imgArr.length; j++) {
+          item.images.push(imgArr[j] as string);
+        }
+      }
+      item.status = (obj['status'] as number) ?? 0;
+      item.handlerId = (obj['handlerId'] as number) ?? 0;
+      item.handlerName = (obj['handlerName'] as string) ?? '';
+      item.handleRemark = (obj['handleRemark'] as string) ?? '';
+      item.createTime = (obj['createTime'] as string) ?? '';
+      item.handleTime = (obj['handleTime'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
+  }
+
+  static parseSafetyContacts(data: Object): SafetyContact[] {
+    const arr: Object[] = data as Object[];
+    const list: SafetyContact[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+      const item: SafetyContact = new SafetyContact();
+      item.id = (obj['id'] as number) ?? 0;
+      item.name = (obj['name'] as string) ?? '';
+      item.phone = (obj['phone'] as string) ?? '';
+      item.category = (obj['category'] as string) ?? '';
+      list.push(item);
+    }
+    return list;
   }
 }

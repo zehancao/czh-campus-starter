@@ -6,6 +6,7 @@ import { NavHeader } from '../common/NavHeader';
 
 const TYPE_TABS: string[] = ['全部', '寻物', '招领'];
 const STATUS_LABELS: string[] = ['进行中', '已找到'];
+const PAGE_SIZE: number = 20;
 
 @Component
 struct LFListCard {
@@ -130,13 +131,18 @@ struct LostFoundListPage {
   @State private activeTab: number = 0;
   @State private keywordValue: string = '';
   @State private isLoading: boolean = true;
+  @State private currentPage: number = 1;
+  @State private hasMore: boolean = true;
+  @State private isLoadingMore: boolean = false;
 
   onPageShow(): void {
-    this.loadList();
+    this.refreshList();
   }
 
-  private async loadList(): Promise<void> {
+  private async refreshList(): Promise<void> {
     this.isLoading = true;
+    this.currentPage = 1;
+    this.hasMore = true;
     let typeVal: number = 0;
     if (this.activeTab === 1) {
       typeVal = 1;
@@ -145,8 +151,9 @@ struct LostFoundListPage {
       typeVal = 2;
     }
     try {
-      const list: LostFoundItem[] = await ApiService.getLostFoundList(typeVal, this.keywordValue, 1);
+      const list: LostFoundItem[] = await ApiService.getLostFoundList(typeVal, this.keywordValue, this.currentPage);
       this.items = list;
+      this.hasMore = list.length >= PAGE_SIZE;
     } catch (err) {
       console.error("加载列表异常", JSON.stringify(err));
       this.items = [];
@@ -155,9 +162,33 @@ struct LostFoundListPage {
     }
   }
 
+  private async loadMore(): Promise<void> {
+    if (this.isLoadingMore || !this.hasMore) {
+      return;
+    }
+    this.isLoadingMore = true;
+    let typeVal: number = 0;
+    if (this.activeTab === 1) {
+      typeVal = 1;
+    }
+    if (this.activeTab === 2) {
+      typeVal = 2;
+    }
+    this.currentPage = this.currentPage + 1;
+    try {
+      const newItems: LostFoundItem[] = await ApiService.getLostFoundList(typeVal, this.keywordValue, this.currentPage);
+      this.items = [...this.items, ...newItems];
+      this.hasMore = newItems.length >= PAGE_SIZE;
+    } catch (err) {
+      console.error("加载更多异常", JSON.stringify(err));
+    } finally {
+      this.isLoadingMore = false;
+    }
+  }
+
   private onTabChange(index: number): void {
     this.activeTab = index;
-    this.loadList();
+    this.refreshList();
   }
 
   private goToDetail(item: LostFoundItem): void {
@@ -194,7 +225,7 @@ struct LostFoundListPage {
           .borderRadius(Theme.radiusPill)
           .padding({ left: 16 })
           .onChange((val: string) => { this.keywordValue = val })
-          .onSubmit(() => { this.loadList() })
+          .onSubmit(() => { this.refreshList() })
         Blank()
       }
       .width('100%')
@@ -226,8 +257,8 @@ struct LostFoundListPage {
 
       Divider().height(1).color(Theme.border)
 
-      Scroll() {
-        Column() {
+      List({ space: 0 }) {
+        ListItem() {
           Row() {
             Text('共 ' + this.items.length + ' 条')
               .fontSize(12).fontColor(Theme.textTertiary)
@@ -235,15 +266,19 @@ struct LostFoundListPage {
           }
           .width('100%')
           .padding({ left: 16, right: 16, bottom: 8 })
+        }
 
-          if (this.items.length > 0) {
-            ForEach(this.items, (item: LostFoundItem) => {
+        if (this.items.length > 0) {
+          ForEach(this.items, (item: LostFoundItem) => {
+            ListItem() {
               LFListCard({
                 itemData: item,
                 onTapCallback: () => this.goToDetail(item)
               })
-            }, (item: LostFoundItem) => item.id.toString())
-          } else {
+            }
+          }, (item: LostFoundItem) => item.id.toString())
+        } else {
+          ListItem() {
             Column() {
               Text('🕊️').fontSize(56)
               Text(this.keywordValue.length > 0 ? '没有找到相关结果' : '暂无失物招领信息')
@@ -261,11 +296,34 @@ struct LostFoundListPage {
             .margin({ top: 40 })
           }
         }
-        .width('100%')
-        .padding({ left: 12, right: 12, top: 4, bottom: 20 })
+
+        if (this.hasMore && this.items.length > 0) {
+          ListItem() {
+            Row() {
+              LoadingProgress().width(20).height(20)
+              Text('加载更多...')
+                .fontSize(13).fontColor(Theme.textTertiary).margin({ left: 8 })
+            }
+            .width('100%')
+            .justifyContent(FlexAlign.Center)
+            .padding({ top: 12, bottom: 12 })
+          }
+        }
+
+        if (!this.hasMore && this.items.length > 0) {
+          ListItem() {
+            Text('- 没有更多了 -')
+              .fontSize(13).fontColor(Theme.textTertiary)
+              .width('100%')
+              .textAlign(TextAlign.Center)
+              .padding({ top: 12, bottom: 12 })
+          }
+        }
       }
       .layoutWeight(1)
       .edgeEffect(EdgeEffect.Spring)
+      .padding({ left: 12, right: 12, top: 4, bottom: 20 })
+      .onReachEnd(() => { this.loadMore() })
     }
     .width('100%')
     .height('100%')

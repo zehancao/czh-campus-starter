@@ -2,6 +2,8 @@
 import { ClubActivityItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
 
+const PAGE_SIZE: number = 20;
+
 @Entry
 @Component
 struct ClubActivityListPage {
@@ -12,40 +14,69 @@ struct ClubActivityListPage {
   @State isRefreshing: boolean = false;
   @State isLoading: boolean = false;
   @State errorMessage: string = '';
+  @State currentPage: number = 1;
+  @State hasMore: boolean = true;
+  @State isLoadingMore: boolean = false;
   private clubOptions: string[] = ['', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
   private clubLabels: string[] = ['全部', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
   private statusValues: number[] = [0, 1, 2, 3];
   private statusLabels: string[] = ['全部', '报名中', '已满', '已结束'];
 
   aboutToAppear(): void {
-    this.loadActivities();
+    this.refreshActivities();
   }
 
   onPageShow(): void {
-    this.loadActivities();
+    this.refreshActivities();
   }
 
-  private async loadActivities(): Promise<void> {
+  private async refreshActivities(): Promise<void> {
+    this.currentPage = 1;
+    this.hasMore = true;
     this.isLoading = true;
     this.errorMessage = '';
     let result: ApiResult;
     if (this.showMine) {
-      result = await ApiService.getMyClubActivities();
+      result = await ApiService.getMyClubActivities(this.currentPage, PAGE_SIZE);
     } else {
-      result = await ApiService.getClubActivityList(this.selectedClub, this.selectedStatus);
+      result = await ApiService.getClubActivityList(this.selectedClub, this.selectedStatus, this.currentPage, PAGE_SIZE);
     }
     if (result.code === 200 && result.data !== undefined) {
-      this.activities = this.parseActivityList(result.data);
+      const arr: ClubActivityItem[] = this.parseActivityList(result.data);
+      this.activities = arr;
+      this.hasMore = arr.length >= PAGE_SIZE;
     } else {
       this.activities = [];
+      this.hasMore = false;
       this.errorMessage = result.msg.length > 0 ? result.msg : '活动加载失败';
     }
     this.isLoading = false;
   }
 
-  private async refreshActivities(): Promise<void> {
+  private async loadMore(): Promise<void> {
+    if (this.isLoadingMore || !this.hasMore) {
+      return;
+    }
+    this.isLoadingMore = true;
+    this.currentPage = this.currentPage + 1;
+    let result: ApiResult;
+    if (this.showMine) {
+      result = await ApiService.getMyClubActivities(this.currentPage, PAGE_SIZE);
+    } else {
+      result = await ApiService.getClubActivityList(this.selectedClub, this.selectedStatus, this.currentPage, PAGE_SIZE);
+    }
+    if (result.code === 200 && result.data !== undefined) {
+      const newItems: ClubActivityItem[] = this.parseActivityList(result.data);
+      const merged: ClubActivityItem[] = this.activities.concat(newItems);
+      this.activities = merged;
+      this.hasMore = newItems.length >= PAGE_SIZE;
+    }
+    this.isLoadingMore = false;
+  }
+
+  private async doRefresh(): Promise<void> {
     this.isRefreshing = true;
-    await this.loadActivities();
+    await this.refreshActivities();
     this.isRefreshing = false;
   }
 
@@ -192,7 +223,7 @@ struct ClubActivityListPage {
           .borderRadius(17)
           .onClick(() => {
             this.showMine = false;
-            this.loadActivities();
+            this.refreshActivities();
           })
         Button('我的报名')
           .height(34)
@@ -202,7 +233,7 @@ struct ClubActivityListPage {
           .borderRadius(17)
           .onClick(() => {
             this.showMine = true;
-            this.loadActivities();
+            this.refreshActivities();
           })
       }
       .width('100%')
@@ -221,7 +252,7 @@ struct ClubActivityListPage {
                 .borderRadius(15)
                 .onClick(() => {
                   this.selectedClub = club;
-                  this.loadActivities();
+                  this.refreshActivities();
                 })
             }, (club: string, index: number) => `${index}-${club}`)
           }
@@ -244,7 +275,7 @@ struct ClubActivityListPage {
                 .borderRadius(15)
                 .onClick(() => {
                   this.selectedStatus = status;
-                  this.loadActivities();
+                  this.refreshActivities();
                 })
             }, (status: number, index: number) => `${index}-${status}`)
           }
@@ -285,7 +316,7 @@ struct ClubActivityListPage {
               .borderRadius(18)
               .margin({ top: 16 })
               .onClick(() => {
-                this.loadActivities();
+                this.refreshActivities();
               })
           }
           .width('100%')
@@ -298,16 +329,46 @@ struct ClubActivityListPage {
                 this.ActivityCard(item)
               }
             }, (item: ClubActivityItem) => `${item.id}`)
+            if (this.hasMore && this.activities.length > 0) {
+              ListItem() {
+                Row() {
+                  LoadingProgress()
+                    .width(20)
+                    .height(20)
+                    .color(Theme.primary)
+                  Text('加载更多...')
+                    .fontSize(13)
+                    .fontColor(Theme.textTertiary)
+                    .margin({ left: 8 })
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.Center)
+                .padding({ top: 12, bottom: 12 })
+              }
+            }
+            if (!this.hasMore && this.activities.length > 0) {
+              ListItem() {
+                Text('- 没有更多了 -')
+                  .fontSize(13)
+                  .fontColor(Theme.textTertiary)
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                  .padding({ top: 12, bottom: 12 })
+              }
+            }
           }
           .width('100%')
           .height('100%')
           .padding({ left: 16, right: 16, top: 14, bottom: 24 })
           .scrollBar(BarState.Off)
+          .onReachEnd(() => {
+            this.loadMore();
+          })
         }
       }
       .layoutWeight(1)
       .onRefreshing(() => {
-        this.refreshActivities();
+        this.doRefresh();
       })
     }
     .width('100%')

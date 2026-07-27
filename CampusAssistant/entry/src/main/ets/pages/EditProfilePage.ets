@@ -197,27 +197,6 @@ struct EditProfilePage {
               .height(56)
               .padding({ left: 16, right: 16 })
 
-              Row()
-                .width('100%')
-                .height(0.5)
-                .margin({ left: 16 })
-                .backgroundColor(Theme.border)
-
-              Row() {
-                Text('修改密码')
-                  .fontSize(15)
-                  .fontColor(Theme.textPrimary)
-                Blank()
-                Text('›')
-                  .fontSize(22)
-                  .fontColor(Theme.textDisabled)
-              }
-              .width('100%')
-              .height(56)
-              .padding({ left: 16, right: 16 })
-              .onClick(() => {
-                router.pushUrl({ url: 'pages/PasswordChangePage' });
-              })
             }
             .width('100%')
             .backgroundColor(Theme.bgCard)

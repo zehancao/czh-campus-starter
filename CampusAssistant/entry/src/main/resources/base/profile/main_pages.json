@@ -27,8 +27,17 @@
     "pages/MyComplaintsPage",
     "pages/SettingsPage",
     "pages/CarpoolPage",
+    "pages/CarpoolDetailPage",
+    "pages/CarpoolPublishPage",
     "pages/ConfessionWallPage",
+    "pages/ConfessionDetailPage",
+    "pages/ConfessionPublishPage",
     "pages/CampusSafetyPage",
-    "pages/StudySharePage"
+    "pages/SafetyReportDetailPage",
+    "pages/SafetyReportPage",
+    "pages/StudySharePage",
+    "pages/StudyShareDetailPage",
+    "pages/StudySharePublishPage",
+    "pages/StudySharePreviewPage"
   ]
 }

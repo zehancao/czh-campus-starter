@@ -33,6 +33,9 @@ struct MainPage {
   @State announcements: Announcement[] = [];
   @State myActivities: ClubActivityItem[] = [];
   @State products: Product[] = [];
+  @State productPage: number = 1;
+  @State productHasMore: boolean = true;
+  @State productLoadingMore: boolean = false;
   @State todayCourses: CourseSchedule[] = [];
   @State scheduleGrid: CourseSchedule[][] = [];
   @State isRefreshing: boolean = false;
@@ -89,7 +92,7 @@ struct MainPage {
     this.loadSemester();
     this.loadAnnouncements();
     this.loadCategories();
-    this.loadProducts();
+    this.refreshProducts();
     this.loadUnreadCount();
     this.loadMyActivities();
     this.mainWsCallback = (msg: WsMessage) => {
@@ -131,7 +134,7 @@ struct MainPage {
     freshInfo.creditScore = store.userInfo.creditScore;
     this.userInfo = freshInfo;
     this.loadSemester();
-    this.loadProducts();
+    this.refreshProducts();
     this.loadMyActivities();
     this.loadUnreadCount();
     if (store.isLoggedIn && this.conversationLoadedOnce) {
@@ -394,7 +397,7 @@ struct MainPage {
   private async searchProducts(): Promise<void> {
     this.showSuggestions = false;
     if (this.searchKeyword.trim().length === 0) {
-      this.loadProducts();
+      this.refreshProducts();
       return;
     }
     const result: ApiResult = await ApiService.request(http.RequestMethod.GET,
@@ -450,45 +453,76 @@ struct MainPage {
     }
   }
 
-  private async loadProducts(): Promise<void> {
-    const result: ApiResult = await ApiService.getProductList(this.selectedCategoryId);
+  private async refreshProducts(): Promise<void> {
+    this.productPage = 1;
+    this.productHasMore = true;
+    const result: ApiResult = await ApiService.getProductList(this.selectedCategoryId, 1, 20);
     if (result.code === 200 && result.data !== undefined) {
       const arr: Object[] = result.data as Object[];
       this.products = [];
       for (let i = 0; i < arr.length; i++) {
         const obj: Record<string, Object> = arr[i] as Record<string, Object>;
-        const item: Product = new Product();
-        item.id = (obj['id'] as number) ?? 0;
-        item.sellerId = (obj['sellerId'] as number) ?? 0;
-        item.sellerName = (obj['sellerName'] as string) ?? '';
-        item.categoryId = (obj['categoryId'] as number) ?? 0;
-        item.categoryName = (obj['categoryName'] as string) ?? '';
-        item.title = (obj['title'] as string) ?? '';
-        item.description = (obj['description'] as string) ?? '';
-        item.price = (obj['price'] as number) ?? 0;
-        item.originalPrice = (obj['originalPrice'] as number) ?? 0;
-        item.conditionLevel = (obj['conditionLevel'] as number) ?? 1;
-        item.status = (obj['status'] as number) ?? 1;
-        item.viewCount = (obj['viewCount'] as number) ?? 0;
-        item.campusLocation = (obj['campusLocation'] as string) ?? '';
-        item.createTime = (obj['createTime'] as string) ?? '';
-        const imagesObj: Object = obj['images'];
-        if (imagesObj !== null && imagesObj !== undefined) {
-          item.images = imagesObj as string[];
-        }
+        const item: Product = this.parseProduct(obj);
         this.products.push(item);
+      }
+      if (arr.length < 20) {
+        this.productHasMore = false;
       }
     }
   }
 
+  private async loadMoreProducts(): Promise<void> {
+    if (this.productLoadingMore || !this.productHasMore) {
+      return;
+    }
+    this.productLoadingMore = true;
+    this.productPage = this.productPage + 1;
+    const result: ApiResult = await ApiService.getProductList(this.selectedCategoryId, this.productPage, 20);
+    if (result.code === 200 && result.data !== undefined) {
+      const arr: Object[] = result.data as Object[];
+      for (let i = 0; i < arr.length; i++) {
+        const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+        const item: Product = this.parseProduct(obj);
+        this.products.push(item);
+      }
+      if (arr.length < 20) {
+        this.productHasMore = false;
+      }
+    }
+    this.productLoadingMore = false;
+  }
+
+  private parseProduct(obj: Record<string, Object>): Product {
+    const item: Product = new Product();
+    item.id = (obj['id'] as number) ?? 0;
+    item.sellerId = (obj['sellerId'] as number) ?? 0;
+    item.sellerName = (obj['sellerName'] as string) ?? '';
+    item.categoryId = (obj['categoryId'] as number) ?? 0;
+    item.categoryName = (obj['categoryName'] as string) ?? '';
+    item.title = (obj['title'] as string) ?? '';
+    item.description = (obj['description'] as string) ?? '';
+    item.price = (obj['price'] as number) ?? 0;
+    item.originalPrice = (obj['originalPrice'] as number) ?? 0;
+    item.conditionLevel = (obj['conditionLevel'] as number) ?? 1;
+    item.status = (obj['status'] as number) ?? 1;
+    item.viewCount = (obj['viewCount'] as number) ?? 0;
+    item.campusLocation = (obj['campusLocation'] as string) ?? '';
+    item.createTime = (obj['createTime'] as string) ?? '';
+    const imagesObj: Object = obj['images'];
+    if (imagesObj !== null && imagesObj !== undefined) {
+      item.images = imagesObj as string[];
+    }
+    return item;
+  }
+
   private async loadAllData(): Promise<void> {
     this.isRefreshing = true;
-    await Promise.all([this.loadSchedule(), this.loadAnnouncements(), this.loadProducts(), this.loadMyActivities(), this.loadUnreadCount()]);
+    await Promise.all([this.loadSchedule(), this.loadAnnouncements(), this.refreshProducts(), this.loadMyActivities(), this.loadUnreadCount()]);
     this.isRefreshing = false;
   }
 
   private async loadMyActivities(): Promise<void> {
-    const result: ApiResult = await ApiService.getMyClubActivities();
+    const result: ApiResult = await ApiService.getMyClubActivities(1, 5);
     if (result.code === 200 && result.data !== undefined) {
       const arr: Object[] = result.data as Object[];
       this.myActivities = [];
@@ -1957,7 +1991,7 @@ struct MainPage {
 
   private async refreshMarket(): Promise<void> {
     this.marketRefreshing = true;
-    await this.loadProducts();
+    await this.refreshProducts();
     this.marketRefreshing = false;
   }
 
@@ -2124,7 +2158,7 @@ struct MainPage {
               .shadow(ShadowStyle.sm)
               .onClick(() => {
                 this.selectedCategoryId = 0;
-                this.loadProducts();
+                this.refreshProducts();
               })
             ForEach(this.categories, (cat: ProductCategory) => {
               Text(cat.name)
@@ -2136,7 +2170,7 @@ struct MainPage {
                 .shadow(ShadowStyle.sm)
                 .onClick(() => {
                   this.selectedCategoryId = cat.id;
-                  this.loadProducts();
+                  this.refreshProducts();
                 })
             }, (cat: ProductCategory) => `${cat.id}`)
           }
@@ -2145,29 +2179,56 @@ struct MainPage {
         .scrollable(ScrollDirection.Horizontal)
         .scrollBar(BarState.Off)
 
-        Scroll() {
-          Row({ space: 8 }) {
-            Column({ space: 8 }) {
-              ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 0), (item: Product) => {
-                this.ProductCard(item)
-              }, (item: Product, _index: number) => `l-${item.id}`)
-            }
-            .layoutWeight(1)
+        List() {
+          ListItem() {
+            Row({ space: 8 }) {
+              Column({ space: 8 }) {
+                ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 0), (item: Product) => {
+                  this.ProductCard(item)
+                }, (item: Product, _index: number) => `l-${item.id}`)
+              }
+              .layoutWeight(1)
 
-            Column({ space: 8 }) {
-              ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 1), (item: Product) => {
-                this.ProductCard(item)
-              }, (item: Product, _index: number) => `r-${item.id}`)
+              Column({ space: 8 }) {
+                ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 1), (item: Product) => {
+                  this.ProductCard(item)
+                }, (item: Product, _index: number) => `r-${item.id}`)
+              }
+              .layoutWeight(1)
+              .margin({ top: 24 })
             }
-            .layoutWeight(1)
-            .margin({ top: 24 })
+            .width('100%')
           }
-          .width('100%')
-          .padding({ left: 12, right: 12, top: 4, bottom: 86 })
+
+          ListItem() {
+            Column() {
+              if (this.productLoadingMore) {
+                Row() {
+                  LoadingProgress().width(20).height(20).color(Theme.primary)
+                  Text('加载更多...')
+                    .fontSize(13).fontColor(Theme.textSecondary).margin({ left: 8 })
+                }
+                .justifyContent(FlexAlign.Center)
+                .width('100%')
+                .padding({ top: 12, bottom: 12 })
+              } else if (!this.productHasMore && this.products.length > 0) {
+                Text('- 没有更多了 -')
+                  .fontSize(13).fontColor(Theme.textTertiary)
+                  .width('100%').textAlign(TextAlign.Center)
+                  .padding({ top: 12, bottom: 12 })
+              }
+            }
+            .width('100%')
+            .padding({ bottom: 80 })
+          }
         }
         .layoutWeight(1)
-        .scrollBar(BarState.Off)
+        .scrollBar(BarState.Auto)
         .edgeEffect(EdgeEffect.Spring)
+        .padding({ left: 12, right: 12, top: 4 })
+        .onReachEnd(() => {
+          this.loadMoreProducts();
+        })
       }
       .width('100%')
       .height('100%')
@@ -2833,60 +2894,6 @@ struct MainPage {
           .padding({ left: 20, right: 20 })
           .onClick(() => {
             this.getUIContext().getRouter().pushUrl({ url: 'pages/MyComplaintsPage' });
-          })
-
-          Divider().margin({ left: 20, right: 20 })
-
-          Row() {
-            Text('AI 助手')
-              .fontSize(14)
-              .fontColor(Theme.textPrimary)
-            Blank()
-            Text('>')
-              .fontSize(14)
-              .fontColor(Theme.textDisabled)
-          }
-          .width('100%')
-          .height(48)
-          .padding({ left: 20, right: 20 })
-          .onClick(() => {
-            this.currentTab = 3;
-          })
-
-          Divider().margin({ left: 20, right: 20 })
-
-          Row() {
-            Text('消息通知')
-              .fontSize(14)
-              .fontColor(Theme.textPrimary)
-            Blank()
-            Text('>')
-              .fontSize(14)
-              .fontColor(Theme.textDisabled)
-          }
-          .width('100%')
-          .height(48)
-          .padding({ left: 20, right: 20 })
-          .onClick(() => {
-            this.currentTab = 2;
-          })
-
-          Divider().margin({ left: 20, right: 20 })
-
-          Row() {
-            Text('修改密码')
-              .fontSize(14)
-              .fontColor(Theme.textPrimary)
-            Blank()
-            Text('>')
-              .fontSize(14)
-              .fontColor(Theme.textDisabled)
-          }
-          .width('100%')
-          .height(48)
-          .padding({ left: 20, right: 20 })
-          .onClick(() => {
-            this.getUIContext().getRouter().pushUrl({ url: 'pages/PasswordChangePage' });
           })
 
           Divider().margin({ left: 20, right: 20 })

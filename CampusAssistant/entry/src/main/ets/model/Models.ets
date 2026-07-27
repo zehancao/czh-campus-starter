@@ -162,3 +162,98 @@ export class ClubActivityItem {
   registered: boolean = false;
   participantNames: string[] = [];
 }
+
+export class ConfessionPost {
+  id: number = 0;
+  userId: number = 0;
+  publisherName: string = '';
+  publisherAvatar: string = '';
+  content: string = '';
+  images: string[] = [];
+  category: string = '树洞';
+  isAnonymous: number = 0;
+  likeCount: number = 0;
+  commentCount: number = 0;
+  liked: boolean = false;
+  status: number = 0;
+  createTime: string = '';
+}
+
+export class ConfessionComment {
+  id: number = 0;
+  userId: number = 0;
+  nickname: string = '';
+  avatar: string = '';
+  content: string = '';
+  isAnonymous: number = 0;
+  createTime: string = '';
+}
+
+export class CarpoolOrder {
+  id: number = 0;
+  userId: number = 0;
+  publisherName: string = '';
+  publisherAvatar: string = '';
+  departure: string = '';
+  destination: string = '';
+  departureTime: string = '';
+  maxPassengers: number = 4;
+  currentPassengers: number = 0;
+  contactPhone: string = '';
+  remark: string = '';
+  status: number = 0;
+  joined: boolean = false;
+  createTime: string = '';
+}
+
+export class PassengerItem {
+  userId: number = 0;
+  nickname: string = '';
+  avatar: string = '';
+}
+
+export class StudyShareItem {
+  id: number = 0;
+  userId: number = 0;
+  uploaderName: string = '';
+  uploaderAvatar: string = '';
+  title: string = '';
+  description: string = '';
+  courseName: string = '';
+  category: string = '其他';
+  fileUrl: string = '';
+  fileType: string = '';
+  fileSize: number = 0;
+  coverImage: string = '';
+  likeCount: number = 0;
+  favoriteCount: number = 0;
+  downloadCount: number = 0;
+  liked: boolean = false;
+  favorited: boolean = false;
+  status: number = 0;
+  createTime: string = '';
+}
+
+export class SafetyReport {
+  id: number = 0;
+  userId: number = 0;
+  reporterName: string = '';
+  reporterPhone: string = '';
+  type: string = '';
+  location: string = '';
+  description: string = '';
+  images: string[] = [];
+  status: number = 0;
+  handlerId: number = 0;
+  handlerName: string = '';
+  handleRemark: string = '';
+  createTime: string = '';
+  handleTime: string = '';
+}
+
+export class SafetyContact {
+  id: number = 0;
+  name: string = '';
+  phone: string = '';
+  category: string = '';
+}

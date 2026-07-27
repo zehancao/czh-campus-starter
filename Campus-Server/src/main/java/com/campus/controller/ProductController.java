@@ -33,9 +33,11 @@ public class ProductController {
     private String uploadDir;
 
     @GetMapping("/list")
-    public Result<List<ProductVO>> getList(@RequestParam(required = false) Long categoryId) {
-        List<ProductVO> list = productService.getProductList(categoryId);
-        return Result.ok(list);
+    public Result<List<ProductVO>> getList(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.ok(productService.getProductList(categoryId, page, size));
     }
 
     @GetMapping("/search")

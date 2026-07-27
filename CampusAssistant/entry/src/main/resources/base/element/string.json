@@ -27,6 +27,14 @@
     {
       "name": "widget_today_schedule_desc",
       "value": "显示今日课程安排"
+    },
+    {
+      "name": "call_reason",
+      "value": "用于紧急情况下一键拨打求助电话"
+    },
+    {
+      "name": "location_reason",
+      "value": "用于紧急求助时获取您的位置信息"
     }
   ]
 }
