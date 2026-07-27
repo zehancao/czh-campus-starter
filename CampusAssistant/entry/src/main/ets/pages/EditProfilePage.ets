@@ -226,6 +226,25 @@ struct EditProfilePage {
               .onClick(() => {
                 this.saveUserName();
               })
+
+            Row() {
+              Text('修改密码')
+                .fontSize(15)
+                .fontColor(Theme.primary)
+              Text('›')
+                .fontSize(20)
+                .fontColor(Theme.textDisabled)
+            }
+            .width('100%')
+            .height(52)
+            .justifyContent(FlexAlign.SpaceBetween)
+            .padding({ left: 16, right: 16 })
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius)
+            .margin({ top: 16 })
+            .onClick(() => {
+              router.pushUrl({ url: 'pages/PasswordChangePage' });
+            })
           }
           .width('100%')
           .padding({ left: 20, right: 20, top: 20, bottom: 40 })
