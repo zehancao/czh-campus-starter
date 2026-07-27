@@ -213,20 +213,6 @@ struct EditProfilePage {
                 .margin({ top: 12 })
             }
 
-            Button(this.isSavingName ? '保存中...' : '保存修改')
-              .width('100%')
-              .height(48)
-              .fontSize(16)
-              .fontColor(Color.White)
-              .backgroundColor(Theme.primary)
-              .borderRadius(24)
-              .margin({ top: 30 })
-              .shadow(ShadowStyle.sm)
-              .enabled(!this.isSavingName)
-              .onClick(() => {
-                this.saveUserName();
-              })
-
             Row() {
               Text('修改密码')
                 .fontSize(15)
@@ -245,6 +231,20 @@ struct EditProfilePage {
             .onClick(() => {
               router.pushUrl({ url: 'pages/PasswordChangePage' });
             })
+
+            Button(this.isSavingName ? '保存中...' : '保存修改')
+              .width('100%')
+              .height(48)
+              .fontSize(16)
+              .fontColor(Color.White)
+              .backgroundColor(Theme.primary)
+              .borderRadius(24)
+              .margin({ top: 30 })
+              .shadow(ShadowStyle.sm)
+              .enabled(!this.isSavingName)
+              .onClick(() => {
+                this.saveUserName();
+              })
           }
           .width('100%')
           .padding({ left: 20, right: 20, top: 20, bottom: 40 })
