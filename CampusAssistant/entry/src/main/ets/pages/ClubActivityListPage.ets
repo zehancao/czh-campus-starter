@@ -1,6 +1,8 @@
 ﻿import { ApiService, ApiResult } from '../service/ApiService';
 import { ClubActivityItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
+import { NavHeader } from '../common/NavHeader';
+import { AppStore } from '../service/AppStore';
 
 const PAGE_SIZE: number = 20;
 
@@ -191,14 +193,34 @@ struct ClubActivityListPage {
     });
   }
 
+  private confirmDeleteActivity(item: ClubActivityItem): void {
+    AlertDialog.show({
+      message: '确定删除这个活动吗？',
+      primaryButton: {
+        value: '取消',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: '删除',
+        action: () => { this.doDeleteActivity(item.id) }
+      }
+    });
+  }
+
+  private async doDeleteActivity(activityId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteClubActivity(activityId);
+    if (result.code === 200) {
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+      this.refreshActivities();
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
+  }
+
   build() {
     Column() {
-      Row() {
-        Text('校园活动')
-          .fontSize(22)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(Theme.textPrimary)
-        Blank()
+      NavHeader({ title: '校园活动' }) {
         Button('组局')
           .height(36)
           .fontSize(14)
@@ -210,9 +232,6 @@ struct ClubActivityListPage {
             this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityPublishPage' });
           })
       }
-      .width('100%')
-      .padding({ left: 20, right: 20, top: 18, bottom: 12 })
-      .backgroundColor(Theme.bgCard)
 
       Row({ space: 10 }) {
         Button('活动广场')
@@ -395,6 +414,13 @@ struct ClubActivityListPage {
           .backgroundColor(Theme.primaryLight)
           .borderRadius(4)
         Blank()
+        if (AppStore.getInstance().isLoggedIn && AppStore.getInstance().userInfo.id === item.userId) {
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.textTertiary)
+            .margin({ right: 8 })
+            .onClick(() => { this.confirmDeleteActivity(item) })
+        }
         Text(this.statusText(item.status))
           .fontSize(12)
           .fontColor(this.statusColor(item.status))

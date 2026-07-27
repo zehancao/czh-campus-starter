@@ -1,5 +1,5 @@
 import { AppStore } from '../service/AppStore';
-import { UserInfo, CourseSchedule, Product, Announcement, Semester, ProductCategory, ClubActivityItem, Conversation, ChatMessage } from '../model/Models';
+import { UserInfo, CourseSchedule, Product, Announcement, Semester, ProductCategory, ClubActivityItem, Conversation, ChatMessage, CarpoolOrder } from '../model/Models';
 import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSocketService';
 import { Constants } from '../common/Constants';
 import { ApiService, ApiResult } from '../service/ApiService';
@@ -32,6 +32,7 @@ struct MainPage {
   @State scheduleList: CourseSchedule[] = [];
   @State announcements: Announcement[] = [];
   @State myActivities: ClubActivityItem[] = [];
+  @State myCarpools: CarpoolOrder[] = [];
   @State products: Product[] = [];
   @State productPage: number = 1;
   @State productHasMore: boolean = true;
@@ -95,6 +96,7 @@ struct MainPage {
     this.refreshProducts();
     this.loadUnreadCount();
     this.loadMyActivities();
+    this.loadMyCarpools();
     this.mainWsCallback = (msg: WsMessage) => {
       if (msg.type === 'unread_update') {
         const data: Record<string, Object> = msg.data as Record<string, Object>;
@@ -136,6 +138,7 @@ struct MainPage {
     this.loadSemester();
     this.refreshProducts();
     this.loadMyActivities();
+    this.loadMyCarpools();
     this.loadUnreadCount();
     if (store.isLoggedIn && this.conversationLoadedOnce) {
       this.loadConversations(false);
@@ -542,6 +545,15 @@ struct MainPage {
     }
   }
 
+  private async loadMyCarpools(): Promise<void> {
+    const store: AppStore = AppStore.getInstance();
+    if (!store.isLoggedIn) return;
+    const result: ApiResult = await ApiService.getMyCarpoolOrders();
+    if (result.code === 200 && result.data !== undefined) {
+      this.myCarpools = ApiService.parseCarpoolOrders(result.data);
+    }
+  }
+
   private getGreeting(): string {
     const hour: number = new Date().getHours();
     if (hour < 12) return '早上好';
@@ -819,6 +831,9 @@ struct MainPage {
                 Text('更多 >')
                   .fontSize(13)
                   .fontColor(Theme.ocean)
+                  .onClick(() => {
+                    this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityListPage' });
+                  })
               }
               .width('100%')
               .padding({ left: 16, right: 16 })
@@ -913,6 +928,127 @@ struct MainPage {
             .padding({ top: 12, bottom: 12 })
           }
 
+          if (this.myCarpools.length > 0) {
+            Column() {
+              Row() {
+                Row() {
+                  Row()
+                    .width(4).height(18)
+                    .borderRadius(2)
+                    .backgroundColor('#10B981')
+                  Text('我的约车')
+                    .fontSize(18)
+                    .fontWeight(FontWeight.Medium)
+                    .fontColor(Theme.textPrimary)
+                    .margin({ left: 8 })
+                }
+                Blank()
+                Text('更多 >')
+                  .fontSize(13)
+                  .fontColor('#10B981')
+                  .onClick(() => {
+                    this.getUIContext().getRouter().pushUrl({ url: 'pages/CarpoolPage' });
+                  })
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16 })
+              .margin({ bottom: 12 })
+
+              Column() {
+                ForEach(this.myCarpools, (item: CarpoolOrder) => {
+                Row() {
+                  Column() {
+                    Text('\uD83D\uDE97')
+                      .fontSize(24)
+                  }
+                  .width(44)
+                  .height(44)
+                  .backgroundColor('#ECFDF5')
+                  .borderRadius(10)
+                  .justifyContent(FlexAlign.Center)
+
+                  Column() {
+                    Row() {
+                      Text(item.departure)
+                        .fontSize(14)
+                        .fontWeight(FontWeight.Medium)
+                        .fontColor(Theme.textPrimary)
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      Text(' \u2192 ')
+                        .fontSize(14)
+                        .fontColor(Theme.textTertiary)
+                      Text(item.destination)
+                        .fontSize(14)
+                        .fontWeight(FontWeight.Medium)
+                        .fontColor(Theme.textPrimary)
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .layoutWeight(1)
+                      Blank()
+                      if (item.status === 0) {
+                        Text('招募中')
+                          .fontSize(11)
+                          .fontColor('#FFFFFF')
+                          .backgroundColor('#10B981')
+                          .borderRadius(4)
+                          .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                      } else if (item.status === 1) {
+                        Text('已满')
+                          .fontSize(11)
+                          .fontColor('#FFFFFF')
+                          .backgroundColor('#F59E0B')
+                          .borderRadius(4)
+                          .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                      } else if (item.status === 3) {
+                        Text('已取消')
+                          .fontSize(11)
+                          .fontColor(Theme.textDisabled)
+                          .backgroundColor(Theme.bgPage)
+                          .borderRadius(4)
+                          .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                      }
+                    }
+                    .width('100%')
+
+                    Row() {
+                      Text(item.departureTime)
+                        .fontSize(12)
+                        .fontColor(Theme.textTertiary)
+                      Text(` \u00B7 `)
+                        .fontSize(12)
+                        .fontColor(Theme.textTertiary)
+                      Text(`${item.currentPassengers}/${item.maxPassengers}人`)
+                        .fontSize(12)
+                        .fontColor(Theme.textTertiary)
+                    }
+                    .width('100%')
+                    .margin({ top: 4 })
+                  }
+                  .layoutWeight(1)
+                  .margin({ left: 12 })
+                  .alignItems(HorizontalAlign.Start)
+                }
+                .width('100%')
+                .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+                .backgroundColor(Theme.bgCard)
+                .borderRadius(Theme.radiusMd)
+                .margin({ bottom: 8 })
+                .onClick(() => {
+                  this.getUIContext().getRouter().pushUrl({
+                    url: 'pages/CarpoolDetailPage',
+                    params: { 'id': `${item.id}` } as Record<string, string>
+                  });
+                })
+              }, (item: CarpoolOrder) => `${item.id}`)
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16 })
+            }
+            .width('100%')
+            .padding({ top: 12, bottom: 12 })
+          }
+
           Column() {
             Row() {
               Row() {
@@ -926,10 +1062,7 @@ struct MainPage {
                   .fontColor(Theme.textPrimary)
                   .margin({ left: 8 })
               }
-              Blank()
-              Text('更多 >')
-                .fontSize(13)
-                .fontColor(Theme.primary)
+              .width('100%')
             }
             .width('100%')
             .padding({ left: 16, right: 16 })

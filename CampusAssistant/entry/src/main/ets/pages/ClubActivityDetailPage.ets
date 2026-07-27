@@ -2,6 +2,7 @@
 import { ClubActivityItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
+import { AppStore } from '../service/AppStore';
 
 @Entry
 @Component
@@ -108,6 +109,31 @@ struct ClubActivityDetailPage {
       this.getUIContext().getPromptAction().showToast({ message: result.msg.length > 0 ? result.msg : '取消失败' });
     }
     this.isSubmitting = false;
+  }
+
+  private confirmDeleteActivity(): void {
+    AlertDialog.show({
+      message: '确定删除这个活动吗？删除后不可恢复。',
+      primaryButton: {
+        value: '取消',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: '删除',
+        action: () => { this.doDeleteActivity() }
+      }
+    });
+  }
+
+  private async doDeleteActivity(): Promise<void> {
+    const result: ApiResult = await ApiService.deleteClubActivity(this.activityId);
+    if (result.code === 200) {
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+      this.getUIContext().getRouter().back();
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
   }
 
   private statusText(status: number): string {
@@ -381,26 +407,36 @@ struct ClubActivityDetailPage {
 
       if (this.activity.id > 0) {
         Row() {
+          if (AppStore.getInstance().isLoggedIn && AppStore.getInstance().userInfo.id === this.activity.userId) {
+            Button('删除活动')
+              .height(46)
+              .fontSize(16)
+              .fontColor(Theme.danger)
+              .backgroundColor(Theme.dangerLight)
+              .borderRadius(23)
+              .layoutWeight(1)
+              .onClick(() => { this.confirmDeleteActivity() })
+          }
           if (this.activity.registered) {
             Button(this.isSubmitting ? '处理中' : this.actionText())
-              .width('100%')
               .height(46)
               .fontSize(16)
               .fontColor(this.canCancel() ? Theme.danger : Theme.textTertiary)
               .backgroundColor(this.canCancel() ? Theme.dangerLight : Theme.border)
               .borderRadius(23)
+              .layoutWeight(1)
               .enabled(this.canCancel() && !this.isSubmitting)
               .onClick(() => {
                 this.cancelActivity();
               })
           } else {
             Button(this.isSubmitting ? '处理中' : this.actionText())
-              .width('100%')
               .height(46)
               .fontSize(16)
               .fontColor(Color.White)
               .backgroundColor(this.canRegister() ? Theme.primary : Theme.textDisabled)
               .borderRadius(23)
+              .layoutWeight(1)
               .enabled(this.canRegister() && !this.isSubmitting)
               .onClick(() => {
                 this.registerActivity();

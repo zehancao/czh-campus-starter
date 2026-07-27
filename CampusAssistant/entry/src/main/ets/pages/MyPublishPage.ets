@@ -144,6 +144,7 @@ struct MyProductCard {
 struct MyActivityCard {
   item: ClubActivityItem = new ClubActivityItem();
   onTap?: () => void;
+  onDelete?: () => void;
 
   build() {
     Row() {
@@ -173,13 +174,15 @@ struct MyActivityCard {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
-          Blank()
-          Text(ACTIVITY_STATUS[Math.max(0, Math.min(this.item.status, 3))])
-            .fontSize(11)
-            .fontColor('#FFFFFF')
-            .backgroundColor(ACTIVITY_STATUS_COLORS[Math.max(0, Math.min(this.item.status, 3))])
-            .borderRadius(4)
-            .padding({ left: 7, right: 7, top: 2, bottom: 2 })
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.danger)
+            .margin({ left: 8 })
+            .onClick(() => {
+              if (this.onDelete !== undefined) {
+                this.onDelete();
+              }
+            })
         }
         .width('100%')
 
@@ -218,6 +221,7 @@ struct MyActivityCard {
 struct MyCarpoolCard {
   item: CarpoolOrder = new CarpoolOrder();
   onTap?: () => void;
+  onDelete?: () => void;
 
   build() {
     Row() {
@@ -247,13 +251,15 @@ struct MyCarpoolCard {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
-          Blank()
-          Text(CARPOOL_STATUS[Math.max(0, Math.min(this.item.status, 3))])
-            .fontSize(11)
-            .fontColor('#FFFFFF')
-            .backgroundColor(CARPOOL_STATUS_COLORS[Math.max(0, Math.min(this.item.status, 3))])
-            .borderRadius(4)
-            .padding({ left: 7, right: 7, top: 2, bottom: 2 })
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.danger)
+            .margin({ left: 8 })
+            .onClick(() => {
+              if (this.onDelete !== undefined) {
+                this.onDelete();
+              }
+            })
         }
         .width('100%')
 
@@ -293,6 +299,7 @@ struct MyCarpoolCard {
 @Component
 struct MyConfessionCard {
   item: ConfessionPost = new ConfessionPost();
+  onDelete: () => void = () => {};
 
   build() {
     Column() {
@@ -304,9 +311,10 @@ struct MyConfessionCard {
           .borderRadius(4)
           .padding({ left: 6, right: 6, top: 2, bottom: 2 })
         Blank()
-        Text(this.item.createTime)
-          .fontSize(11)
-          .fontColor(Theme.textTertiary)
+        Text('删除')
+          .fontSize(12)
+          .fontColor(Theme.danger)
+          .onClick(() => { this.onDelete() })
       }
       .width('100%')
 
@@ -355,6 +363,7 @@ struct MyConfessionCard {
 struct MyStudyShareCard {
   item: StudyShareItem = new StudyShareItem();
   onTap?: () => void;
+  onDelete?: () => void;
 
   build() {
     Row() {
@@ -369,12 +378,24 @@ struct MyStudyShareCard {
       .justifyContent(FlexAlign.Center)
 
       Column() {
-        Text(this.item.title)
-          .fontSize(15)
-          .fontWeight(FontWeight.Medium)
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .width('100%')
+        Row() {
+          Text(this.item.title)
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.danger)
+            .margin({ left: 8 })
+            .onClick(() => {
+              if (this.onDelete !== undefined) {
+                this.onDelete();
+              }
+            })
+        }
+        .width('100%')
 
         Text(`${this.item.courseName} \u00B7 ${this.item.category}`)
           .fontSize(12)
@@ -488,6 +509,82 @@ struct MyPublishPage {
       }
       this.studyLoaded = true;
       this.studyLoading = false;
+    }
+  }
+
+  private confirmDeleteConfession(postId: number): void {
+    AlertDialog.show({
+      message: '确定删除这条帖子吗？',
+      primaryButton: { value: '取消', action: () => {} },
+      secondaryButton: { value: '删除', action: () => { this.doDeleteConfession(postId) } }
+    });
+  }
+
+  private async doDeleteConfession(postId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteConfession(postId);
+    if (result.code === 200) {
+      this.confessionPosts = this.confessionPosts.filter((p: ConfessionPost) => p.id !== postId);
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
+  }
+
+  private confirmDeleteActivity(activityId: number): void {
+    AlertDialog.show({
+      message: '确定删除这个活动吗？',
+      primaryButton: { value: '取消', action: () => {} },
+      secondaryButton: { value: '删除', action: () => { this.doDeleteActivity(activityId) } }
+    });
+  }
+
+  private async doDeleteActivity(activityId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteClubActivity(activityId);
+    if (result.code === 200) {
+      this.activities = this.activities.filter((a: ClubActivityItem) => a.id !== activityId);
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
+  }
+
+  private confirmDeleteCarpool(orderId: number): void {
+    AlertDialog.show({
+      message: '确定删除这条拼车信息吗？',
+      primaryButton: { value: '取消', action: () => {} },
+      secondaryButton: { value: '删除', action: () => { this.doDeleteCarpool(orderId) } }
+    });
+  }
+
+  private async doDeleteCarpool(orderId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteCarpool(orderId);
+    if (result.code === 200) {
+      this.carpools = this.carpools.filter((c: CarpoolOrder) => c.id !== orderId);
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
+  }
+
+  private confirmDeleteStudyShare(shareId: number): void {
+    AlertDialog.show({
+      message: '确定删除这份资料吗？',
+      primaryButton: { value: '取消', action: () => {} },
+      secondaryButton: { value: '删除', action: () => { this.doDeleteStudyShare(shareId) } }
+    });
+  }
+
+  private async doDeleteStudyShare(shareId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteStudyShare(shareId);
+    if (result.code === 200) {
+      this.studyShares = this.studyShares.filter((s: StudyShareItem) => s.id !== shareId);
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
     }
   }
 
@@ -629,7 +726,8 @@ struct MyPublishPage {
               item: item,
               onTap: () => {
                   router.pushUrl({ url: 'pages/ClubActivityDetailPage', params: { 'id': item.id } as Record<string, Object> });
-              }
+              },
+              onDelete: () => { this.confirmDeleteActivity(item.id) }
             })
           }, (item: ClubActivityItem) => `${item.id}`)
         }
@@ -670,7 +768,8 @@ struct MyPublishPage {
               item: item,
               onTap: () => {
                   router.pushUrl({ url: 'pages/CarpoolDetailPage', params: { 'id': `${item.id}` } as Record<string, string> });
-              }
+              },
+              onDelete: () => { this.confirmDeleteCarpool(item.id) }
             })
           }, (item: CarpoolOrder) => `${item.id}`)
         }
@@ -708,7 +807,8 @@ struct MyPublishPage {
         Column() {
           ForEach(this.confessionPosts, (item: ConfessionPost) => {
             MyConfessionCard({
-              item: item
+              item: item,
+              onDelete: () => { this.confirmDeleteConfession(item.id) }
             })
           }, (item: ConfessionPost) => `${item.id}`)
         }
@@ -749,7 +849,8 @@ struct MyPublishPage {
               item: item,
               onTap: () => {
                   router.pushUrl({ url: 'pages/StudyShareDetailPage', params: { 'id': item.id } as Record<string, Object> });
-              }
+              },
+              onDelete: () => { this.confirmDeleteStudyShare(item.id) }
             })
           }, (item: StudyShareItem) => `${item.id}`)
         }

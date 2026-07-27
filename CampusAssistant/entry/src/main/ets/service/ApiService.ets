@@ -676,6 +676,10 @@ export class ApiService {
     return ApiService.request(http.RequestMethod.POST, `/api/club-activity/cancel?activityId=${activityId}`, undefined, true);
   }
 
+  static async deleteClubActivity(activityId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/club-activity/delete?activityId=${activityId}`, undefined, true);
+  }
+
   static async getMyClubActivities(page: number, size: number): Promise<ApiResult> {
     return ApiService.request(http.RequestMethod.GET, `/api/club-activity/my-activities?page=${page}&size=${size}`, undefined, true);
   }
@@ -829,6 +833,10 @@ export class ApiService {
 
   static async cancelCarpool(orderId: number): Promise<ApiResult> {
     return ApiService.request(http.RequestMethod.POST, `/api/carpool/cancel?orderId=${orderId}`, undefined, true);
+  }
+
+  static async deleteCarpool(orderId: number): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.POST, `/api/carpool/delete?orderId=${orderId}`, undefined, true);
   }
 
   static async getMyCarpoolOrders(): Promise<ApiResult> {

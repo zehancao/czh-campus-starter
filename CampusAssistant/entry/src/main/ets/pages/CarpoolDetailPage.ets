@@ -1,5 +1,5 @@
 import { router } from '@kit.ArkUI';
-import { ApiService } from '../service/ApiService';
+import { ApiService, ApiResult } from '../service/ApiService';
 import { CarpoolOrder, PassengerItem } from '../model/Models';
 import { Theme } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
@@ -85,6 +85,31 @@ struct CarpoolDetailPage {
     const result = await ApiService.cancelCarpool(this.orderId);
     if (result.code === 200) {
       this.loadDetail();
+    }
+  }
+
+  private confirmDeleteCarpool(): void {
+    AlertDialog.show({
+      message: '确定删除这条拼车信息吗？删除后不可恢复。',
+      primaryButton: {
+        value: '取消',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: '删除',
+        action: () => { this.doDeleteCarpool() }
+      }
+    });
+  }
+
+  private async doDeleteCarpool(): Promise<void> {
+    const result: ApiResult = await ApiService.deleteCarpool(this.orderId);
+    if (result.code === 200) {
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+      this.getUIContext().getRouter().back();
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
     }
   }
 
@@ -216,12 +241,20 @@ struct CarpoolDetailPage {
             }
 
             Column() {
-              if (this.isOwner && this.order.status === 0) {
-                Button('取消拼车')
+              if (this.isOwner) {
+                Button('删除拼车')
                   .width('100%').height(44).type(ButtonType.Normal)
                   .backgroundColor('#FEE2E2').fontColor(Theme.danger)
                   .borderRadius(Theme.radiusMd)
-                  .onClick(() => { this.cancelOrder() })
+                  .margin({ bottom: 10 })
+                  .onClick(() => { this.confirmDeleteCarpool() })
+                if (this.order.status === 0) {
+                  Button('取消拼车')
+                    .width('100%').height(44).type(ButtonType.Normal)
+                    .backgroundColor('#FEF3C7').fontColor(Theme.warning)
+                    .borderRadius(Theme.radiusMd)
+                    .onClick(() => { this.cancelOrder() })
+                }
               } else if (this.order.status === 0 || this.order.status === 1) {
                 if (this.order.joined) {
                   Button('退出拼车')

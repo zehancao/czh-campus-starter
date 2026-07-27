@@ -92,6 +92,14 @@ public class ClubActivityController {
         return Result.ok(true);
     }
 
+    @PostMapping("/delete")
+    public Result<Boolean> delete(@RequestAttribute("userId") Long userId,
+                                   @RequestParam Long activityId) {
+        boolean ok = clubActivityService.delete(userId, activityId);
+        if (!ok) return Result.error(400, "删除失败（非作者或活动不存在）");
+        return Result.ok(true);
+    }
+
     @GetMapping("/my-activities")
     public Result<List<ClubActivityVO>> myActivities(@RequestAttribute("userId") Long userId) {
         return Result.ok(clubActivityService.getMyActivities(userId));

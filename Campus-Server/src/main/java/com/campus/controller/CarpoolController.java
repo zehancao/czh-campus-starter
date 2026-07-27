@@ -54,6 +54,14 @@ public class CarpoolController {
         return Result.ok(true);
     }
 
+    @PostMapping("/delete")
+    public Result<Boolean> delete(@RequestAttribute("userId") Long userId,
+                                   @RequestParam Long orderId) {
+        boolean ok = carpoolService.delete(userId, orderId);
+        if (!ok) return Result.error(400, "删除失败（非作者或拼车单不存在）");
+        return Result.ok(true);
+    }
+
     @PostMapping("/cancel")
     public Result<Boolean> cancelOrder(@RequestAttribute("userId") Long userId,
                                         @RequestParam Long orderId) {

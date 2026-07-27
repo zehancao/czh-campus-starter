@@ -4,6 +4,7 @@ import { ConfessionPost, ConfessionComment } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
 import { AvatarView } from '../common/AvatarView';
+import { AppStore } from '../service/AppStore';
 
 const CATEGORY_TABS: string[] = ['全部', '表白', '树洞', '吐槽', '交友'];
 const CATEGORY_COLORS: string[] = [Theme.ocean, '#DB2777', Theme.ocean, Theme.primary, '#7C3AED'];
@@ -111,6 +112,31 @@ struct ConfessionWallPage {
     const result = await ApiService.likeConfession(item.id);
     if (result.code === 200) {
       this.refreshList();
+    }
+  }
+
+  private confirmDelete(item: ConfessionPost): void {
+    AlertDialog.show({
+      message: '确定删除这条帖子吗？',
+      primaryButton: {
+        value: '取消',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: '删除',
+        action: () => { this.doDeleteConfession(item.id) }
+      }
+    });
+  }
+
+  private async doDeleteConfession(postId: number): Promise<void> {
+    const result = await ApiService.deleteConfession(postId);
+    if (result.code === 200) {
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+      this.refreshList();
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
     }
   }
 
@@ -325,6 +351,13 @@ struct ConfessionWallPage {
         }
         .alignItems(HorizontalAlign.Start)
         .margin({ left: 10 })
+        if (AppStore.getInstance().isLoggedIn && AppStore.getInstance().userInfo.id === item.userId) {
+          Blank()
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.textTertiary)
+            .onClick(() => { this.confirmDelete(item) })
+        }
       }
       .width('100%')
       .alignItems(VerticalAlign.Top)

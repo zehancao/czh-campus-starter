@@ -1,8 +1,9 @@
 import { router } from '@kit.ArkUI';
-import { ApiService } from '../service/ApiService';
+import { ApiService, ApiResult } from '../service/ApiService';
 import { StudyShareItem } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
+import { AppStore } from '../service/AppStore';
 
 const CATEGORY_TABS: string[] = ['全部', '课件', '笔记', '真题', '作业', '其他'];
 const CATEGORY_COLORS: string[] = [Theme.primary, '#0288D1', Theme.ocean, '#D97706', Theme.success, Theme.textSecondary];
@@ -31,6 +32,7 @@ struct ShareCard {
   private onTapCallback?: () => void;
   private onLikeCallback?: () => void;
   private onFavoriteCallback?: () => void;
+  private onDeleteCallback?: () => void;
 
   build() {
     Column() {
@@ -43,6 +45,17 @@ struct ShareCard {
           .fontColor(Theme.textTertiary)
           .margin({ left: 8 })
         Blank()
+        if (AppStore.getInstance().isLoggedIn && AppStore.getInstance().userInfo.id === this.itemData.userId) {
+          Text('删除')
+            .fontSize(12)
+            .fontColor(Theme.textTertiary)
+            .margin({ right: 8 })
+            .onClick(() => {
+              if (this.onDeleteCallback !== undefined) {
+                this.onDeleteCallback();
+              }
+            })
+        }
         Text(this.itemData.category)
           .fontSize(10)
           .fontWeight(FontWeight.Medium)
@@ -314,6 +327,31 @@ struct StudySharePage {
     }
   }
 
+  private confirmDeleteShare(item: StudyShareItem): void {
+    AlertDialog.show({
+      message: '确定删除这份资料吗？',
+      primaryButton: {
+        value: '取消',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: '删除',
+        action: () => { this.doDeleteShare(item.id) }
+      }
+    });
+  }
+
+  private async doDeleteShare(shareId: number): Promise<void> {
+    const result: ApiResult = await ApiService.deleteStudyShare(shareId);
+    if (result.code === 200) {
+      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
+      this.refreshList();
+    } else {
+      const msg: string = result.msg ?? '删除失败';
+      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+    }
+  }
+
   private doSearch(): void {
     this.refreshList();
   }
@@ -396,7 +434,8 @@ struct StudySharePage {
                   itemData: item,
                   onTapCallback: () => this.goToDetail(item),
                   onLikeCallback: () => this.toggleLike(item),
-                  onFavoriteCallback: () => this.toggleFavorite(item)
+                  onFavoriteCallback: () => this.toggleFavorite(item),
+                  onDeleteCallback: () => this.confirmDeleteShare(item)
                 })
               }
             }, (item: StudyShareItem) => `${item.id}`)

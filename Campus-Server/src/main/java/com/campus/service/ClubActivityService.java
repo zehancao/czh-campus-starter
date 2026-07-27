@@ -113,6 +113,16 @@ public class ClubActivityService {
         return true;
     }
 
+    public boolean delete(Long userId, Long activityId) {
+        ClubActivity a = clubActivityMapper.selectById(activityId);
+        if (a == null || !a.getUserId().equals(userId)) return false;
+        LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
+        w.eq(ActivityRegistration::getActivityId, activityId);
+        activityRegistrationMapper.delete(w);
+        clubActivityMapper.deleteById(activityId);
+        return true;
+    }
+
     public List<ClubActivityVO> getMyActivities(Long userId) {
         LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
         w.eq(ActivityRegistration::getUserId, userId);

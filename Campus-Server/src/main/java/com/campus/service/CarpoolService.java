@@ -113,6 +113,16 @@ public class CarpoolService {
         return true;
     }
 
+    public boolean delete(Long userId, Long orderId) {
+        CarpoolOrder order = carpoolOrderMapper.selectById(orderId);
+        if (order == null || !order.getUserId().equals(userId)) return false;
+        LambdaQueryWrapper<CarpoolPassenger> w = new LambdaQueryWrapper<>();
+        w.eq(CarpoolPassenger::getOrderId, orderId);
+        carpoolPassengerMapper.delete(w);
+        carpoolOrderMapper.deleteById(orderId);
+        return true;
+    }
+
     public boolean cancelOrder(Long userId, Long orderId) {
         CarpoolOrder order = carpoolOrderMapper.selectById(orderId);
         if (order == null || !order.getUserId().equals(userId)) return false;
