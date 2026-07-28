@@ -100,6 +100,11 @@ public class ClubActivityController {
         return Result.ok(true);
     }
 
+    @GetMapping("/my-published")
+    public Result<List<ClubActivityVO>> myPublished(@RequestAttribute("userId") Long userId) {
+        return Result.ok(clubActivityService.getMyPublishedActivities(userId));
+    }
+
     @GetMapping("/my-activities")
     public Result<List<ClubActivityVO>> myActivities(@RequestAttribute("userId") Long userId) {
         return Result.ok(clubActivityService.getMyActivities(userId));

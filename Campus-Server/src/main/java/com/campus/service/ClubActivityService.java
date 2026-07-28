@@ -123,6 +123,14 @@ public class ClubActivityService {
         return true;
     }
 
+    public List<ClubActivityVO> getMyPublishedActivities(Long userId) {
+        LambdaQueryWrapper<ClubActivity> w = new LambdaQueryWrapper<>();
+        w.eq(ClubActivity::getUserId, userId);
+        w.orderByDesc(ClubActivity::getCreateTime);
+        List<ClubActivity> activities = clubActivityMapper.selectList(w);
+        return toVOList(activities, userId);
+    }
+
     public List<ClubActivityVO> getMyActivities(Long userId) {
         LambdaQueryWrapper<ActivityRegistration> w = new LambdaQueryWrapper<>();
         w.eq(ActivityRegistration::getUserId, userId);
