@@ -479,7 +479,7 @@ struct MyPublishPage {
       this.productsLoading = false;
     } else if (tabIndex === 1 && !this.activitiesLoaded) {
       this.activitiesLoading = true;
-      const result: ApiResult = await ApiService.getMyClubActivities(1, 100);
+      const result: ApiResult = await ApiService.getMyPublishedClubActivities();
       if (result.code === 200 && result.data !== undefined) {
         this.activities = ApiService.parseClubActivityList(result.data);
       }
@@ -628,7 +628,7 @@ struct MyPublishPage {
     if (this.productsLoading && !this.productsLoaded) {
       Column() {
         LoadingProgress().color(Theme.secondary).width(40).height(40)
-      }.width('100%').layoutWeight(1).padding({ top: 80 })
+      }.width('100%').layoutWeight(1)
     } else if (this.products.length === 0) {
       Column() {
         Text('\uD83D\uDCE6')
@@ -654,7 +654,6 @@ struct MyPublishPage {
       .width('100%')
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .padding({ top: 80 })
     } else {
       Scroll() {
         Column() {
@@ -689,11 +688,11 @@ struct MyPublishPage {
           .padding({ left: 12, right: 12, bottom: 20 })
         }
         .width('100%')
-        .alignItems(HorizontalAlign.Start)
+        .height('100%')
+        .justifyContent(FlexAlign.Start)
       }
       .width('100%')
       .layoutWeight(1)
-      .align(Alignment.TopStart)
       .edgeEffect(EdgeEffect.Spring)
     }
   }
@@ -703,7 +702,7 @@ struct MyPublishPage {
     if (this.activitiesLoading && !this.activitiesLoaded) {
       Column() {
         LoadingProgress().color(Theme.secondary).width(40).height(40)
-      }.width('100%').layoutWeight(1).padding({ top: 80 })
+      }.width('100%').layoutWeight(1)
     } else if (this.activities.length === 0) {
       Column() {
         Text('\uD83C\uDF89')
@@ -717,7 +716,6 @@ struct MyPublishPage {
       .width('100%')
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .padding({ top: 80 })
     } else {
       Scroll() {
         Column() {
@@ -725,14 +723,16 @@ struct MyPublishPage {
             MyActivityCard({
               item: item,
               onTap: () => {
-                  router.pushUrl({ url: 'pages/ClubActivityDetailPage', params: { 'id': item.id } as Record<string, Object> });
+                router.pushUrl({ url: 'pages/ClubActivityDetailPage', params: { 'id': item.id } as Record<string, Object> });
               },
               onDelete: () => { this.confirmDeleteActivity(item.id) }
             })
           }, (item: ClubActivityItem) => `${item.id}`)
         }
         .width('100%')
+        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
+        .justifyContent(FlexAlign.Start)
       }
       .width('100%')
       .layoutWeight(1)
@@ -745,7 +745,7 @@ struct MyPublishPage {
     if (this.carpoolsLoading && !this.carpoolsLoaded) {
       Column() {
         LoadingProgress().color(Theme.secondary).width(40).height(40)
-      }.width('100%').layoutWeight(1).padding({ top: 80 })
+      }.width('100%').layoutWeight(1)
     } else if (this.carpools.length === 0) {
       Column() {
         Text('\uD83D\uDE97')
@@ -759,7 +759,6 @@ struct MyPublishPage {
       .width('100%')
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .padding({ top: 80 })
     } else {
       Scroll() {
         Column() {
@@ -767,14 +766,16 @@ struct MyPublishPage {
             MyCarpoolCard({
               item: item,
               onTap: () => {
-                  router.pushUrl({ url: 'pages/CarpoolDetailPage', params: { 'id': `${item.id}` } as Record<string, string> });
+                router.pushUrl({ url: 'pages/CarpoolDetailPage', params: { 'id': `${item.id}` } as Record<string, string> });
               },
               onDelete: () => { this.confirmDeleteCarpool(item.id) }
             })
           }, (item: CarpoolOrder) => `${item.id}`)
         }
         .width('100%')
+        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
+        .justifyContent(FlexAlign.Start)
       }
       .width('100%')
       .layoutWeight(1)
@@ -787,7 +788,7 @@ struct MyPublishPage {
     if (this.confessionLoading && !this.confessionLoaded) {
       Column() {
         LoadingProgress().color(Theme.secondary).width(40).height(40)
-      }.width('100%').layoutWeight(1).padding({ top: 80 })
+      }.width('100%').layoutWeight(1)
     } else if (this.confessionPosts.length === 0) {
       Column() {
         Text('\uD83D\uDC95')
@@ -801,7 +802,6 @@ struct MyPublishPage {
       .width('100%')
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .padding({ top: 80 })
     } else {
       Scroll() {
         Column() {
@@ -813,7 +813,9 @@ struct MyPublishPage {
           }, (item: ConfessionPost) => `${item.id}`)
         }
         .width('100%')
+        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
+        .justifyContent(FlexAlign.Start)
       }
       .width('100%')
       .layoutWeight(1)
@@ -826,7 +828,7 @@ struct MyPublishPage {
     if (this.studyLoading && !this.studyLoaded) {
       Column() {
         LoadingProgress().color(Theme.secondary).width(40).height(40)
-      }.width('100%').layoutWeight(1).padding({ top: 80 })
+      }.width('100%').layoutWeight(1)
     } else if (this.studyShares.length === 0) {
       Column() {
         Text('\uD83D\uDCC4')
@@ -840,7 +842,6 @@ struct MyPublishPage {
       .width('100%')
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .padding({ top: 80 })
     } else {
       Scroll() {
         Column() {
@@ -848,14 +849,16 @@ struct MyPublishPage {
             MyStudyShareCard({
               item: item,
               onTap: () => {
-                  router.pushUrl({ url: 'pages/StudyShareDetailPage', params: { 'id': item.id } as Record<string, Object> });
+                router.pushUrl({ url: 'pages/StudyShareDetailPage', params: { 'id': item.id } as Record<string, Object> });
               },
               onDelete: () => { this.confirmDeleteStudyShare(item.id) }
             })
           }, (item: StudyShareItem) => `${item.id}`)
         }
         .width('100%')
+        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
+        .justifyContent(FlexAlign.Start)
       }
       .width('100%')
       .layoutWeight(1)
@@ -887,7 +890,6 @@ struct MyPublishPage {
         .width('100%')
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Center)
-        .padding({ top: 80 })
       } else if (this.productsLoading && !this.productsLoaded) {
         Column() {
           LoadingProgress()
@@ -897,7 +899,6 @@ struct MyPublishPage {
         }
         .width('100%')
         .layoutWeight(1)
-        .padding({ top: 80 })
       } else {
         Tabs({ barPosition: BarPosition.Start }) {
           TabContent() {

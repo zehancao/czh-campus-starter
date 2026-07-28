@@ -271,7 +271,7 @@ struct MyFavoritesPage {
             })
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .justifyContent(FlexAlign.Center)
 
       } else if (this.isLoading) {
@@ -282,7 +282,7 @@ struct MyFavoritesPage {
             .height(40)
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .justifyContent(FlexAlign.Center)
 
       } else if (this.totalCount() === 0) {
@@ -309,7 +309,7 @@ struct MyFavoritesPage {
             })
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .justifyContent(FlexAlign.Center)
 
       } else {
@@ -344,10 +344,13 @@ struct MyFavoritesPage {
             .padding({ left: 12, right: 12, bottom: 20 })
           }
           .width('100%')
+          .justifyContent(FlexAlign.Start)
+          .align(Alignment.Top)
         }
         .width('100%')
         .layoutWeight(1)
         .edgeEffect(EdgeEffect.Spring)
+        .align(Alignment.Top)
       }
     }
     .width('100%')

@@ -21,8 +21,8 @@ struct ClubActivityListPage {
   @State isLoadingMore: boolean = false;
   private clubOptions: string[] = ['', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
   private clubLabels: string[] = ['全部', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
-  private statusValues: number[] = [0, 1, 2, 3];
-  private statusLabels: string[] = ['全部', '报名中', '已满', '已结束'];
+  private statusValues: number[] = [0, 1, 2];
+  private statusLabels: string[] = ['全部', '报名中', '已满'];
 
   aboutToAppear(): void {
     this.refreshActivities();
@@ -123,9 +123,6 @@ struct ClubActivityListPage {
     if (status === 2) {
       return '已满';
     }
-    if (status === 3) {
-      return '已结束';
-    }
     return '未知';
   }
 
@@ -136,9 +133,6 @@ struct ClubActivityListPage {
     if (status === 2) {
       return Theme.warning;
     }
-    if (status === 3) {
-      return Theme.textTertiary;
-    }
     return Theme.textSecondary;
   }
 
@@ -148,9 +142,6 @@ struct ClubActivityListPage {
     }
     if (status === 2) {
       return Theme.warningLight;
-    }
-    if (status === 3) {
-      return Theme.border;
     }
     return Theme.divider;
   }

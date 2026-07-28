@@ -12,7 +12,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.1.12:8080';
+  static baseUrl: string = 'http://192.168.1.253:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -678,6 +678,10 @@ export class ApiService {
 
   static async deleteClubActivity(activityId: number): Promise<ApiResult> {
     return ApiService.request(http.RequestMethod.POST, `/api/club-activity/delete?activityId=${activityId}`, undefined, true);
+  }
+
+  static async getMyPublishedClubActivities(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/club-activity/my-published', undefined, true);
   }
 
   static async getMyClubActivities(page: number, size: number): Promise<ApiResult> {

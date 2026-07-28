@@ -143,9 +143,6 @@ struct ClubActivityDetailPage {
     if (status === 2) {
       return '已满';
     }
-    if (status === 3) {
-      return '已结束';
-    }
     return '未知';
   }
 
@@ -156,9 +153,6 @@ struct ClubActivityDetailPage {
     if (status === 2) {
       return Theme.warning;
     }
-    if (status === 3) {
-      return Theme.textTertiary;
-    }
     return Theme.textSecondary;
   }
 
@@ -168,9 +162,6 @@ struct ClubActivityDetailPage {
     }
     if (status === 2) {
       return Theme.warningLight;
-    }
-    if (status === 3) {
-      return Theme.border;
     }
     return Theme.divider;
   }
