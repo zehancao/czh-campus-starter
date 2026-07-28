@@ -132,7 +132,7 @@ const addGradePreview = computed(() => {
   if (!addGrade.value || addGrade.value.length !== 4) return []
   const shortYear = addGrade.value.substring(2)
   const result: string[] = []
-  for (const [mid, mname] of Object.entries(majorMap.value)) {
+  for (const [, mname] of Object.entries(majorMap.value)) {
     const prefix = prefixMap[mname] || mname.substring(0, 2)
     result.push(`${prefix}${shortYear}01`)
     result.push(`${prefix}${shortYear}02`)

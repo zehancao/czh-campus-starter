@@ -68,4 +68,16 @@ public class ComplaintController {
         complaintService.processComplaint(id);
         return Result.ok();
     }
+
+    @PostMapping("/reject/{id}")
+    public Result<?> reject(@PathVariable Long id) {
+        complaintService.rejectComplaint(id);
+        return Result.ok();
+    }
+
+    @GetMapping("/{id}/chat-records")
+    public Result<?> chatRecords(@PathVariable Long id) {
+        Map<String, Object> records = complaintService.getComplaintChatRecords(id);
+        return Result.ok(records);
+    }
 }

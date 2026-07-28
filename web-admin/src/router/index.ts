@@ -33,7 +33,7 @@ const router = createRouter({
 })
 
 const publicPaths = ['/login', '/screen']
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   if (!publicPaths.includes(to.path) && !userStore.token) {
     next('/login')

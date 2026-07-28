@@ -2,13 +2,18 @@ package com.campus.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.entity.Complaint;
+import com.campus.entity.ChatConversation;
+import com.campus.entity.ChatMessage;
 import com.campus.entity.User;
+import com.campus.mapper.ChatMessageMapper;
 import com.campus.mapper.ComplaintMapper;
+import com.campus.mapper.ConversationMapper;
 import com.campus.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +27,14 @@ public class ComplaintService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ConversationMapper conversationMapper;
+
+    @Autowired
+    private ChatMessageMapper chatMessageMapper;
+
+    private static final DateTimeFormatter CHAT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @Transactional
     public void submitComplaint(Long complainantId, Long defendantId, Long productId, String reason) {
@@ -116,6 +129,90 @@ public class ComplaintService {
                 userMapper.updateById(defendant);
             }
         }
+    }
+
+    @Transactional
+    public void rejectComplaint(Long id) {
+        Complaint c = complaintMapper.selectById(id);
+        if (c != null && c.getStatus() == 0) {
+            c.setStatus(2);
+            complaintMapper.updateById(c);
+        }
+    }
+
+    public Map<String, Object> getComplaintChatRecords(Long id) {
+        Complaint c = complaintMapper.selectById(id);
+        if (c == null) {
+            throw new RuntimeException("投诉记录不存在");
+        }
+
+        User complainant = userMapper.selectById(c.getComplainantId());
+        User defendant = userMapper.selectById(c.getDefendantId());
+        String complainantName = complainant != null ? complainant.getName() : "";
+        String defendantName = defendant != null ? defendant.getName() : "";
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", c.getId());
+        result.put("complainantId", c.getComplainantId());
+        result.put("complainantName", complainantName);
+        result.put("defendantId", c.getDefendantId());
+        result.put("defendantName", defendantName);
+        result.put("productId", c.getProductId());
+        result.put("reason", c.getReason());
+        result.put("status", c.getStatus());
+        result.put("createTime", c.getCreateTime());
+
+        ChatConversation conversation = findComplaintConversation(c);
+        List<Map<String, Object>> messages = new ArrayList<>();
+        if (conversation != null) {
+            result.put("conversationId", conversation.getId());
+            List<ChatMessage> list = chatMessageMapper.selectList(
+                new LambdaQueryWrapper<ChatMessage>()
+                    .eq(ChatMessage::getConversationId, conversation.getId())
+                    .orderByAsc(ChatMessage::getCreateTime));
+            for (ChatMessage msg : list) {
+                Map<String, Object> item = new HashMap<>();
+                boolean fromComplainant = msg.getSenderId().equals(c.getComplainantId());
+                item.put("id", msg.getId());
+                item.put("senderId", msg.getSenderId());
+                item.put("senderName", fromComplainant ? complainantName : defendantName);
+                item.put("senderRole", fromComplainant ? "complainant" : "defendant");
+                item.put("content", msg.getContent());
+                item.put("msgType", msg.getMsgType());
+                item.put("createTime", msg.getCreateTime() != null ? msg.getCreateTime().format(CHAT_TIME_FORMATTER) : "");
+                messages.add(item);
+            }
+        }
+        result.put("messages", messages);
+        return result;
+    }
+
+    private ChatConversation findComplaintConversation(Complaint c) {
+        if (c.getProductId() != null) {
+            List<ChatConversation> exactList = conversationMapper.selectList(
+                baseConversationWrapper(c)
+                    .eq(ChatConversation::getProductId, c.getProductId())
+                    .last("LIMIT 1"));
+            if (!exactList.isEmpty()) {
+                return exactList.get(0);
+            }
+        }
+        List<ChatConversation> list = conversationMapper.selectList(
+            baseConversationWrapper(c)
+                .orderByDesc(ChatConversation::getLastTime)
+                .orderByDesc(ChatConversation::getCreateTime)
+                .last("LIMIT 1"));
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    private LambdaQueryWrapper<ChatConversation> baseConversationWrapper(Complaint c) {
+        return new LambdaQueryWrapper<ChatConversation>()
+            .and(wrapper -> wrapper
+                .eq(ChatConversation::getUser1Id, c.getComplainantId())
+                .eq(ChatConversation::getUser2Id, c.getDefendantId())
+                .or()
+                .eq(ChatConversation::getUser1Id, c.getDefendantId())
+                .eq(ChatConversation::getUser2Id, c.getComplainantId()));
     }
 
     public int getCreditScore(Long userId) {
