@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 F</title>
+  <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@500;700;900&family=Big+Shoulders+Display:wght@800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f6ead0;
+      --ink: #342414;
+      --red: #e5392a;
+      --pink: #e54489;
+      --orange: #f09131;
+      --green: #36a853;
+      --blue: #347ed9;
+      --cream: #fff8e9;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #ded2bc; overflow: hidden; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      transform-origin: center center;
+      background:
+        radial-gradient(circle, rgba(52,36,20,.11) 1px, transparent 1.2px),
+        var(--paper);
+      background-size: 18px 18px;
+      box-shadow: 0 28px 80px rgba(0,0,0,.18);
+    }
+    .ribbon {
+      position: absolute;
+      right: -210px;
+      top: 80px;
+      width: 860px;
+      height: 420px;
+      transform: rotate(-18deg);
+      display: grid;
+      gap: 16px;
+    }
+    .ribbon div { height: 58px; border: 4px solid var(--ink); }
+    .ribbon div:nth-child(1) { background: var(--red); }
+    .ribbon div:nth-child(2) { background: var(--pink); }
+    .ribbon div:nth-child(3) { background: var(--orange); }
+    .ribbon div:nth-child(4) { background: var(--green); }
+    .ribbon div:nth-child(5) { background: var(--blue); }
+    .stamp {
+      position: absolute;
+      right: 172px;
+      bottom: 156px;
+      width: 300px;
+      height: 300px;
+      border: 8px solid var(--red);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--red);
+      font-size: 40px;
+      font-weight: 900;
+      transform: rotate(-10deg);
+      background: rgba(255,248,233,.7);
+    }
+    .panel {
+      position: absolute;
+      left: 118px;
+      top: 96px;
+      width: 1160px;
+      height: 888px;
+      background: var(--cream);
+      border: 5px solid var(--ink);
+      padding: 74px 82px;
+      box-shadow: 16px 16px 0 rgba(52,36,20,.2);
+    }
+    .mast {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "Albert Sans", "Noto Sans SC", sans-serif;
+      font-size: 25px;
+      color: var(--ink);
+      font-weight: 900;
+      border-bottom: 4px solid var(--ink);
+      padding-bottom: 25px;
+    }
+    .label {
+      margin-top: 54px;
+      display: inline-block;
+      padding: 14px 22px;
+      background: var(--blue);
+      color: white;
+      border: 4px solid var(--ink);
+      font-size: 25px;
+      font-weight: 900;
+    }
+    h1 {
+      margin: 44px 0 0;
+      font-size: 168px;
+      line-height: .9;
+      color: var(--ink);
+      letter-spacing: 0;
+      font-weight: 900;
+    }
+    h1 .latin {
+      font-family: "Big Shoulders Display", "Noto Sans SC", sans-serif;
+      color: var(--red);
+      font-size: 188px;
+      font-weight: 900;
+    }
+    .subtitle {
+      margin-top: 52px;
+      width: 840px;
+      font-size: 43px;
+      line-height: 1.42;
+      color: #493725;
+      font-weight: 800;
+    }
+    .chips {
+      margin-top: 54px;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      width: 850px;
+    }
+    .chip {
+      padding: 16px 24px;
+      border: 4px solid var(--ink);
+      background: #fff;
+      font-size: 25px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+    .chip:nth-child(2) { background: #dff2c6; }
+    .chip:nth-child(3) { background: #ffd3e5; }
+    .chip:nth-child(4) { background: #d8eaff; }
+    .side-note {
+      position: absolute;
+      right: 164px;
+      top: 548px;
+      width: 390px;
+      padding: 32px;
+      background: #fff8e9;
+      border: 5px solid var(--ink);
+      box-shadow: 12px 12px 0 rgba(52,36,20,.25);
+      color: var(--ink);
+      font-size: 29px;
+      line-height: 1.5;
+      font-weight: 900;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .panel, .side-note { animation: slideIn .78s ease both; }
+      .ribbon, .stamp { animation: fadeOnly .78s ease both; }
+      .ribbon { animation-delay: .1s; }
+      .side-note { animation-delay: .18s; }
+      .stamp { animation-delay: .25s; }
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOnly { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <div class="ribbon"><div></div><div></div><div></div><div></div><div></div></div>
+      <section class="panel">
+        <div class="mast">
+          <div>中国民用航空飞行学院</div>
+          <div>实训项目答辩</div>
+        </div>
+        <div class="label">校园生活服务平台</div>
+        <h1>校园<span class="latin">π</span></h1>
+        <div class="subtitle">把学习、交易、交流和管理入口整合到学生常用的校园助手中</div>
+        <div class="chips">
+          <div class="chip">课表</div>
+          <div class="chip">二手交易</div>
+          <div class="chip">即时聊天</div>
+          <div class="chip">校园安全</div>
+        </div>
+      </section>
+      <aside class="side-note">答辩人：曹泽涵<br>指导教师：谭堂<br>日期：待定</aside>
+      <div class="stamp">校园π</div>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>

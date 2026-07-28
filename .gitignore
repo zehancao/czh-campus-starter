@@ -4,6 +4,7 @@ target/
 dist/
 *.class
 *.jar
+*.bak
 .hvigor/
 .cache/
 oh_modules/

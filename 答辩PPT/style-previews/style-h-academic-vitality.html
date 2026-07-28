@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 H</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #fffdf4;
+      --ink: #182026;
+      --muted: #68727a;
+      --green: #208a68;
+      --cyan: #34b9d6;
+      --orange: #f29a45;
+      --line: rgba(24,32,38,.16);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #e2ded2; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      transform-origin: center center;
+      background: var(--paper);
+      box-shadow: 0 28px 80px rgba(0,0,0,.18);
+    }
+    .left-band {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 240px;
+      background: linear-gradient(180deg, var(--green), #1f6f7d);
+    }
+    .left-band::after {
+      content: "";
+      position: absolute;
+      right: -70px;
+      top: 120px;
+      width: 140px;
+      height: 760px;
+      border-radius: 90px;
+      background: rgba(52,185,214,.9);
+    }
+    .content {
+      position: absolute;
+      left: 330px;
+      right: 120px;
+      top: 100px;
+      bottom: 100px;
+    }
+    .topline {
+      height: 82px;
+      border-bottom: 2px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 26px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .seal {
+      position: absolute;
+      right: 0;
+      top: 165px;
+      width: 330px;
+      height: 330px;
+      border-radius: 50%;
+      border: 5px solid var(--orange);
+      display: grid;
+      place-items: center;
+      color: var(--orange);
+      font-size: 44px;
+      font-weight: 900;
+      transform: rotate(-8deg);
+      background: rgba(242,154,69,.06);
+    }
+    .hero {
+      position: absolute;
+      left: 0;
+      top: 220px;
+      width: 1020px;
+    }
+    .label {
+      display: inline-block;
+      color: var(--green);
+      font-size: 30px;
+      font-weight: 900;
+      padding-bottom: 14px;
+      border-bottom: 5px solid var(--orange);
+    }
+    h1 {
+      margin: 42px 0 0;
+      font-family: "Noto Serif SC", serif;
+      font-size: 150px;
+      line-height: 1.02;
+      letter-spacing: 0;
+      color: var(--ink);
+      font-weight: 900;
+    }
+    h1 span { color: var(--green); }
+    .subtitle {
+      margin-top: 42px;
+      width: 880px;
+      font-size: 42px;
+      line-height: 1.42;
+      color: #35424a;
+      font-weight: 700;
+    }
+    .info {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 150px;
+      border-top: 2px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 38px;
+      align-items: center;
+    }
+    .info div {
+      color: var(--ink);
+      font-size: 29px;
+      font-weight: 800;
+    }
+    .info span {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .module {
+      position: absolute;
+      right: 0;
+      bottom: 200px;
+      width: 360px;
+      display: grid;
+      gap: 18px;
+    }
+    .module div {
+      padding: 20px 26px;
+      border: 2px solid var(--line);
+      background: #f5fbf8;
+      color: var(--ink);
+      font-size: 27px;
+      font-weight: 800;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .content, .seal, .module { animation: rise .75s ease both; }
+      .seal { animation-delay: .12s; }
+      .module { animation-delay: .2s; }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <div class="left-band"></div>
+      <section class="content">
+        <div class="topline">
+          <div>中国民用航空飞行学院</div>
+          <div>实训项目答辩 · 日期待定</div>
+        </div>
+        <section class="hero">
+          <div class="label">校园助手全栈系统设计与实现</div>
+          <h1>校园<span>π</span></h1>
+          <div class="subtitle">围绕学生高频校园场景，构建移动端使用、后端支撑、后台管理的完整闭环</div>
+        </section>
+        <aside class="seal">校园π</aside>
+        <aside class="module">
+          <div>学习服务</div>
+          <div>校园生活</div>
+          <div>交易交流</div>
+          <div>后台管理</div>
+        </aside>
+        <footer class="info">
+          <div><span>DEFENDER</span>答辩人：曹泽涵</div>
+          <div><span>ADVISOR</span>指导教师：谭堂</div>
+          <div><span>TEAM</span>小组名：待定</div>
+        </footer>
+      </section>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>

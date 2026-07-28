@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 C</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #1c2644;
+      --navy-alt: #232f55;
+      --cream: #f0ece3;
+      --gold: #c8a870;
+      --warm: #e2dcd0;
+      --muted: #8a96a8;
+      --line: rgba(226, 220, 208, .22);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #111827; overflow: hidden; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        radial-gradient(circle at 85% 18%, rgba(200,168,112,.18), transparent 360px),
+        var(--navy);
+      background-size: 80px 80px, 80px 80px, auto, auto;
+      transform-origin: center center;
+      box-shadow: 0 28px 80px rgba(0,0,0,.32);
+    }
+    .masthead {
+      position: absolute;
+      left: 110px;
+      right: 110px;
+      top: 86px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 22px;
+    }
+    .layout {
+      position: absolute;
+      left: 110px;
+      right: 110px;
+      top: 188px;
+      bottom: 110px;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      border: 1px solid var(--line);
+    }
+    .left {
+      padding: 86px 92px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .kicker {
+      color: var(--gold);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      font-size: 146px;
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: var(--cream);
+      font-weight: 900;
+    }
+    h1 em {
+      color: var(--gold);
+      font-style: normal;
+    }
+    .subtitle {
+      width: 780px;
+      font-size: 38px;
+      line-height: 1.45;
+      color: var(--warm);
+      font-weight: 500;
+    }
+    .right {
+      background: var(--cream);
+      color: #1a2030;
+      padding: 76px 70px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .right-title {
+      font-family: "Noto Serif SC", serif;
+      font-size: 54px;
+      line-height: 1.22;
+      font-weight: 900;
+      color: #1a2030;
+    }
+    .info-grid {
+      display: grid;
+      gap: 30px;
+      font-size: 29px;
+      line-height: 1.4;
+    }
+    .info-grid div {
+      padding-top: 18px;
+      border-top: 1px solid rgba(28, 38, 68, .22);
+    }
+    .info-grid span {
+      display: block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 18px;
+      color: #6a6256;
+      margin-bottom: 8px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .masthead, .layout { animation: reveal .9s ease both; }
+      .layout { animation-delay: .12s; }
+    }
+    @keyframes reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <div class="masthead">
+        <div>中国民用航空飞行学院</div>
+        <div>实训项目答辩 · 日期待定</div>
+      </div>
+      <section class="layout">
+        <div class="left">
+          <div class="kicker">CAMPUS ASSISTANT FULL-STACK SYSTEM</div>
+          <h1>校园<em>π</em></h1>
+          <div class="subtitle">围绕学习、生活、交易、交流与管理场景构建的一体化校园服务平台</div>
+        </div>
+        <div class="right">
+          <div class="right-title">项目设计与实现汇报</div>
+          <div class="info-grid">
+            <div><span>DEFENDER</span>答辩人：曹泽涵</div>
+            <div><span>ADVISOR</span>指导教师：谭堂</div>
+            <div><span>TEAM</span>小组名：待定</div>
+            <div><span>STACK</span>HarmonyOS · Spring Boot · Vue</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>

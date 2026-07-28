@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 实训项目答辩</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* === THEME VARIABLES === */
+    :root {
+      --stage-bg: #d6e3ef;
+      --slide-bg: #edf7ff;
+      --paper: #ffffff;
+      --ink: #122138;
+      --muted: #657489;
+      --blue: #2457e6;
+      --teal: #12b9ad;
+      --yellow: #ffe36d;
+      --soft: #eaf2ff;
+      --line: rgba(36, 87, 230, .14);
+      --shadow: rgba(18, 33, 56, .12);
+      --font-display: "Manrope", "Noto Sans SC", sans-serif;
+      --font-body: "Noto Sans SC", sans-serif;
+      --ease-out-expo: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    /* === RESET === */
+    * { box-sizing: border-box; }
+
+    /* ===========================================
+       FIXED 16:9 STAGE: MANDATORY BASE STYLES
+       Include this ENTIRE file in every presentation.
+       Slides are authored at 1920×1080 and scaled as a whole.
+       =========================================== */
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+    }
+    .deck-viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+    }
+    .deck-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--slide-bg, #fff);
+    }
+    .slide {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        background: var(--slide-bg, #fff);
+    }
+    .slide.active,
+    .slide.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+    }
+    img,
+    video,
+    canvas,
+    svg {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    .deck-controls {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        transform: translateX(-50%);
+        z-index: 1000;
+    }
+    @media print {
+        html,
+        body {
+            width: 1920px;
+            height: auto;
+            overflow: visible;
+            background: #fff;
+        }
+        .deck-viewport {
+            position: static;
+            overflow: visible;
+            background: #fff;
+        }
+        .deck-stage {
+            position: static;
+            width: auto;
+            height: auto;
+            transform: none !important;
+            background: none;
+        }
+        .slide {
+            position: relative;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            width: 1920px;
+            height: 1080px;
+            break-after: page;
+            page-break-after: always;
+        }
+        .slide:last-child {
+            break-after: auto;
+            page-break-after: auto;
+        }
+        .deck-controls {
+            display: none !important;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.2s !important;
+        }
+    }
+
+    /* === BASE TYPOGRAPHY === */
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+    }
+    h1, h2, h3, p { margin: 0; }
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 76% 24%, rgba(18,185,173,.16), transparent 360px),
+        linear-gradient(135deg, #f7fbff, var(--slide-bg));
+      z-index: -2;
+    }
+    .slide::after {
+      content: "";
+      position: absolute;
+      left: 112px;
+      right: 112px;
+      top: 86px;
+      bottom: 86px;
+      border-radius: 42px;
+      background: rgba(255,255,255,.78);
+      border: 2px solid var(--line);
+      box-shadow: 0 32px 80px var(--shadow);
+      z-index: -1;
+    }
+
+    /* === SHARED SLIDE CHROME === */
+    .chrome {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 136px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .brand {
+      font-family: var(--font-display);
+      color: var(--blue);
+      font-size: 36px;
+      font-weight: 800;
+    }
+    .page-no {
+      font-family: var(--font-display);
+      color: var(--teal);
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .slide-title {
+      position: absolute;
+      left: 176px;
+      top: 214px;
+      font-family: var(--font-display);
+      font-size: 68px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: 0;
+      color: var(--ink);
+    }
+    .slide-subtitle {
+      position: absolute;
+      left: 176px;
+      top: 306px;
+      width: 960px;
+      font-size: 30px;
+      line-height: 1.42;
+      font-weight: 700;
+      color: #31425f;
+    }
+    .pill {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--blue);
+      font-size: 24px;
+      font-weight: 900;
+    }
+    .accent-dot {
+      position: absolute;
+      right: -120px;
+      top: -120px;
+      width: 470px;
+      height: 470px;
+      border-radius: 50%;
+      background: var(--yellow);
+      opacity: .82;
+      z-index: -1;
+    }
+    .accent-dot.small {
+      left: -90px;
+      bottom: -130px;
+      top: auto;
+      right: auto;
+      width: 340px;
+      height: 340px;
+      background: var(--teal);
+      opacity: .2;
+    }
+
+    /* === ANIMATIONS === */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .62s var(--ease-out-expo), transform .62s var(--ease-out-expo);
+    }
+    .slide.visible .reveal {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal:nth-child(1) { transition-delay: .08s; }
+    .reveal:nth-child(2) { transition-delay: .16s; }
+    .reveal:nth-child(3) { transition-delay: .24s; }
+    .reveal:nth-child(4) { transition-delay: .32s; }
+    .reveal:nth-child(5) { transition-delay: .40s; }
+
+    /* === TITLE SLIDE === */
+    .title-content {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 260px;
+      bottom: 145px;
+      display: grid;
+      grid-template-columns: 1fr 520px;
+      gap: 80px;
+      align-items: center;
+    }
+    .deck-title {
+      margin-top: 44px;
+      font-family: var(--font-display);
+      font-size: 150px;
+      line-height: 1;
+      letter-spacing: 0;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .deck-title span { color: var(--teal); }
+    .deck-subtitle {
+      margin-top: 44px;
+      width: 900px;
+      color: #31425f;
+      font-size: 42px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+    .meta-line {
+      margin-top: 58px;
+      display: flex;
+      gap: 34px;
+      color: var(--muted);
+      font-size: 26px;
+      font-weight: 700;
+      flex-wrap: wrap;
+    }
+    .project-card {
+      position: relative;
+      border-radius: 34px;
+      background: #f9fbff;
+      border: 2px solid var(--line);
+      box-shadow: 0 20px 54px var(--shadow);
+      padding: 46px;
+      display: grid;
+      gap: 24px;
+    }
+    .project-card h2 {
+      color: var(--ink);
+      font-size: 40px;
+      font-weight: 900;
+    }
+    .number-row {
+      padding: 24px 26px;
+      border-radius: 22px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 29px;
+      font-weight: 800;
+      border: 1px solid rgba(36,87,230,.12);
+    }
+    .number-row span {
+      color: var(--teal);
+      font-family: var(--font-display);
+      font-weight: 800;
+      margin-right: 14px;
+    }
+
+    /* === GRID AND CARD LAYOUTS === */
+    .content-grid {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 410px;
+      bottom: 150px;
+      display: grid;
+      gap: 26px;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .card {
+      border-radius: 28px;
+      background: #ffffff;
+      border: 2px solid var(--line);
+      box-shadow: 0 18px 46px rgba(18,33,56,.08);
+      padding: 34px;
+      min-height: 150px;
+    }
+    .card h3 {
+      font-size: 33px;
+      line-height: 1.25;
+      color: var(--ink);
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+    .card p, .card li {
+      font-size: 25px;
+      line-height: 1.45;
+      color: #40516c;
+      font-weight: 600;
+    }
+    .card ul {
+      margin: 0;
+      padding-left: 26px;
+      display: grid;
+      gap: 10px;
+    }
+    .tag-blue { color: var(--blue); }
+    .tag-teal { color: var(--teal); }
+    .tag-yellow { background: var(--yellow); color: var(--ink); padding: 4px 12px; border-radius: 999px; }
+
+    /* === TEAM TABLE === */
+    .team-table {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 380px;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 2px solid var(--line);
+      background: #fff;
+      box-shadow: 0 18px 46px rgba(18,33,56,.08);
+    }
+    .team-cell {
+      min-height: 102px;
+      padding: 24px 34px;
+      border-bottom: 1px solid var(--line);
+      font-size: 27px;
+      line-height: 1.42;
+      display: flex;
+      align-items: center;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .team-cell:nth-child(odd) {
+      background: #f2f7ff;
+      color: var(--blue);
+    }
+    .team-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .slide-team .team-table {
+      top: 430px;
+    }
+
+    /* === FLOW DIAGRAMS === */
+    .flow {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 410px;
+      bottom: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .flow-node {
+      width: 250px;
+      min-height: 148px;
+      border-radius: 28px;
+      background: #fff;
+      border: 2px solid var(--line);
+      box-shadow: 0 16px 40px rgba(18,33,56,.08);
+      padding: 28px 24px;
+      display: grid;
+      align-content: center;
+      gap: 10px;
+      text-align: center;
+      font-weight: 900;
+      color: var(--ink);
+      font-size: 28px;
+    }
+    .flow-node span {
+      color: var(--teal);
+      font-family: var(--font-display);
+      font-size: 22px;
+    }
+    .arrow {
+      width: 74px;
+      height: 3px;
+      background: var(--blue);
+      position: relative;
+      flex: 0 0 74px;
+    }
+    .arrow::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: -8px;
+      border-left: 14px solid var(--blue);
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+    }
+
+    /* === ARCHITECTURE === */
+    .architecture {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 388px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 34px;
+      align-items: stretch;
+    }
+    .arch-card {
+      border-radius: 32px;
+      background: #fff;
+      border: 2px solid var(--line);
+      box-shadow: 0 18px 46px rgba(18,33,56,.08);
+      padding: 38px;
+      min-height: 420px;
+    }
+    .arch-card h3 {
+      font-size: 38px;
+      color: var(--ink);
+      margin-bottom: 24px;
+    }
+    .arch-card .mini {
+      display: grid;
+      gap: 18px;
+    }
+    .mini div {
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: #f4f8ff;
+      color: #31425f;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    /* === DATA TABLE RELATIONS === */
+    .table-map {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 390px;
+      bottom: 150px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 42px;
+      align-items: stretch;
+    }
+    .core-user {
+      border-radius: 34px;
+      background: var(--blue);
+      color: white;
+      padding: 42px;
+      display: grid;
+      align-content: center;
+      gap: 22px;
+      box-shadow: 0 20px 54px rgba(36,87,230,.24);
+    }
+    .core-user h3 { font-size: 46px; }
+    .core-user p { font-size: 26px; line-height: 1.45; font-weight: 700; }
+    .tables {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .table-pill {
+      border-radius: 24px;
+      background: #fff;
+      border: 2px solid var(--line);
+      padding: 25px;
+      font-size: 25px;
+      font-weight: 900;
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    /* === SCREENSHOT PLACEHOLDERS === */
+    .showcase {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 385px;
+      bottom: 145px;
+      display: grid;
+      grid-template-columns: 560px 1fr;
+      gap: 50px;
+      align-items: stretch;
+    }
+    .phone-shot {
+      border-radius: 46px;
+      background: linear-gradient(180deg, #f6fbff, #e8f2ff);
+      border: 3px solid var(--line);
+      box-shadow: 0 22px 60px rgba(18,33,56,.12);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 31px;
+      font-weight: 900;
+    }
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    /* === HIGHLIGHT PAGE === */
+    .highlight-wrap {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 360px;
+      bottom: 145px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    .highlight {
+      border-radius: 32px;
+      background: #fff;
+      border: 2px solid var(--line);
+      padding: 32px;
+      box-shadow: 0 18px 46px rgba(18,33,56,.08);
+    }
+    .highlight strong {
+      display: block;
+      color: var(--teal);
+      font-family: var(--font-display);
+      font-size: 54px;
+      margin-bottom: 22px;
+    }
+    .slide-summary .highlight-wrap {
+      top: 430px;
+    }
+
+    /* === CONTROLS AND EDITING === */
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(18,33,56,.72);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+    }
+    .control-btn {
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+    .edit-hotzone {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 80px;
+      height: 80px;
+      z-index: 10000;
+      cursor: pointer;
+    }
+    .edit-toggle {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 10001;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 0;
+      background: var(--blue);
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      cursor: pointer;
+      transition: opacity .25s ease;
+      font-size: 18px;
+    }
+    .edit-toggle.show,
+    .edit-toggle.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .editing [contenteditable="true"] {
+      outline: 3px dashed rgba(18,185,173,.55);
+      outline-offset: 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-viewport">
+    <main class="deck-stage" id="deckStage">
+      <section class="slide visible active">
+        <div class="accent-dot"></div><div class="accent-dot small"></div>
+        <header class="chrome"><div class="brand editable" data-edit-id="brand">校园π</div><div class="editable" data-edit-id="school">中国民用航空飞行学院 · 实训项目答辩</div></header>
+        <section class="title-content">
+          <div>
+            <div class="pill reveal editable" data-edit-id="cover-pill">学生校园服务 App</div>
+            <h1 class="deck-title reveal editable" data-edit-id="cover-title">校园<span>π</span></h1>
+            <p class="deck-subtitle reveal editable" data-edit-id="cover-subtitle">用一套全栈系统整合校园学习、生活、交易、交流与管理服务</p>
+            <div class="meta-line reveal"><div class="editable" data-edit-id="cover-speaker">答辩人：曹泽涵</div><div class="editable" data-edit-id="cover-teacher">指导教师：谭堂</div><div class="editable" data-edit-id="cover-date">日期：待定</div></div>
+          </div>
+          <aside class="project-card reveal">
+            <h2 class="editable" data-edit-id="cover-card-title">项目组成</h2>
+            <div class="number-row"><span>01</span><span class="editable" data-edit-id="cover-row-1">鸿蒙学生端</span></div>
+            <div class="number-row"><span>02</span><span class="editable" data-edit-id="cover-row-2">Spring Boot 后端</span></div>
+            <div class="number-row"><span>03</span><span class="editable" data-edit-id="cover-row-3">Vue 管理端</span></div>
+            <div class="number-row"><span>04</span><span class="editable" data-edit-id="cover-row-4">MySQL 数据支撑</span></div>
+          </aside>
+        </section>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">02 / 16</div></header>
+        <h2 class="slide-title reveal editable" data-edit-id="s2-title">答辩内容目录</h2>
+        <p class="slide-subtitle reveal editable" data-edit-id="s2-subtitle">围绕团队协作、项目说明、系统设计、功能成果和项目总结展开。</p>
+        <div class="content-grid grid-3">
+          <div class="card reveal"><h3>01 团队与管理</h3><p>团队分工、GitHub 协作、日常开发与联调方式。</p></div>
+          <div class="card reveal"><h3>02 项目说明</h3><p>项目背景、目标意义、业务功能和核心流程。</p></div>
+          <div class="card reveal"><h3>03 项目设计</h3><p>总体架构、技术栈、数据表关系和接口通信。</p></div>
+          <div class="card reveal"><h3>04 功能展示</h3><p>鸿蒙学生端、Web 管理端和后端服务能力展示。</p></div>
+          <div class="card reveal"><h3>05 项目亮点</h3><p>功能覆盖、实时通信、管理闭环和二期扩展。</p></div>
+          <div class="card reveal"><h3>06 收获总结</h3><p>技术能力、团队协作和问题解决经验总结。</p></div>
+        </div>
+      </section>
+
+      <section class="slide slide-team">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">03 / 16</div></header>
+        <h2 class="slide-title reveal">团队介绍与分工</h2>
+        <p class="slide-subtitle reveal">团队按学生端、后端服务、Web 管理端进行模块化开发，职责边界清晰。</p>
+        <div class="team-table reveal">
+          <div class="team-cell">曹泽涵</div><div class="team-cell">后端服务架构设计、接口规范制定、核心业务接口开发、首页模块联调</div>
+          <div class="team-cell">白雪峰</div><div class="team-cell">鸿蒙端校园服务模块开发，负责课表查询、空教室查询、账号安全与个人中心功能</div>
+          <div class="team-cell">谢易霖</div><div class="team-cell">鸿蒙端交易与信息服务模块开发，负责商品详情、收藏、浏览记录、投诉记录与失物招领功能</div>
+          <div class="team-cell">何隆</div><div class="team-cell">鸿蒙端互动模块开发，负责即时聊天、社团活动、商品发布等用户交互功能</div>
+          <div class="team-cell">杨晨</div><div class="team-cell">Web 管理端前端开发，负责后台管理页面、数据展示与管理员操作流程</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">04 / 16</div></header>
+        <h2 class="slide-title reveal">项目开发与协作管理</h2>
+        <p class="slide-subtitle reveal">采用基于 GitHub 的协同迭代开发模式，每日提交代码并同步远端仓库。</p>
+        <div class="flow">
+          <div class="flow-node reveal"><span>01</span>模块分工</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>02</span>本地开发</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>03</span>每日提交</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>04</span>同步仓库</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>05</span>接口联调</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">05 / 16</div></header>
+        <h2 class="slide-title reveal">项目背景</h2>
+        <p class="slide-subtitle reveal">校园学习、生活和管理信息分散，学生需要在多个渠道之间切换。</p>
+        <div class="content-grid grid-3">
+          <div class="card reveal"><h3>信息入口分散</h3><p>课程、公告、交易、社团等信息来源不统一，查找效率较低。</p></div>
+          <div class="card reveal"><h3>学生高频需求多</h3><p>课表、空教室、失物招领、二手交易、聊天等需求覆盖日常校园生活。</p></div>
+          <div class="card reveal"><h3>管理侧缺少闭环</h3><p>商品审核、公告维护、投诉处理、安全事件处理需要后台统一支撑。</p></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">06 / 16</div></header>
+        <h2 class="slide-title reveal">项目目标与意义</h2>
+        <p class="slide-subtitle reveal">构建集学生端使用、后端处理和后台管理于一体的校园服务平台。</p>
+        <div class="content-grid grid-3">
+          <div class="card reveal"><h3>提升学生体验</h3><p>将校园服务集中到移动端入口，降低信息获取和事务处理成本。</p></div>
+          <div class="card reveal"><h3>提升管理效率</h3><p>通过后台管理端统一处理公告、审核、投诉、安全事件等事务。</p></div>
+          <div class="card reveal"><h3>提升工程能力</h3><p>通过全栈项目实践完成需求分析、接口设计、前后端联调和多人协作。</p></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">07 / 16</div></header>
+        <h2 class="slide-title reveal">业务功能总览</h2>
+        <p class="slide-subtitle reveal">项目覆盖学习、生活、交易、交流、安全和后台管理等校园高频场景。</p>
+        <div class="content-grid grid-4">
+          <div class="card reveal"><h3>学习服务</h3><p>课表、空教室、学习资料共享</p></div>
+          <div class="card reveal"><h3>生活服务</h3><p>失物招领、拼车回家、校园安全</p></div>
+          <div class="card reveal"><h3>交易交流</h3><p>二手交易、收藏浏览、即时聊天</p></div>
+          <div class="card reveal"><h3>互动社区</h3><p>社团活动、表白墙/树洞、报名评论</p></div>
+          <div class="card reveal"><h3>个人中心</h3><p>资料维护、头像更新、账号安全</p></div>
+          <div class="card reveal"><h3>信用投诉</h3><p>投诉提交、记录查询、信用分</p></div>
+          <div class="card reveal"><h3>后台管理</h3><p>公告、课表、商品、投诉、安全管理</p></div>
+          <div class="card reveal"><h3>数据服务</h3><p>统一 API、JWT 鉴权、文件上传</p></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">08 / 16</div></header>
+        <h2 class="slide-title reveal">核心业务流程</h2>
+        <p class="slide-subtitle reveal">用户通过学生端发起操作，后端完成鉴权、业务处理和数据读写，最后返回结果。</p>
+        <div class="flow">
+          <div class="flow-node reveal"><span>01</span>登录认证</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>02</span>选择功能</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>03</span>发起请求</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>04</span>后端处理</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>05</span>结果展示</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">09 / 16</div></header>
+        <h2 class="slide-title reveal">二手交易业务流程</h2>
+        <p class="slide-subtitle reveal">二手交易模块形成“发布、审核、浏览、沟通、成交”的完整业务链路。</p>
+        <div class="flow">
+          <div class="flow-node reveal"><span>01</span>发布商品</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>02</span>管理员审核</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>03</span>商品上架</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>04</span>收藏/聊天</div><div class="arrow reveal"></div>
+          <div class="flow-node reveal"><span>05</span>完成交易</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">10 / 16</div></header>
+        <h2 class="slide-title reveal">管理员审核与处理闭环</h2>
+        <p class="slide-subtitle reveal">管理端集中处理平台内容与校园事务，保证系统运行秩序。</p>
+        <div class="content-grid grid-4">
+          <div class="card reveal"><h3>商品审核</h3><p>待审核商品通过后上架，违规内容可拒绝。</p></div>
+          <div class="card reveal"><h3>公告维护</h3><p>发布和维护校园公告，支撑首页信息展示。</p></div>
+          <div class="card reveal"><h3>投诉处理</h3><p>对用户投诉进行处理，并影响信用分记录。</p></div>
+          <div class="card reveal"><h3>安全处理</h3><p>查看安全求助报告并进行状态处理。</p></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">11 / 16</div></header>
+        <h2 class="slide-title reveal">系统总体架构设计</h2>
+        <p class="slide-subtitle reveal">系统采用前后端分离架构，学生端与管理端通过统一 API 访问后端服务。</p>
+        <div class="architecture">
+          <div class="arch-card reveal"><h3>鸿蒙学生端</h3><div class="mini"><div>ArkTS / ArkUI 页面</div><div>ApiService 请求封装</div><div>WebSocket 实时聊天</div><div>文件与图片上传</div></div></div>
+          <div class="arch-card reveal"><h3>Spring Boot 后端</h3><div class="mini"><div>REST API 业务接口</div><div>JWT 登录鉴权</div><div>MyBatis-Plus 数据访问</div><div>统一 Result 响应</div></div></div>
+          <div class="arch-card reveal"><h3>Vue 管理端</h3><div class="mini"><div>Vue3 + TypeScript</div><div>Naive UI 后台页面</div><div>ECharts 数据展示</div><div>Axios 接口调用</div></div></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">12 / 16</div></header>
+        <h2 class="slide-title reveal">技术栈说明</h2>
+        <p class="slide-subtitle reveal">技术选型围绕移动端体验、后端稳定服务和后台管理效率展开。</p>
+        <div class="content-grid grid-3">
+          <div class="card reveal"><h3>学生端</h3><ul><li>HarmonyOS</li><li>ArkTS / ArkUI</li><li>HTTP 请求封装</li><li>WebSocket 与文件上传</li></ul></div>
+          <div class="card reveal"><h3>后端</h3><ul><li>Java 17 / Spring Boot</li><li>MyBatis-Plus / MySQL</li><li>JWT / BCrypt</li><li>Apache POI / 邮件 / 上传</li></ul></div>
+          <div class="card reveal"><h3>管理端</h3><ul><li>Vue3 / TypeScript / Vite</li><li>Vue Router / Pinia</li><li>Axios / Naive UI</li><li>ECharts 数据可视化</li></ul></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">13 / 16</div></header>
+        <h2 class="slide-title reveal">数据表结构概览</h2>
+        <p class="slide-subtitle reveal">数据库围绕用户表展开，各业务表通过用户 ID 与业务 ID 建立关联。</p>
+        <div class="table-map">
+          <div class="core-user reveal"><h3>users</h3><p>用户信息、登录身份、角色权限、信用分等基础数据。</p></div>
+          <div class="tables reveal">
+            <div class="table-pill">course_schedules<br>课表</div>
+            <div class="table-pill">products<br>二手商品</div>
+            <div class="table-pill">chat_messages<br>聊天消息</div>
+            <div class="table-pill">lost_found<br>失物招领</div>
+            <div class="table-pill">club_activities<br>社团活动</div>
+            <div class="table-pill">safety_reports<br>安全求助</div>
+            <div class="table-pill">study_shares<br>学习资料</div>
+            <div class="table-pill">carpool_orders<br>拼车订单</div>
+            <div class="table-pill">complaints<br>投诉记录</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">14 / 16</div></header>
+        <h2 class="slide-title reveal">鸿蒙学生端功能展示</h2>
+        <p class="slide-subtitle reveal">学生端以首页入口为中心，整合校园学习、生活、交易和互动服务。</p>
+        <div class="showcase">
+          <div class="phone-shot reveal">鸿蒙端截图占位</div>
+          <div class="feature-list">
+            <div class="card reveal"><h3>学习服务</h3><p>课表查询、空教室、学习资料共享。</p></div>
+            <div class="card reveal"><h3>生活服务</h3><p>失物招领、拼车回家、校园安全。</p></div>
+            <div class="card reveal"><h3>交易交流</h3><p>二手交易、收藏记录、即时聊天。</p></div>
+            <div class="card reveal"><h3>互动社区</h3><p>社团活动、表白墙/树洞、报名评论。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">15 / 16</div></header>
+        <h2 class="slide-title reveal">Web 管理端与后端能力</h2>
+        <p class="slide-subtitle reveal">管理端承担平台维护和审核处理职责，后端提供统一业务服务能力。</p>
+        <div class="showcase">
+          <div class="phone-shot reveal">管理端截图占位</div>
+          <div class="feature-list">
+            <div class="card reveal"><h3>后台管理</h3><p>学期、班级、课表、公告、商品、投诉、安全管理。</p></div>
+            <div class="card reveal"><h3>接口能力</h3><p>统一 REST API、Result 响应、JWT 鉴权。</p></div>
+            <div class="card reveal"><h3>实时通信</h3><p>WebSocket 会话、消息推送、在线状态。</p></div>
+            <div class="card reveal"><h3>文件服务</h3><p>商品图片、头像、社团封面、学习资料上传。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide slide-summary">
+        <header class="chrome"><div class="brand">校园π</div><div class="page-no">16 / 16</div></header>
+        <h2 class="slide-title reveal">项目亮点与收获</h2>
+        <p class="slide-subtitle reveal">通过本项目，团队完成了从需求、设计、开发、联调到展示的完整工程实践。</p>
+        <div class="highlight-wrap">
+          <div class="highlight reveal"><strong>01</strong><h3>功能覆盖广</h3><p>覆盖学习、生活、交易、交流、安全等校园高频场景。</p></div>
+          <div class="highlight reveal"><strong>02</strong><h3>实时通信</h3><p>通过 WebSocket 支撑私聊、会话和在线状态能力。</p></div>
+          <div class="highlight reveal"><strong>03</strong><h3>管理闭环</h3><p>学生端提交信息，管理端审核处理，后端统一记录。</p></div>
+          <div class="highlight reveal"><strong>04</strong><h3>二期扩展</h3><p>新增拼车、表白墙、校园安全、学习资料共享等功能。</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="deck-controls" aria-label="presentation controls">
+    <button class="control-btn" id="prevBtn" title="上一页">‹</button>
+    <span id="counter">1 / 16</span>
+    <button class="control-btn" id="nextBtn" title="下一页">›</button>
+  </div>
+  <div class="edit-hotzone" title="编辑模式"></div>
+  <button class="edit-toggle" id="editToggle" title="编辑模式 (E)">E</button>
+
+  <script>
+    /* === SLIDE PRESENTATION CONTROLLER === */
+    class SlidePresentation {
+      constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.currentSlide = 0;
+        this.stage = document.getElementById('deckStage');
+        this.counter = document.getElementById('counter');
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupButtons();
+        this.showSlide(0);
+      }
+      setupStageScale() {
+        const scale = () => {
+          const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          const x = (window.innerWidth - 1920 * factor) / 2;
+          const y = (window.innerHeight - 1080 * factor) / 2;
+          this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+      }
+      setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+          if (document.body.classList.contains('editing') && e.target.getAttribute('contenteditable')) return;
+          if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) this.next();
+          if (['ArrowLeft', 'PageUp'].includes(e.key)) this.prev();
+          if (e.key === 'Home') this.showSlide(0);
+          if (e.key === 'End') this.showSlide(this.slides.length - 1);
+        });
+      }
+      setupTouchNav() {
+        let startX = 0;
+        window.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+        window.addEventListener('touchend', (e) => {
+          const delta = e.changedTouches[0].clientX - startX;
+          if (Math.abs(delta) > 60) delta < 0 ? this.next() : this.prev();
+        }, { passive: true });
+      }
+      setupWheelNav() {
+        let last = 0;
+        window.addEventListener('wheel', (e) => {
+          const now = Date.now();
+          if (now - last < 650) return;
+          last = now;
+          e.deltaY > 0 ? this.next() : this.prev();
+        }, { passive: true });
+      }
+      setupButtons() {
+        document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+        document.getElementById('nextBtn').addEventListener('click', () => this.next());
+      }
+      showSlide(index) {
+        this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+        this.slides.forEach((slide, i) => {
+          slide.classList.toggle('active', i === this.currentSlide);
+          slide.classList.toggle('visible', i === this.currentSlide);
+        });
+        this.counter.textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+      }
+      next() { this.showSlide(this.currentSlide + 1); }
+      prev() { this.showSlide(this.currentSlide - 1); }
+    }
+
+    /* === INLINE EDITOR === */
+    class InlineEditor {
+      constructor() {
+        this.isActive = false;
+        this.elements = Array.from(document.querySelectorAll('.editable'));
+        this.load();
+      }
+      toggleEditMode() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle('editing', this.isActive);
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        this.elements.forEach((el) => el.setAttribute('contenteditable', String(this.isActive)));
+        if (!this.isActive) this.save();
+      }
+      save() {
+        const data = {};
+        this.elements.forEach((el) => { data[el.dataset.editId] = el.innerHTML; });
+        localStorage.setItem('campus-pi-deck-edits', JSON.stringify(data));
+      }
+      load() {
+        const raw = localStorage.getItem('campus-pi-deck-edits');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        this.elements.forEach((el) => {
+          if (data[el.dataset.editId]) el.innerHTML = data[el.dataset.editId];
+        });
+      }
+    }
+
+    const deck = new SlidePresentation();
+    const editor = new InlineEditor();
+
+    /* === EDIT BUTTON VISIBILITY === */
+    const hotzone = document.querySelector('.edit-hotzone');
+    const editToggle = document.getElementById('editToggle');
+    let hideTimeout = null;
+    hotzone.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+      editToggle.classList.add('show');
+    });
+    hotzone.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        if (!editor.isActive) editToggle.classList.remove('show');
+      }, 400);
+    });
+    editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    editToggle.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        if (!editor.isActive) editToggle.classList.remove('show');
+      }, 400);
+    });
+    editToggle.addEventListener('click', () => editor.toggleEditMode());
+    hotzone.addEventListener('click', () => editor.toggleEditMode());
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) editor.toggleEditMode();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        editor.save();
+      }
+    });
+  </script>
+</body>
+</html>

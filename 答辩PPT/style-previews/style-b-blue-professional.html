@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 B</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fdfae7;
+      --blue: #1e2bfa;
+      --ink: #111111;
+      --muted: #6b6b6b;
+      --soft: rgba(30, 43, 250, .04);
+      --border: rgba(30, 43, 250, .2);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #dcd9cc; overflow: hidden; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--bg);
+      transform-origin: center center;
+      box-shadow: 0 28px 80px rgba(0,0,0,.16);
+    }
+    .topbar {
+      position: absolute;
+      left: 120px;
+      right: 120px;
+      top: 92px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 25px;
+      color: var(--muted);
+    }
+    .brand { color: var(--blue); font-weight: 900; }
+    .hero {
+      position: absolute;
+      left: 120px;
+      top: 238px;
+      width: 1040px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 16px 28px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--soft);
+      color: var(--blue);
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 54px;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+      font-size: 152px;
+      line-height: .98;
+      letter-spacing: 0;
+      color: var(--ink);
+    }
+    .subtitle {
+      margin-top: 52px;
+      width: 850px;
+      font-size: 43px;
+      line-height: 1.35;
+      color: #303030;
+      font-weight: 500;
+    }
+    .panel {
+      position: absolute;
+      right: 120px;
+      top: 238px;
+      width: 500px;
+      height: 610px;
+      border: 1.5px solid var(--border);
+      background: var(--soft);
+      border-radius: 14px;
+      padding: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .metric-label { font-size: 24px; color: var(--muted); font-weight: 500; }
+    .metric { font-family: "Space Grotesk", sans-serif; font-size: 110px; color: var(--blue); line-height: 1; font-weight: 700; margin-top: 10px; }
+    .mini-list { display: grid; gap: 24px; font-size: 30px; color: var(--ink); }
+    .mini-list div { border-top: 1.5px solid var(--border); padding-top: 18px; }
+    .footer {
+      position: absolute;
+      left: 120px;
+      right: 120px;
+      bottom: 92px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 26px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero, .panel, .footer { animation: fadeUp .8s ease both; }
+      .panel { animation-delay: .12s; }
+      .footer { animation-delay: .22s; }
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <div class="topbar">
+        <div class="brand">校园π</div>
+        <div>中国民用航空飞行学院 · 实训项目答辩</div>
+      </div>
+      <section class="hero">
+        <div class="eyebrow">校园助手全栈系统</div>
+        <h1>校园π</h1>
+        <div class="subtitle">面向校园学习、生活、交易与管理场景的一体化服务平台</div>
+      </section>
+      <aside class="panel">
+        <div>
+          <div class="metric-label">答辩结构</div>
+          <div class="metric">16</div>
+          <div class="metric-label">页项目展示</div>
+        </div>
+        <div class="mini-list">
+          <div>鸿蒙学生端</div>
+          <div>Spring Boot 后端</div>
+          <div>Vue 管理端</div>
+        </div>
+      </aside>
+      <div class="footer">
+        <div>答辩人：曹泽涵</div>
+        <div>指导教师：谭堂</div>
+        <div>日期：待定</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>

@@ -1,4 +1,6 @@
-# 校园助手 - czh-campus-starter
+# 校园π - czh-campus-starter
+
+校园π是一套面向校园生活服务场景的全栈项目，包含 Spring Boot 后端、鸿蒙端应用和 Web 管理后台。项目覆盖课表、空教室、二手交易、社团活动、拼车、表白墙、校园安全、学习资料共享、投诉审核等功能。
 
 ## 分工
 
@@ -17,9 +19,15 @@
 # 1. 导入数据库（MySQL 需要先装好）
 mysql -u root --default-character-set=utf8mb4 < campusdb2.sql
 
-# 2. 改数据库密码（如果你的 MySQL 有密码）
-#    打开 Campus-Server/src/main/resources/application.yml
-#    修改 spring.datasource.password: 你的密码
+# 2. 配置本机环境变量（按需修改）
+$env:CAMPUS_DB_PASSWORD="你的数据库密码"
+$env:CAMPUS_JWT_SECRET="至少32位的JWT密钥"
+$env:CAMPUS_UPLOAD_DIR="./uploads"
+
+# 如果需要反馈邮件功能，再配置邮箱
+$env:CAMPUS_MAIL_USERNAME="你的邮箱"
+$env:CAMPUS_MAIL_PASSWORD="你的邮箱授权码"
+$env:CAMPUS_FEEDBACK_EMAIL="接收反馈的邮箱"
 
 # 3. 启动 Spring Boot
 cd Campus-Server
@@ -52,7 +60,7 @@ npm run dev
 
 ```bash
 # 克隆到本地
-git clone git@github.com:zehancao/czh-campus-starter.git
+git clone git@github.com:bai988/czh-campus-starter.git
 
 # 进入项目目录
 cd czh-campus-starter

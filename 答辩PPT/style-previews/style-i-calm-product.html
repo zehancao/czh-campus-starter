@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 I</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #edf7ff;
+      --paper: #ffffff;
+      --ink: #122138;
+      --muted: #657489;
+      --blue: #2457e6;
+      --teal: #12b9ad;
+      --yellow: #ffe36d;
+      --soft: #eaf2ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #d6e3ef; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      transform-origin: center center;
+      background:
+        radial-gradient(circle at 75% 28%, rgba(18,185,173,.18), transparent 360px),
+        linear-gradient(135deg, #f7fbff, var(--bg));
+      box-shadow: 0 28px 80px rgba(0,0,0,.18);
+    }
+    .frame {
+      position: absolute;
+      left: 112px;
+      right: 112px;
+      top: 86px;
+      bottom: 86px;
+      border-radius: 42px;
+      background: rgba(255,255,255,.78);
+      border: 2px solid rgba(36,87,230,.14);
+      box-shadow: 0 32px 80px rgba(18,33,56,.12);
+      overflow: hidden;
+    }
+    .accent {
+      position: absolute;
+      right: -120px;
+      top: -120px;
+      width: 470px;
+      height: 470px;
+      border-radius: 50%;
+      background: var(--yellow);
+      opacity: .88;
+    }
+    .accent.two {
+      left: -90px;
+      bottom: -130px;
+      top: auto;
+      right: auto;
+      width: 340px;
+      height: 340px;
+      background: var(--teal);
+      opacity: .22;
+    }
+    .chrome {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 148px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .brand {
+      font-family: "Manrope", "Noto Sans SC", sans-serif;
+      color: var(--blue);
+      font-size: 40px;
+      font-weight: 800;
+    }
+    .content {
+      position: absolute;
+      left: 176px;
+      right: 176px;
+      top: 260px;
+      bottom: 145px;
+      display: grid;
+      grid-template-columns: 1fr 520px;
+      gap: 80px;
+      align-items: center;
+    }
+    .pill {
+      width: fit-content;
+      padding: 16px 28px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--blue);
+      font-size: 29px;
+      font-weight: 900;
+    }
+    h1 {
+      margin: 44px 0 0;
+      font-family: "Manrope", "Noto Sans SC", sans-serif;
+      font-size: 150px;
+      line-height: 1;
+      letter-spacing: 0;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    h1 span { color: var(--teal); }
+    .subtitle {
+      margin-top: 44px;
+      width: 900px;
+      color: #31425f;
+      font-size: 42px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+    .meta {
+      margin-top: 58px;
+      display: flex;
+      gap: 34px;
+      color: var(--muted);
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .card {
+      position: relative;
+      border-radius: 34px;
+      background: #f9fbff;
+      border: 2px solid rgba(36,87,230,.14);
+      box-shadow: 0 20px 54px rgba(18,33,56,.12);
+      padding: 46px;
+      display: grid;
+      gap: 24px;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 40px;
+      font-weight: 900;
+    }
+    .row {
+      padding: 24px 26px;
+      border-radius: 22px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 29px;
+      font-weight: 800;
+      border: 1px solid rgba(36,87,230,.12);
+    }
+    .row span {
+      color: var(--teal);
+      font-family: "Manrope", sans-serif;
+      font-weight: 800;
+      margin-right: 14px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .frame, .content { animation: rise .75s ease both; }
+      .content { animation-delay: .12s; }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <section class="frame">
+        <div class="accent"></div>
+        <div class="accent two"></div>
+      </section>
+      <header class="chrome">
+        <div class="brand">校园π</div>
+        <div>中国民用航空飞行学院 · 实训项目答辩</div>
+      </header>
+      <section class="content">
+        <div>
+          <div class="pill">学生校园服务 App</div>
+          <h1>校园<span>π</span></h1>
+          <div class="subtitle">用一套全栈系统整合校园学习、生活、交易、交流与管理服务</div>
+          <div class="meta">
+            <div>答辩人：曹泽涵</div>
+            <div>指导教师：谭堂</div>
+            <div>日期：待定</div>
+          </div>
+        </div>
+        <aside class="card">
+          <h2>项目组成</h2>
+          <div class="row"><span>01</span>鸿蒙学生端</div>
+          <div class="row"><span>02</span>Spring Boot 后端</div>
+          <div class="row"><span>03</span>Vue 管理端</div>
+          <div class="row"><span>04</span>MySQL 数据支撑</div>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>

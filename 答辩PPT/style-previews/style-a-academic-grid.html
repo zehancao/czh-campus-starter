@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园π - 样式预览 A</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #fbfaf7;
+      --ink: #151515;
+      --muted: #626262;
+      --line: rgba(0, 0, 0, .16);
+      --accent: #b51d22;
+      --navy: #10233f;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #e8e4dc; overflow: hidden; }
+    body { font-family: "Noto Sans SC", sans-serif; }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(0,0,0,.045) 1px, transparent 1px),
+        var(--paper);
+      background-size: 80px 80px, 80px 80px, auto;
+      transform-origin: center center;
+      box-shadow: 0 28px 80px rgba(0,0,0,.18);
+    }
+    .rule-top { position: absolute; left: 120px; right: 120px; top: 92px; border-top: 3px solid var(--ink); }
+    .rule-bottom { position: absolute; left: 120px; right: 120px; bottom: 92px; border-top: 3px solid var(--ink); }
+    .school { position: absolute; top: 122px; left: 120px; font-size: 30px; color: var(--navy); font-weight: 700; }
+    .meta { position: absolute; top: 122px; right: 120px; font-size: 24px; color: var(--muted); text-align: right; line-height: 1.7; }
+    .title {
+      position: absolute;
+      left: 120px;
+      top: 296px;
+      width: 1120px;
+      font-family: "Noto Serif SC", serif;
+      font-size: 164px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+    .subtitle {
+      position: absolute;
+      left: 132px;
+      top: 610px;
+      width: 920px;
+      font-size: 42px;
+      font-weight: 500;
+      color: var(--navy);
+      letter-spacing: 0;
+    }
+    .accent-block {
+      position: absolute;
+      right: 176px;
+      top: 342px;
+      width: 360px;
+      height: 360px;
+      border: 5px solid var(--accent);
+      display: grid;
+      place-items: center;
+      background: rgba(181, 29, 34, .035);
+    }
+    .accent-block span {
+      font-family: "Noto Serif SC", serif;
+      font-size: 52px;
+      font-weight: 900;
+      color: var(--accent);
+      writing-mode: vertical-rl;
+      letter-spacing: 0;
+    }
+    .footer { position: absolute; left: 120px; bottom: 128px; display: flex; gap: 72px; color: var(--ink); font-size: 28px; }
+    .footer strong { color: var(--accent); font-weight: 700; }
+    @media (prefers-reduced-motion: no-preference) {
+      .title, .subtitle, .accent-block, .footer { animation: rise .9s ease both; }
+      .subtitle { animation-delay: .12s; }
+      .accent-block { animation-delay: .18s; }
+      .footer { animation-delay: .26s; }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage">
+      <div class="rule-top"></div>
+      <div class="rule-bottom"></div>
+      <div class="school">中国民用航空飞行学院</div>
+      <div class="meta">实训项目答辩<br>日期：待定</div>
+      <h1 class="title">校园π</h1>
+      <div class="subtitle">校园助手全栈系统设计与实现</div>
+      <div class="accent-block"><span>项目答辩</span></div>
+      <div class="footer">
+        <div><strong>答辩人</strong>：曹泽涵</div>
+        <div><strong>指导教师</strong>：谭堂</div>
+        <div><strong>小组名</strong>：待定</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>
