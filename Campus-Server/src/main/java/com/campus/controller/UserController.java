@@ -113,4 +113,15 @@ public class UserController {
         userService.updateAvatar(userId, avatar);
         return Result.ok();
     }
+
+    @PostMapping("/update-phone")
+    public Result<Void> updatePhone(HttpServletRequest request, @RequestBody Map<String, String> body) {
+        Long userId = (Long) request.getAttribute("userId");
+        String phone = body.get("phone");
+        if (phone == null || phone.isEmpty()) {
+            return Result.error(400, "手机号不能为空");
+        }
+        userService.updatePhone(userId, phone.trim());
+        return Result.ok();
+    }
 }

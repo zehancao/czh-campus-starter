@@ -12,8 +12,10 @@ struct EditProfilePage {
   @State private user: UserInfo = new UserInfo();
   @State private avatar: string = '';
   @State private userName: string = '';
+  @State private phone: string = '';
   @State private isUploading: boolean = false;
   @State private isSavingName: boolean = false;
+  @State private isSavingPhone: boolean = false;
   @State private showAvatarSheet: boolean = false;
   @State private errorMsg: string = '';
   private emojiList: string[] = ['🐱','🐶','🦊','🐼','🐨','🦁','🐯','🐸','🦉','🐲','🌸','🌻','🍀','🌙','⭐','💎','🦋','🐝','🐙','🐧'];
@@ -41,6 +43,7 @@ struct EditProfilePage {
     this.user = copy;
     this.avatar = copy.avatar;
     this.userName = copy.name;
+    this.phone = copy.phone;
   }
 
   private updateLocalUser(nextName: string, nextAvatar: string): void {
@@ -128,6 +131,30 @@ struct EditProfilePage {
     this.isSavingName = false;
   }
 
+  private async savePhone(): Promise<void> {
+    if (this.isSavingPhone) {
+      return;
+    }
+    const nextPhone: string = this.phone.trim();
+    if (nextPhone.length === 0) {
+      this.errorMsg = '手机号不能为空';
+      return;
+    }
+    this.errorMsg = '';
+    this.isSavingPhone = true;
+    const result: ApiResult = await ApiService.updatePhone(nextPhone);
+    if (result.code === 200) {
+      const next: UserInfo = this.user;
+      next.phone = nextPhone;
+      this.user = next;
+      AppStore.getInstance().setUserInfo(next);
+      this.getUIContext().getPromptAction().showToast({ message: '联系方式已保存' });
+    } else {
+      this.errorMsg = result.msg.length > 0 ? result.msg : '保存失败';
+    }
+    this.isSavingPhone = false;
+  }
+
   build() {
     Stack() {
       Column() {
@@ -202,6 +229,38 @@ struct EditProfilePage {
             .backgroundColor(Theme.bgCard)
             .borderRadius(Theme.cardRadius)
             .margin({ top: 16 })
+            .shadow(ShadowStyle.nmRaised)
+
+            Column() {
+              Row() {
+                Text('联系方式')
+                  .fontSize(15)
+                  .fontColor(Theme.textPrimary)
+                  .width(76)
+                TextInput({ placeholder: '请输入手机号', text: this.phone })
+                  .layoutWeight(1)
+                  .height(44)
+                  .fontSize(15)
+                  .fontColor(Theme.textPrimary)
+                  .placeholderColor(Theme.textDisabled)
+                  .textAlign(TextAlign.End)
+                  .backgroundColor(Color.Transparent)
+                  .padding({ left: 8, right: 0 })
+                  .type(InputType.PhoneNumber)
+                  .onChange((value: string) => {
+                    this.phone = value;
+                    this.errorMsg = '';
+                  })
+              }
+              .width('100%')
+              .height(56)
+              .padding({ left: 16, right: 16 })
+
+            }
+            .width('100%')
+            .backgroundColor(Theme.bgCard)
+            .borderRadius(Theme.cardRadius)
+            .margin({ top: 12 })
             .shadow(ShadowStyle.nmRaised)
 
             if (this.errorMsg.length > 0) {

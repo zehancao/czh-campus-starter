@@ -12,7 +12,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.1.253:8080';
+  static baseUrl: string = 'http://192.168.1.37:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -647,6 +647,13 @@ export class ApiService {
       'avatar': avatar,
     };
     return ApiService.request(http.RequestMethod.POST, '/api/user/update-avatar', body, true);
+  }
+
+  static async updatePhone(phone: string): Promise<ApiResult> {
+    const body: Record<string, Object> = {
+      'phone': phone,
+    };
+    return ApiService.request(http.RequestMethod.POST, '/api/user/update-phone', body, true);
   }
 
   static async getClubActivityList(club: string, status: number, page: number, size: number): Promise<ApiResult> {
