@@ -91,3 +91,13 @@ export function updateAnnouncement(id: number, data: any) {
 export function deleteAnnouncement(id: number) {
   return request.delete(`/admin/announcement/${id}`)
 }
+
+/** 开发板温湿度：最新一条 */
+export function getSensorLatest() {
+  return request.get('/admin/stats/sensor-latest')
+}
+
+/** 开发板温湿度：近期序列（默认近 6 小时），用于曲线 */
+export function getSensorHistory(hours = 6) {
+  return request.get('/admin/stats/sensor-history', { params: { hours } })
+}

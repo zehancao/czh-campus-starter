@@ -44,7 +44,7 @@ async function handleLogin() {
     userStore.setToken(res.data.token)
     userStore.setUserInfo(res.data.user)
     message.success('登录成功')
-    router.push('/')
+    router.push('/dashboard')
   } catch (e: any) {
     message.error(e.message || '登录失败')
   } finally {

@@ -100,6 +100,7 @@ import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { useUserStore } from '../../stores/user'
+import { getSensorLatest } from '../../api/admin'
 import chinaJson from '../../assets/china.json'
 
 echarts.registerMap('china', chinaJson as any)
@@ -126,10 +127,13 @@ function goLogin() {
 
 // ===== KPI =====
 const kpis = reactive([
-  { key: 'user', label: '注册用户', icon: '👤', color: C1, unit: '人', target: 0, display: 0 },
-  { key: 'product', label: '商品总数', icon: '📦', color: C2, unit: '件', target: 0, display: 0 },
-  { key: 'active', label: '活跃用户', icon: '⚡', color: '#34d399', unit: '人', target: 0, display: 0 },
-  { key: 'lost', label: '失物招领', icon: '🔍', color: C4, unit: '条', target: 0, display: 0 },
+  { key: 'user', label: '注册用户', icon: '👤', color: C1, unit: '人', target: 0, display: 0, animate: true },
+  { key: 'product', label: '商品总数', icon: '📦', color: C2, unit: '件', target: 0, display: 0, animate: true },
+  { key: 'active', label: '活跃用户', icon: '⚡', color: '#34d399', unit: '人', target: 0, display: 0, animate: true },
+  { key: 'lost', label: '失物招领', icon: '🔍', color: C4, unit: '条', target: 0, display: 0, animate: true },
+  { key: 'temp', label: '实时温度', icon: '🌡️', color: '#fb923c', unit: '℃', target: 0, display: '--', animate: false },
+  { key: 'humidity', label: '实时湿度', icon: '💧', color: '#38bdf8', unit: '%', target: 0, display: '--', animate: false },
+  { key: 'light', label: '实时光照', icon: '💡', color: '#fbbf24', unit: 'lx', target: 0, display: '--', animate: false },
 ])
 
 function animateCount(k: any, duration = 1500) {
@@ -171,6 +175,25 @@ async function fetchStats(path: string) {
   if (!res.ok) return null
   const json = await res.json()
   return json.data
+}
+
+// ===== 开发板温湿度（串口中继上报，轮询刷新）=====
+let sensorTimer: any = null
+async function refreshSensor() {
+  try {
+    const res = await getSensorLatest()
+    const d = (res && res.data) || {}
+    if (d.temp !== undefined && d.temp !== null) {
+      const t = kpis.find(k => k.key === 'temp')
+      const h = kpis.find(k => k.key === 'humidity')
+      const l = kpis.find(k => k.key === 'light')
+      if (t) t.display = Number(d.temp).toFixed(1)
+      if (h) h.display = Number(d.humidity).toFixed(1)
+      if (l && d.light !== undefined && d.light !== null) l.display = Number(d.light).toFixed(0)
+    }
+  } catch (e) {
+    // 上报链路未接通时保留上一次数值，不闪烁
+  }
 }
 
 function getLast7Days(): string[] {
@@ -334,7 +357,11 @@ onMounted(async () => {
 
   await nextTick()
   initStars()
-  kpis.forEach(k => animateCount(k))
+  kpis.filter(k => k.animate).forEach(k => animateCount(k))
+
+  // 开发板温湿度：立即拉一次 + 每 5 秒轮询刷新
+  refreshSensor()
+  sensorTimer = setInterval(refreshSensor, 5000)
 
   // 右侧动态滚动列表
   const colors = [C1, C2, C3, C4, '#34d399']
@@ -365,6 +392,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   clearInterval(clockTimer)
+  clearInterval(sensorTimer)
   if (starsRAF) cancelAnimationFrame(starsRAF)
   window.removeEventListener('resize', resizeCharts)
   categoryChart?.dispose(); collegeChart?.dispose(); announceChart?.dispose(); mapChart?.dispose()
@@ -422,11 +450,17 @@ onBeforeUnmount(() => {
 .hd-login:hover { background: rgba(125,211,252,0.15); box-shadow: 0 0 12px rgba(125,211,252,0.4); color: #e2f6ff; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-/* KPI */
-.kpi-row { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+/* KPI：7 张卡片固定单行，压缩内部留白以适配常见大屏宽度 */
+.kpi-row {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) 1.6fr;
+  gap: 8px;
+}
 .kpi-card {
-  position: relative; display: flex; align-items: center; gap: 16px;
-  padding: 18px 20px; border-radius: 12px;
+  position: relative; display: flex; align-items: center; gap: 8px;
+  min-width: 0; padding: 10px 10px; border-radius: 10px;
   background: linear-gradient(135deg, rgba(20,32,66,0.9), rgba(12,20,48,0.7));
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.35);
@@ -437,16 +471,16 @@ onBeforeUnmount(() => {
   background: var(--accent); box-shadow: 0 0 14px var(--accent);
 }
 .kpi-icon {
-  width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center;
-  font-size: 26px; border-radius: 12px;
+  width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center;
+  font-size: 20px; border-radius: 9px;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
 }
-.kpi-body { display: flex; flex-direction: column; }
-.kpi-value { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.1; text-shadow: 0 0 16px color-mix(in srgb, var(--accent) 60%, transparent); font-variant-numeric: tabular-nums; }
-.kpi-unit { font-size: 13px; color: #94a3b8; margin-left: 4px; font-weight: 500; }
-.kpi-label { font-size: 13px; color: #9fb3d1; margin-top: 4px; letter-spacing: 1px; }
+.kpi-body { display: flex; flex-direction: column; min-width: 0; }
+.kpi-value { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.1; white-space: nowrap; text-shadow: 0 0 16px color-mix(in srgb, var(--accent) 60%, transparent); font-variant-numeric: tabular-nums; }
+.kpi-unit { font-size: 10px; color: #94a3b8; margin-left: 2px; font-weight: 500; }
+.kpi-label { font-size: 10px; color: #9fb3d1; margin-top: 3px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.7; }
 .kpi-corner { position: absolute; width: 10px; height: 10px; border: 2px solid var(--accent); opacity: 0.8; }
 .kpi-corner.tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
@@ -486,7 +520,7 @@ onBeforeUnmount(() => {
   animation: bdSpin 5s linear infinite; opacity: 0.6;
 }
 .cb-title { font-size: 13px; color: #9fb3d1; letter-spacing: 1px; }
-.cb-chart { width: 100%; height: 66px; }
+.cb-chart { width: 100%; height: 80px; }
 .panel-feed { flex: 1.2; }
 .panel-title {
   display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #e2e8f0;

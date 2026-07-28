@@ -1,58 +1,35 @@
 <template>
   <div class="dashboard">
-    <!-- 顶部KPI指标卡片 -->
-    <n-grid :cols="4" :x-gap="16" :y-gap="16">
-      <!-- 注册用户：新增可点击弹窗 -->
-      <n-gi>
-        <n-card class="stat-card clickable" @click="openUserModal">
+    <!-- 左侧 4 个垂直堆叠的 KPI 卡 + 右侧大地图 -->
+    <div class="main-row">
+      <div class="left-col">
+        <n-card class="stat-card clickable side-card" @click="openUserModal">
           <n-statistic label="注册用户" :value="overview.userCount">
             <template #prefix><span style="font-size:20px">👤</span></template>
           </n-statistic>
         </n-card>
-      </n-gi>
-      <!-- 商品总数：可点击弹窗 -->
-      <n-gi>
-        <n-card class="stat-card clickable" @click="openProductModal">
+        <n-card class="stat-card clickable side-card" @click="openProductModal">
           <n-statistic label="商品总数" :value="overview.productCount">
             <template #prefix><span style="font-size:20px">📦</span></template>
           </n-statistic>
         </n-card>
-      </n-gi>
-      <!-- 公告数量：可点击弹窗 -->
-      <n-gi>
-        <n-card class="stat-card clickable" @click="openAnnounceModal">
+        <n-card class="stat-card clickable side-card" @click="openAnnounceModal">
           <n-statistic label="公告数量" :value="announcementList.length">
             <template #prefix><span style="font-size:20px">📢</span></template>
           </n-statistic>
         </n-card>
-      </n-gi>
-      <!-- 失物招领：点击弹窗 -->
-      <n-gi>
-        <n-card class="stat-card clickable" @click="openLostFoundModal">
+        <n-card class="stat-card clickable side-card" @click="openLostFoundModal">
           <n-statistic label="失物招领" :value="overview.lostFoundCount">
             <template #prefix><span style="font-size:20px">🔍</span></template>
           </n-statistic>
         </n-card>
-      </n-gi>
-    </n-grid>
-
-    <!-- 图表区域：3行5列网格布局 -->
-    <div class="chart-grid">
-      <n-card title="商品分类分布" class="chart-card grid-item category">
-        <div ref="categoryChartRef" class="chart-box"></div>
-      </n-card>
-      <n-card title="用户学院分布" class="chart-card grid-item college">
-        <div ref="collegeChartRef" class="chart-box"></div>
-      </n-card>
-      <n-card title="近7日公告发布量" class="chart-card grid-item announce">
-        <div ref="announceChartRef" class="chart-box"></div>
-      </n-card>
-      <n-card title="籍贯分布热力图" class="chart-card grid-item map">
-        <div ref="mapChartRef" class="chart-box"></div>
+      </div>
+      <n-card title="籍贯分布热力图" class="chart-card map-card">
+        <div ref="mapChartRef" class="chart-box map-box"></div>
       </n-card>
     </div>
 
-    <!-- 【新增】注册用户列表弹窗（完全匹配users库全字段） -->
+    <!-- 注册用户列表弹窗 -->
     <n-modal
       v-model:show="showUserModal"
       preset="card"
@@ -150,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onBeforeUnmount, watch, h } from 'vue'
+import { ref, onMounted, nextTick, onBeforeUnmount, h } from 'vue'
 import { NGrid, NGi, NCard, NStatistic, NModal, NDataTable, NButton, NTag, useMessage } from 'naive-ui'
 import * as echarts from 'echarts'
 import { useUserStore } from '../../stores/user'
@@ -169,25 +146,22 @@ const overview = ref<Record<string, number>>({
 })
 const announcementList = ref<any[]>([])
 
-// ========== 新增：注册用户弹窗变量 ==========
+// 弹窗状态
 const showUserModal = ref(false)
 const userList = ref<any[]>([])
 const userLoading = ref(false)
 
-// 失物招领弹窗
 const showLostFoundModal = ref(false)
 const lostFoundList = ref<any[]>([])
 const lostFoundLoading = ref(false)
 
-// 商品弹窗
 const showProductModal = ref(false)
 const productList = ref<any[]>([])
 const productLoading = ref(false)
 
-// 公告弹窗
 const showAnnounceModal = ref(false)
 
-// ====================== 【新增】用户表格 100%匹配users表字段 + TS类型修复 ======================
+// 用户表格列
 const userColumns = [
   { title: '用户ID', key: 'id', width: 70 },
   { title: '学号', key: 'student_id', width: 110 },
@@ -227,7 +201,7 @@ const userColumns = [
   { title: '更新时间', key: 'update_time', width: 160 },
 ]
 
-// ====================== 失物招领表格【修复全部TS索引/类型报错】 ======================
+// 失物招领表格
 const lostFoundColumns = [
   { title: 'ID', key: 'id', width: 70 },
   { title: '发布用户ID', key: 'user_id', width: 100 },
@@ -276,7 +250,7 @@ const lostFoundColumns = [
   { title: '发布时间', key: 'create_time', width: 180 },
 ]
 
-// ====================== 商品表格【同步修复全部TS索引/字面量类型报错】 ======================
+// 商品表格
 const productColumns = [
   { title: '商品ID', key: 'id', width: 70 },
   { title: '卖家ID', key: 'seller_id', width: 90 },
@@ -361,30 +335,19 @@ const announceColumns = [
   { title: '发布时间', key: 'publishTime', width: 160 },
 ]
 
-const categoryChartRef = ref<HTMLElement | null>(null)
-const collegeChartRef = ref<HTMLElement | null>(null)
-const announceChartRef = ref<HTMLElement | null>(null)
+// 地图图表
 const mapChartRef = ref<HTMLElement | null>(null)
-
-let categoryChart: echarts.ECharts | null = null
-let collegeChart: echarts.ECharts | null = null
-let announceChart: echarts.ECharts | null = null
 let mapChart: echarts.ECharts | null = null
 
-function getLast7Days(): string[] {
-  const days: string[] = []
-  const today = new Date()
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    days.push(`${month}-${day}`)
-  }
-  return days
+async function fetchStats(path: string) {
+  const res = await fetch(`/api/admin/stats${path}`, {
+    headers: { Authorization: `Bearer ${userStore.token}` },
+  })
+  const json = await res.json()
+  return json.data
 }
 
-// ========== 弹窗打开函数（新增用户弹窗打开逻辑） ==========
+// 弹窗打开
 async function openUserModal() {
   showUserModal.value = true
   await loadUserList()
@@ -401,7 +364,7 @@ function openAnnounceModal() {
   showAnnounceModal.value = true
 }
 
-// ========== 新增：加载注册用户列表接口 ==========
+// 列表数据加载
 async function loadUserList() {
   userLoading.value = true
   try {
@@ -418,7 +381,6 @@ async function loadUserList() {
   }
 }
 
-// 加载失物招领列表
 async function loadLostFoundList() {
   lostFoundLoading.value = true
   try {
@@ -435,7 +397,6 @@ async function loadLostFoundList() {
   }
 }
 
-// 加载商品列表
 async function loadProductList() {
   productLoading.value = true
   try {
@@ -452,67 +413,9 @@ async function loadProductList() {
   }
 }
 
-async function fetchStats(path: string) {
-  const res = await fetch(`/api/admin/stats${path}`, {
-    headers: { Authorization: `Bearer ${userStore.token}` },
-  })
-  const json = await res.json()
-  return json.data
-}
-
-function calcWeekCount(list: any[]) {
-  const dateList = getLast7Days()
-  const counts = new Array(7).fill(0)
-  list.forEach(item => {
-    const time = item.publishTime || item.createTime
-    if (!time) return
-    const md = time.slice(5, 10)
-    const idx = dateList.indexOf(md)
-    if (idx > -1) counts[idx]++
-  })
-  return counts
-}
-
-const renderAnnounceChart = () => {
-  if (!announceChartRef.value) return
-  if (!announceChart) announceChart = echarts.init(announceChartRef.value)
-  const data = calcWeekCount(announcementList.value)
-  const dateList = getLast7Days()
-  const option = {
-    tooltip: { trigger: 'axis' },
-    backgroundColor: 'transparent',
-    textStyle: { color: '#000000', fontSize: 13 },
-    xAxis: {
-      type: 'category',
-      data: dateList,
-      axisLine: { lineStyle: { color: '#2a3450' } },
-      axisLabel: { color: '#000000', fontSize: 12 }
-    },
-    yAxis: {
-      type: 'value',
-      splitLine: { lineStyle: { color: '#eeeeee' } },
-      axisLabel: { color: '#000000', fontSize: 12 }
-    },
-    series: [{
-      data: data,
-      type: 'bar',
-      barWidth: '40%',
-      itemStyle: { borderRadius: [4, 4, 0, 0], color: '#3a7bd5' }
-    }]
-  }
-  announceChart.setOption(option)
-}
-
 async function loadAnnouncementList() {
   const res = await getAnnouncements()
   announcementList.value = res.data || []
-}
-
-function resizeCharts() {
-  categoryChart?.resize()
-  collegeChart?.resize()
-  announceChart?.resize()
-  mapChart?.resize()
 }
 
 onMounted(async () => {
@@ -522,56 +425,7 @@ onMounted(async () => {
   await loadAnnouncementList()
   await nextTick()
 
-  // 商品分类饼图
-  const catData = await fetchStats('/products-by-category')
-  if (categoryChartRef.value && catData) {
-    categoryChart = echarts.init(categoryChartRef.value)
-    categoryChart.setOption({
-      tooltip: { trigger: 'item' },
-      backgroundColor: 'transparent',
-      textStyle: { color: '#000000', fontSize: 13 },
-      legend: { orient: 'vertical', left: 10, top: 'center', textStyle: { color: '#000000', fontSize: 12 }, itemGap: 12 },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '65%'],
-        center: ['65%', '50%'],
-        data: catData,
-        emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } },
-      }],
-    })
-  }
-
-  // 用户学院柱状图
-  const collegeData = await fetchStats('/users-by-college')
-  if (collegeChartRef.value && collegeData) {
-    collegeChart = echarts.init(collegeChartRef.value)
-    collegeChart.setOption({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      backgroundColor: 'transparent',
-      textStyle: { color: '#000000', fontSize: 13 },
-      xAxis: {
-        type: 'category',
-        data: collegeData.map((d: { name: string; value: number }) => d.name || '未填写'),
-        axisLine: { lineStyle: { color: '#2a3450' } },
-        axisLabel: { color: '#000000', fontSize: 11, rotate: 0, interval: 0, overflow: 'break', align: 'center' }
-      },
-      yAxis: {
-        type: 'value',
-        splitLine: { lineStyle: { color: '#eeeeee' } },
-        axisLabel: { color: '#000000', fontSize: 12 }
-      },
-      series: [{
-        type: 'bar',
-        data: collegeData.map((d: { name: string; value: number }) => d.value),
-        barWidth: '40%',
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: '#3a7bd5' }
-      }],
-    })
-  }
-
-  renderAnnounceChart()
-
-  // 籍贯热力地图
+  // 籍贯热力地图（全宽放大版）
   const hometownData = await fetchStats('/hometown-stats')
   if (mapChartRef.value && hometownData) {
     const nameFix: Record<string, string> = {
@@ -608,35 +462,28 @@ onMounted(async () => {
         calculable: true,
         left: 'left',
         itemWidth: 16,
-        itemHeight: 130,
+        itemHeight: 200,
       },
       series: [{
         type: 'map',
         map: 'china',
         roam: true,
         zoom: 1.3,
-        layoutCenter: ['50%', '58%'],
-        layoutSize: '80%',
-        label: { show: true, fontSize: 11, color: '#000000' },
+        layoutCenter: ['55%', '55%'],
+        layoutSize: '85%',
+        label: { show: true, fontSize: 12, color: '#000000' },
         itemStyle: { borderColor: '#cccccc', borderWidth: 1, areaColor: '#ffffff' },
-        emphasis: { label: { show: true, fontSize: 13 }, itemStyle: { areaColor: '#f0f9ff' } },
+        emphasis: { label: { show: true, fontSize: 14 }, itemStyle: { areaColor: '#f0f9ff' } },
         data: mapData,
       }],
     })
   }
 
-  window.addEventListener('resize', resizeCharts)
+  window.addEventListener('resize', () => mapChart?.resize())
 })
 
-watch(announcementList, () => {
-  renderAnnounceChart()
-}, { deep: true })
-
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resizeCharts)
-  categoryChart?.dispose()
-  collegeChart?.dispose()
-  announceChart?.dispose()
+  window.removeEventListener('resize', () => mapChart?.resize())
   mapChart?.dispose()
 })
 </script>
@@ -654,30 +501,42 @@ onBeforeUnmount(() => {
   background: #ffffff;
   color: #000000;
   font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
 }
 
-.chart-grid {
+/* 主体：左 1 列（4 个垂直卡）+ 右大地图（占主体 ~3/4 宽） */
+.main-row {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: 1fr 3fr;
   gap: 16px;
   min-height: 0;
 }
 
-.grid-item {
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.side-card {
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.category { grid-row: 1 / 2; grid-column: 1 / 3; }
-.college { grid-row: 2 / 3; grid-column: 1 / 3; }
-.announce { grid-row: 3 / 4; grid-column: 1 / 3; }
-.map { grid-row: 1 / 4; grid-column: 3 / 6; }
+.side-card :deep(.n-card__content) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .stat-card {
   background: #ffffff !important;
@@ -719,11 +578,22 @@ onBeforeUnmount(() => {
   font-size: 16px;
   font-weight: 500;
   padding-left: 8px;
-  border-left: none;
 }
 
 .chart-box {
   width: 100%;
   height: 100%;
+}
+
+/* 籍贯地图：右侧大块，占满 main-row 剩余高度 */
+.map-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.map-box {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 </style>

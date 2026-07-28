@@ -1,0 +1,18 @@
+static_library("lcd_example") {
+    sources = [
+        "lcd_example.c",
+        "src/lcd.c",
+        "src/picture.c",
+        "src/sht30.c",          # 新增：SHT30 驱动（cp 自 c5_sht30）
+    ]
+
+    include_dirs = [
+        "//utils/native/lite/include",
+        "include",
+        "//base/iot_hardware/peripheral/interfaces/kits",
+    ]
+
+    deps = [
+        "//device/rockchip/hardware:hardware",
+    ]
+}

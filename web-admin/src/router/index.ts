@@ -17,7 +17,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('../components/Layout.vue'),
-      redirect: '/dashboard',
+      redirect: '/screen',
       children: [
         { path: 'dashboard', name: 'Dashboard', component: () => import('../views/dashboard/Index.vue') },
         { path: 'schedule', name: 'Schedule', component: () => import('../views/schedule/Index.vue') },

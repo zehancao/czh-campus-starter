@@ -7,6 +7,8 @@ import com.campus.mapper.FavoriteMapper;
 import com.campus.mapper.AnnouncementMapper;
 import com.campus.mapper.LostFoundMapper;
 import com.campus.mapper.ProductCategoryMapper;
+import com.campus.mapper.SensorTempHumiMapper;
+import com.campus.entity.SensorTempHumi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +36,9 @@ public class StatsController {
 
     @Autowired
     private ProductCategoryMapper productCategoryMapper;
+
+    @Autowired
+    private SensorTempHumiMapper sensorTempHumiMapper;
 
     @GetMapping("/overview")
     public Result<Map<String, Object>> getOverview() {
@@ -111,6 +116,43 @@ public class StatsController {
                 .isNotNull("hometown")
                 .groupBy("hometown")
         );
+        return Result.ok(result);
+    }
+
+    @GetMapping("/sensor-latest")
+    public Result<Map<String, Object>> sensorLatest() {
+        SensorTempHumi latest = sensorTempHumiMapper.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SensorTempHumi>()
+                .orderByDesc("create_time")
+                .last("LIMIT 1")
+        );
+        Map<String, Object> data = new HashMap<>();
+        if (latest != null) {
+            data.put("temp", latest.getTemp());
+            data.put("humidity", latest.getHumidity());
+            data.put("light", latest.getLight());
+            data.put("deviceId", latest.getDeviceId());
+            data.put("createTime", latest.getCreateTime());
+        }
+        return Result.ok(data);
+    }
+
+    @GetMapping("/sensor-history")
+    public Result<List<Map<String, Object>>> sensorHistory(@RequestParam(defaultValue = "6") int hours) {
+        List<SensorTempHumi> list = sensorTempHumiMapper.selectList(
+            new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SensorTempHumi>()
+                .ge("create_time", LocalDateTime.now().minusHours(hours))
+                .orderByAsc("create_time")
+        );
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (SensorTempHumi s : list) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("temp", s.getTemp());
+            m.put("humidity", s.getHumidity());
+            m.put("light", s.getLight());
+            m.put("createTime", s.getCreateTime());
+            result.add(m);
+        }
         return Result.ok(result);
     }
 }
