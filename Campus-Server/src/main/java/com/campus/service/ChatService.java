@@ -74,12 +74,26 @@ public class ChatService {
 
         ChatConversation cc = conversationMapper.selectById(conversationId);
         if (cc != null) {
-            cc.setLastMessage(content.length() > 50 ? content.substring(0, 50) : content);
+            String lastMessage = buildLastMessage(content, msgType);
+            cc.setLastMessage(lastMessage.length() > 50 ? lastMessage.substring(0, 50) : lastMessage);
             cc.setLastTime(LocalDateTime.now());
             conversationMapper.updateById(cc);
         }
 
         return toVO(msg, senderId);
+    }
+
+    private String buildLastMessage(String content, String msgType) {
+        if ("image".equals(msgType)) {
+            return "[图片]";
+        }
+        if ("product".equals(msgType)) {
+            return "[商品卡片]";
+        }
+        if ("video".equals(msgType)) {
+            return "[视频]";
+        }
+        return content != null ? content : "";
     }
 
     public Long getReceiverId(Long conversationId, Long senderId) {

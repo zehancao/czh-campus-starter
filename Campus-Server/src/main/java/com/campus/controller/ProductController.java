@@ -34,24 +34,24 @@ public class ProductController {
 
     @GetMapping("/list")
     public Result<List<ProductVO>> getList(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
         return Result.ok(productService.getProductList(categoryId, page, size));
     }
 
     @GetMapping("/search")
-    public Result<List<ProductVO>> search(@RequestParam String keyword) {
+    public Result<List<ProductVO>> search(@RequestParam("keyword") String keyword) {
         return Result.ok(productService.searchProducts(keyword));
     }
 
     @GetMapping("/search-suggest")
-    public Result<List<String>> searchSuggest(@RequestParam String keyword) {
+    public Result<List<String>> searchSuggest(@RequestParam("keyword") String keyword) {
         return Result.ok(productService.searchSuggest(keyword));
     }
 
     @GetMapping("/{id}")
-    public Result<ProductVO> getDetail(@PathVariable Long id, HttpServletRequest request) {
+    public Result<ProductVO> getDetail(@PathVariable("id") Long id, HttpServletRequest request) {
         ProductVO vo = productService.getProductDetail(id);
         try {
             Long userId = (Long) request.getAttribute("userId");
@@ -80,14 +80,14 @@ public class ProductController {
     }
 
     @PostMapping("/update-status")
-    public Result<Void> updateStatus(HttpServletRequest request, @RequestParam Long productId, @RequestParam Integer status) {
+    public Result<Void> updateStatus(HttpServletRequest request, @RequestParam("productId") Long productId, @RequestParam("status") Integer status) {
         Long userId = (Long) request.getAttribute("userId");
         productService.updateProductStatus(userId, productId, status);
         return Result.ok();
     }
 
     @PostMapping("/delete")
-    public Result<Void> delete(HttpServletRequest request, @RequestParam Long productId) {
+    public Result<Void> delete(HttpServletRequest request, @RequestParam("productId") Long productId) {
         Long userId = (Long) request.getAttribute("userId");
         productService.deleteProduct(userId, productId);
         return Result.ok();

@@ -33,6 +33,9 @@ struct ProductDetailPage {
   @State private isLoggedIn: boolean = false;
   @State private errorMsg: string = '';
   @State private sellerPhoneText: string = '';
+  @State private isSharing: boolean = false;
+  @State private showContactConfirm: boolean = false;
+  @State private isContactSending: boolean = false;
 
   private productId: number = 0;
 
@@ -218,14 +221,77 @@ struct ProductDetailPage {
       AlertDialog.show({ message: '这是您自己的商品', confirm: { value: '好的', action: () => {} } });
       return;
     }
-    router.pushUrl({
-      url: 'pages/ChatPage',
-      params: {
-        'otherUserId': this.product.sellerId.toString(),
-        'otherUserName': this.product.sellerName,
-        'productId': this.product.id.toString()
-      } as Record<string, string>
-    });
+    this.showContactConfirm = true;
+  }
+
+  private buildProductCardContent(): string {
+    const payload: Record<string, Object> = {
+      'productId': this.product.id,
+      'title': this.product.title,
+      'price': this.product.price,
+      'image': this.parsedImages.length > 0 ? this.parsedImages[0] : '',
+      'status': this.product.status
+    };
+    return JSON.stringify(payload);
+  }
+
+  private parseConversationId(data: Object | undefined): number {
+    if (data === undefined || data === null) {
+      return 0;
+    }
+    if (typeof data === 'number') {
+      return data as number;
+    }
+    const record: Record<string, Object> = data as Record<string, Object>;
+    const value: Object = record['conversationId'];
+    if (typeof value === 'number') {
+      return value as number;
+    }
+    if (value !== null && value !== undefined) {
+      const parsed: number = Number(value as string);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    const idObj: Object = record['id'];
+    if (typeof idObj === 'number') {
+      return idObj as number;
+    }
+    return 0;
+  }
+
+  private async sendContactProductCard(): Promise<void> {
+    if (this.isContactSending) {
+      return;
+    }
+    this.isContactSending = true;
+    const conversationResult = await ApiService.createConversation(this.product.sellerId, this.product.id);
+    if (conversationResult.code !== 200) {
+      this.isContactSending = false;
+      AlertDialog.show({ title: '发送失败', message: conversationResult.msg || '会话创建失败', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    const conversationId: number = this.parseConversationId(conversationResult.data);
+    if (conversationId <= 0) {
+      this.isContactSending = false;
+      AlertDialog.show({ title: '发送失败', message: '会话创建失败', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    const sendResult = await ApiService.sendMessage(conversationId, this.buildProductCardContent(), 'product');
+    this.isContactSending = false;
+    if (sendResult.code === 200) {
+      this.showContactConfirm = false;
+      promptAction.showToast({ message: '已发送商品卡片', duration: 1500 });
+      router.pushUrl({
+        url: 'pages/ChatPage',
+        params: {
+          'conversationId': conversationId.toString(),
+          'otherUserId': this.product.sellerId.toString(),
+          'otherUserName': this.product.sellerName,
+          'productId': this.product.id.toString()
+        } as Record<string, string>
+      });
+    } else {
+      AlertDialog.show({ title: '发送失败', message: sendResult.msg || '请稍后重试', confirm: { value: '好的', action: () => {} } });
+    }
   }
 
   private reportProduct(): void {
@@ -246,6 +312,126 @@ struct ProductDetailPage {
         'defendantName': this.product.sellerName
       } as Record<string, string>
     });
+  }
+
+  private async shareProduct(): Promise<void> {
+    if (!this.isLoggedIn) {
+      AlertDialog.show({ message: '请先登录后分享商品', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    if (this.product.id <= 0 || this.isSharing) {
+      return;
+    }
+    router.pushUrl({
+      url: 'pages/ConversationListPage',
+      params: {
+        'shareMode': 'product',
+        'productId': this.product.id.toString(),
+        'title': this.product.title,
+        'price': this.product.price.toString(),
+        'image': this.parsedImages.length > 0 ? this.parsedImages[0] : '',
+        'status': this.product.status.toString()
+      } as Record<string, string>
+    });
+  }
+
+  @Builder
+  ContactProductCard() {
+    Row() {
+      if (this.parsedImages.length > 0) {
+        Image(ApiService.baseUrl + this.parsedImages[0])
+          .width(76)
+          .height(76)
+          .borderRadius(8)
+          .objectFit(ImageFit.Cover)
+          .backgroundColor(Theme.bgInput)
+      } else {
+        Column() {
+          Text('商')
+            .fontSize(24)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Theme.primary)
+        }
+        .width(76)
+        .height(76)
+        .borderRadius(8)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(Theme.primaryLight)
+      }
+      Column() {
+        Text(this.product.title.length > 0 ? this.product.title : '商品卡片')
+          .fontSize(15)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Theme.textPrimary)
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Text(`¥${this.product.price.toFixed(2)}`)
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.primary)
+          .margin({ top: 8 })
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+      .margin({ left: 12 })
+    }
+    .width('100%')
+    .padding(12)
+    .backgroundColor(Theme.bgPage)
+    .borderRadius(12)
+  }
+
+  @Builder
+  ContactConfirmOverlay() {
+    Column() {
+      Blank()
+      Column() {
+        Text('是否询问此商品')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.textPrimary)
+          .margin({ top: 18, bottom: 8 })
+        Text(`发送给 ${this.product.sellerName}`)
+          .fontSize(13)
+          .fontColor(Theme.textSecondary)
+          .margin({ bottom: 14 })
+        this.ContactProductCard()
+        Row() {
+          Button('取消')
+            .type(ButtonType.Normal)
+            .height(44)
+            .fontSize(15)
+            .fontColor(Theme.textSecondary)
+            .backgroundColor(Theme.bgInput)
+            .borderRadius(22)
+            .layoutWeight(1)
+            .margin({ right: 8 })
+            .onClick(() => { this.showContactConfirm = false })
+          Button(this.isContactSending ? '发送中' : '发送')
+            .type(ButtonType.Normal)
+            .height(44)
+            .fontSize(15)
+            .fontColor('#FFFFFF')
+            .backgroundColor(this.isContactSending ? Theme.textTertiary : Theme.primary)
+            .borderRadius(22)
+            .layoutWeight(1)
+            .margin({ left: 8 })
+            .enabled(!this.isContactSending)
+            .onClick(() => { this.sendContactProductCard() })
+        }
+        .width('100%')
+        .margin({ top: 16, bottom: 18 })
+      }
+      .width('86%')
+      .padding({ left: 18, right: 18 })
+      .backgroundColor('#FFFFFF')
+      .borderRadius(18)
+      Blank()
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor('#00000066')
+    .position({ x: 0, y: 0 })
   }
 
   build() {
@@ -475,6 +661,16 @@ struct ProductDetailPage {
             .justifyContent(FlexAlign.Center)
             .onClick(() => { this.reportProduct() })
 
+            Column() {
+              Text(this.isSharing ? '...' : '分享').fontSize(13).fontColor(Theme.primary)
+            }
+            .width(54).height(48)
+            .backgroundColor(Theme.primaryLight)
+            .borderRadius(24)
+            .margin({ left: 10 })
+            .justifyContent(FlexAlign.Center)
+            .onClick(() => { this.shareProduct() })
+
             Blank()
 
             Button('联系卖家')
@@ -509,6 +705,10 @@ struct ProductDetailPage {
       .alignItems(VerticalAlign.Center)
       .position({ x: 15, y: 44 })
       .onClick(() => { router.back() })
+
+      if (this.showContactConfirm) {
+        this.ContactConfirmOverlay()
+      }
     }
     .width('100%').height('100%')
   }

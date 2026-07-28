@@ -24,21 +24,21 @@ public class FavoriteController {
     }
 
     @PostMapping("/add")
-    public Result<Void> add(HttpServletRequest request, @RequestParam Long productId) {
+    public Result<Void> add(HttpServletRequest request, @RequestParam("productId") Long productId) {
         Long userId = (Long) request.getAttribute("userId");
         favoriteService.addFavorite(userId, productId);
         return Result.ok();
     }
 
     @PostMapping("/remove")
-    public Result<Void> remove(HttpServletRequest request, @RequestParam Long productId) {
+    public Result<Void> remove(HttpServletRequest request, @RequestParam("productId") Long productId) {
         Long userId = (Long) request.getAttribute("userId");
         favoriteService.removeFavorite(userId, productId);
         return Result.ok();
     }
 
     @GetMapping("/check")
-    public Result<Boolean> check(HttpServletRequest request, @RequestParam Long productId) {
+    public Result<Boolean> check(HttpServletRequest request, @RequestParam("productId") Long productId) {
         Long userId = (Long) request.getAttribute("userId");
         boolean isFav = favoriteService.isFavorite(userId, productId);
         return Result.ok(isFav);

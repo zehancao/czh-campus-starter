@@ -7,6 +7,14 @@ import { WebSocketService, WsMessage, MessageCallback } from '../service/WebSock
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
 
+class ProductCardMessage {
+  productId: number = 0;
+  title: string = '';
+  price: number = 0;
+  image: string = '';
+  status: number = 1;
+}
+
 @Entry
 @Component
 struct ChatPage {
@@ -21,6 +29,9 @@ struct ChatPage {
   @State private isSending: boolean = false;
   @State private isOtherUserOnline: boolean = false;
   @State private errorMsg: string = '';
+  @State private showImagePreview: boolean = false;
+  @State private previewImageUrl: string = '';
+  @State private showMorePanel: boolean = false;
   private wsCallback: MessageCallback | null = null;
   private messageTimer: number = -1;
   private onlineTimer: number = -1;
@@ -299,20 +310,88 @@ struct ChatPage {
       return;
     }
     this.isSending = true;
-    if (WebSocketService.getInstance().connectionState === 'connected') {
+    const sent: boolean = await this.sendChatContent(content, 'text');
+    if (sent) {
       this.inputText = '';
-      WebSocketService.getInstance().sendMessage(this.conversationId, content, 'text');
-      this.isSending = false;
-      return;
-    }
-    const result = await ApiService.sendMessage(this.conversationId, content, 'text');
-    if (result.code === 200) {
-      this.inputText = '';
-      await this.loadMessages();
-    } else {
-      AlertDialog.show({ title: '发送失败', message: result.msg || '请稍后重试', confirm: { value: '好的', action: () => {} } });
+      this.showMorePanel = false;
     }
     this.isSending = false;
+  }
+
+  private async sendChatContent(content: string, msgType: string): Promise<boolean> {
+    if (this.conversationId <= 0) {
+      AlertDialog.show({ message: '会话还没有创建成功', confirm: { value: '好的', action: () => {} } });
+      return false;
+    }
+    if (WebSocketService.getInstance().connectionState === 'connected') {
+      WebSocketService.getInstance().sendMessage(this.conversationId, content, msgType);
+      return true;
+    }
+    const result = await ApiService.sendMessage(this.conversationId, content, msgType);
+    if (result.code === 200) {
+      await this.loadMessages();
+      return true;
+    }
+    AlertDialog.show({ title: '发送失败', message: result.msg || '请稍后重试', confirm: { value: '好的', action: () => {} } });
+    return false;
+  }
+
+  private async sendImage(): Promise<void> {
+    if (this.isSending) {
+      return;
+    }
+    if (this.conversationId <= 0) {
+      AlertDialog.show({ message: '会话还没有创建成功', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    try {
+      const uris: string[] = await ApiService.pickImages();
+      if (uris.length === 0) {
+        return;
+      }
+      this.isSending = true;
+      this.showMorePanel = false;
+      promptAction.showToast({ message: '正在发送图片', duration: 1200 });
+      const url: string = await ApiService.uploadChatMedia(uris[0]);
+      if (url.startsWith('ERROR:')) {
+        AlertDialog.show({ title: '发送失败', message: '图片上传失败，请重试', confirm: { value: '好的', action: () => {} } });
+      } else {
+        await this.sendChatContent(url, 'image');
+      }
+    } catch (err) {
+      AlertDialog.show({ message: '相册无法打开，请用真机或模拟器运行', confirm: { value: '知道了', action: () => {} } });
+    } finally {
+      this.isSending = false;
+    }
+  }
+
+  private async sendVideo(): Promise<void> {
+    if (this.isSending) {
+      return;
+    }
+    if (this.conversationId <= 0) {
+      AlertDialog.show({ message: '会话还没有创建成功', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    try {
+      const uris: string[] = await ApiService.pickVideos();
+      if (uris.length === 0) {
+        return;
+      }
+      this.isSending = true;
+      this.showMorePanel = false;
+      promptAction.showToast({ message: '正在发送视频', duration: 1200 });
+      const url: string = await ApiService.uploadChatMedia(uris[0]);
+      if (url.startsWith('ERROR:')) {
+        AlertDialog.show({ title: '发送失败', message: '视频上传失败，请重试', confirm: { value: '好的', action: () => {} } });
+      } else {
+        await this.sendChatContent(url, 'video');
+      }
+    } catch (err) {
+      AlertDialog.show({ message: '视频选择无法打开，请用真机或模拟器运行', confirm: { value: '知道了', action: () => {} } });
+    } finally {
+      this.isSending = false;
+    }
   }
 
   private formatTime(text: string): string {
@@ -326,14 +405,213 @@ struct ChatPage {
     return value;
   }
 
+  private normalizeImageUrl(path: string): string {
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('file://')) {
+      return path;
+    }
+    if (path.startsWith('/')) {
+      return `${ApiService.baseUrl}${path}`;
+    }
+    return path;
+  }
+
+  private openImagePreview(url: string): void {
+    this.previewImageUrl = this.normalizeImageUrl(url);
+    this.showImagePreview = true;
+  }
+
+  private parseProductCard(content: string): ProductCardMessage {
+    const card: ProductCardMessage = new ProductCardMessage();
+    try {
+      const obj: Record<string, Object> = JSON.parse(content) as Record<string, Object>;
+      const idObj: Object = obj['productId'];
+      if (typeof idObj === 'number') {
+        card.productId = idObj as number;
+      } else if (idObj !== null && idObj !== undefined) {
+        const id: number = Number(idObj as string);
+        card.productId = isNaN(id) ? 0 : id;
+      }
+      card.title = (obj['title'] as string) ?? '';
+      const priceObj: Object = obj['price'];
+      if (typeof priceObj === 'number') {
+        card.price = priceObj as number;
+      } else if (priceObj !== null && priceObj !== undefined) {
+        const price: number = Number(priceObj as string);
+        card.price = isNaN(price) ? 0 : price;
+      }
+      card.image = (obj['image'] as string) ?? '';
+      card.status = (obj['status'] as number) ?? 1;
+    } catch (e) {
+      card.title = content;
+    }
+    return card;
+  }
+
+  private productCardId(content: string): number {
+    return this.parseProductCard(content).productId;
+  }
+
+  private productCardTitle(content: string): string {
+    const title: string = this.parseProductCard(content).title;
+    return title.length > 0 ? title : '商品卡片';
+  }
+
+  private productCardPrice(content: string): string {
+    return `¥${this.parseProductCard(content).price.toFixed(2)}`;
+  }
+
+  private productCardImage(content: string): string {
+    return this.parseProductCard(content).image;
+  }
+
   private displayContent(item: ChatMessage): string {
     if (item.msgType === 'product') {
-      return '商品卡片：' + item.content;
+      const card: ProductCardMessage = this.parseProductCard(item.content);
+      return card.title.length > 0 ? `商品卡片：${card.title}` : '商品卡片';
     }
     if (item.msgType === 'image') {
       return '[图片]';
     }
+    if (item.msgType === 'video') {
+      return '[视频]';
+    }
     return item.content;
+  }
+
+  @Builder
+  MessageContent(item: ChatMessage) {
+    if (item.msgType === 'image') {
+      Image(this.normalizeImageUrl(item.content))
+        .width(168)
+        .height(168)
+        .borderRadius(12)
+        .objectFit(ImageFit.Cover)
+        .backgroundColor('#FFFFFF')
+        .onClick(() => { this.openImagePreview(item.content) })
+    } else if (item.msgType === 'video') {
+      Row() {
+        Text('▶')
+          .fontSize(22)
+          .fontColor(Theme.primary)
+          .width(42)
+          .height(42)
+          .borderRadius(21)
+          .textAlign(TextAlign.Center)
+          .backgroundColor(Theme.primaryLight)
+        Column() {
+          Text('视频')
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(Theme.textPrimary)
+          Text('已发送视频文件')
+            .fontSize(12)
+            .fontColor(Theme.textTertiary)
+            .margin({ top: 4 })
+        }
+        .alignItems(HorizontalAlign.Start)
+        .margin({ left: 10 })
+      }
+      .width(188)
+      .padding(10)
+      .backgroundColor('#FFFFFF')
+      .borderRadius(12)
+      .border({ width: 1, color: Theme.border })
+    } else if (item.msgType === 'product') {
+      this.ProductCard(item)
+    } else {
+      Text(item.content)
+        .fontSize(15)
+        .fontColor(item.isMine ? '#FFFFFF' : Theme.textPrimary)
+        .padding({ left: 12, right: 12, top: 9, bottom: 9 })
+        .backgroundColor(item.isMine ? Theme.primary : '#FFFFFF')
+        .borderRadius(14)
+        .maxLines(8)
+    }
+  }
+
+  @Builder
+  ProductCard(item: ChatMessage) {
+    Column() {
+      Row() {
+        if (this.productCardImage(item.content).length > 0) {
+          Image(this.normalizeImageUrl(this.productCardImage(item.content)))
+            .width(64)
+            .height(64)
+            .borderRadius(8)
+            .objectFit(ImageFit.Cover)
+            .backgroundColor(Theme.bgInput)
+        } else {
+          Column() {
+            Text('商').fontSize(22).fontWeight(FontWeight.Bold).fontColor(Theme.primary)
+          }
+          .width(64)
+          .height(64)
+          .borderRadius(8)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor(Theme.primaryLight)
+        }
+        Column() {
+          Text(this.productCardTitle(item.content))
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(Theme.textPrimary)
+            .maxLines(2)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(this.productCardPrice(item.content))
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Theme.primary)
+            .margin({ top: 6 })
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+        .margin({ left: 10 })
+      }
+      .width('100%')
+      Text('查看商品详情')
+        .fontSize(12)
+        .fontColor(Theme.textTertiary)
+        .margin({ top: 8 })
+    }
+    .width(238)
+    .padding(10)
+    .backgroundColor('#FFFFFF')
+    .borderRadius(12)
+    .border({ width: 1, color: Theme.border })
+    .onClick(() => {
+      const id: number = this.productCardId(item.content);
+      if (id > 0) {
+        router.pushUrl({
+          url: 'pages/ProductDetailPage',
+          params: { 'productId': id.toString() } as Record<string, string>
+        });
+      }
+    })
+  }
+
+  @Builder
+  ImagePreviewOverlay() {
+    Column() {
+      Row() {
+        Text('✕')
+          .fontSize(22)
+          .fontColor('#FFFFFF')
+          .margin({ left: 16 })
+          .onClick(() => { this.showImagePreview = false })
+        Blank()
+      }
+      .width('100%')
+      .height(56)
+
+      Image(this.previewImageUrl)
+        .width('100%')
+        .layoutWeight(1)
+        .objectFit(ImageFit.Contain)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor('#000000')
+    .position({ x: 0, y: 0 })
   }
 
   @Builder
@@ -342,25 +620,13 @@ struct ChatPage {
       if (item.isMine) {
         Blank()
         Column() {
-          Text(this.displayContent(item))
-            .fontSize(15)
-            .fontColor('#FFFFFF')
-            .padding({ left: 12, right: 12, top: 9, bottom: 9 })
-            .backgroundColor(Theme.primary)
-            .borderRadius(14)
-            .maxLines(8)
+          this.MessageContent(item)
           Text(this.formatTime(item.createTime))
             .fontSize(11).fontColor(Theme.textTertiary).margin({ top: 4, right: 4 })
         }.alignItems(HorizontalAlign.End).constraintSize({ maxWidth: '76%' })
       } else {
         Column() {
-          Text(this.displayContent(item))
-            .fontSize(15)
-            .fontColor(Theme.textPrimary)
-            .padding({ left: 12, right: 12, top: 9, bottom: 9 })
-            .backgroundColor('#FFFFFF')
-            .borderRadius(14)
-            .maxLines(8)
+          this.MessageContent(item)
           Text(this.formatTime(item.createTime))
             .fontSize(11).fontColor(Theme.textTertiary).margin({ top: 4, left: 4 })
         }.alignItems(HorizontalAlign.Start).constraintSize({ maxWidth: '76%' })
@@ -371,120 +637,187 @@ struct ChatPage {
     .padding({ left: 14, right: 14, top: 7, bottom: 7 })
   }
 
-  build() {
+  @Builder
+  MoreActionItem(label: string, icon: string, actionType: number) {
     Column() {
-      NavHeader({ title: this.otherUserName }) {
-        Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => {
-          this.isLoading = true;
-          this.loadOnlineStatus();
-          this.loadMessages();
-        })
+      Text(icon)
+        .fontSize(22)
+        .fontColor(Theme.primary)
+        .width(54)
+        .height(54)
+        .textAlign(TextAlign.Center)
+        .backgroundColor('#FFFFFF')
+        .borderRadius(14)
+        .border({ width: 1, color: Theme.border })
+      Text(label)
+        .fontSize(12)
+        .fontColor(Theme.textSecondary)
+        .margin({ top: 6 })
+    }
+    .width(76)
+    .alignItems(HorizontalAlign.Center)
+    .onClick(() => {
+      if (actionType === 1) {
+        this.sendImage();
+      } else if (actionType === 2) {
+        this.sendVideo();
       }
-      Row() {
-        Text('')
-          .width(7).height(7).borderRadius(4)
-          .backgroundColor(this.isOtherUserOnline ? Theme.success : Theme.textTertiary)
-          .margin({ right: 5 })
-        Text(this.isOtherUserOnline ? '在线' : '离线')
-          .fontSize(11).fontColor(this.isOtherUserOnline ? Theme.success : Theme.textSecondary)
-        if (this.productId > 0) {
-          Text('  商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary)
-        }
-        Blank()
-        if (this.otherUserId > 0 && this.otherUserId !== AppStore.getInstance().userInfo.id) {
-          Button('投诉')
-            .type(ButtonType.Capsule)
-            .fontSize(12)
-            .fontColor('#FFFFFF')
-            .backgroundColor(Theme.danger)
-            .height(28)
-            .padding({ left: 14, right: 14 })
-            .onClick(() => {
-              const params: Record<string, Object> = {
-                'defendantId': this.otherUserId,
-                'defendantName': this.otherUserName
-              }
-              if (this.productId > 0) {
-                params['productId'] = this.productId
-              }
-              router.pushUrl({ url: 'pages/MyComplaintsPage', params: params })
-            })
-        }
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 4, bottom: 8 })
-      .backgroundColor('#FFFFFF')
+    })
+  }
 
-      if (!this.isLoggedIn) {
-        Column() {
-          Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
-          Text('登录后可以联系卖家').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
-          Button('去登录')
-            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
-            .margin({ top: 20 })
-            .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
-        }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
-      } else if (this.isLoading) {
-        Column() {
-          LoadingProgress().width(40).height(40).color(Theme.primary)
-          Text('正在加载消息').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 12 })
-        }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
-      } else if (this.errorMsg.length > 0) {
-        Column() {
-          Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary)
-          Button('重试')
-            .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
-            .margin({ top: 18 })
-            .onClick(() => { this.prepareConversation() })
-        }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
-      } else {
-        List({ scroller: this.messageScroller }) {
-          if (this.messages.length === 0) {
-            ListItem() {
-              Column() {
-                Text('还没有消息').fontSize(16).fontColor(Theme.textSecondary)
-                Text('发送第一条消息开始沟通').fontSize(13).fontColor(Theme.textTertiary).margin({ top: 6 })
-              }
-              .width('100%')
-              .padding({ top: 40, left: 16, right: 16 })
-              .alignItems(HorizontalAlign.Center)
-            }
-          } else {
-            ForEach(this.messages, (item: ChatMessage) => {
-              ListItem() {
-                this.MessageBubble(item)
-              }
-            }, (item: ChatMessage) => item.id.toString())
+  @Builder
+  MorePanel() {
+    Row({ space: 14 }) {
+      this.MoreActionItem('图片', '图', 1)
+      this.MoreActionItem('视频', '视', 2)
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 14, bottom: 16 })
+    .backgroundColor(Theme.bgPage)
+  }
+
+  build() {
+    Stack() {
+      Column() {
+        NavHeader({ title: this.otherUserName }) {
+          Text('刷新').fontSize(14).fontColor(Theme.primary).onClick(() => {
+            this.isLoading = true;
+            this.loadOnlineStatus();
+            this.loadMessages();
+          })
+        }
+        Row() {
+          Text('')
+            .width(7).height(7).borderRadius(4)
+            .backgroundColor(this.isOtherUserOnline ? Theme.success : Theme.textTertiary)
+            .margin({ right: 5 })
+          Text(this.isOtherUserOnline ? '在线' : '离线')
+            .fontSize(11).fontColor(this.isOtherUserOnline ? Theme.success : Theme.textSecondary)
+          if (this.productId > 0) {
+            Text('  商品 #' + this.productId.toString()).fontSize(11).fontColor(Theme.textSecondary)
+          }
+          Blank()
+          if (this.otherUserId > 0 && this.otherUserId !== AppStore.getInstance().userInfo.id) {
+            Button('投诉')
+              .type(ButtonType.Capsule)
+              .fontSize(12)
+              .fontColor('#FFFFFF')
+              .backgroundColor(Theme.danger)
+              .height(28)
+              .padding({ left: 14, right: 14 })
+              .onClick(() => {
+                const params: Record<string, Object> = {
+                  'defendantId': this.otherUserId,
+                  'defendantName': this.otherUserName
+                }
+                if (this.productId > 0) {
+                  params['productId'] = this.productId
+                }
+                router.pushUrl({ url: 'pages/MyComplaintsPage', params: params })
+              })
           }
         }
         .width('100%')
-        .layoutWeight(1)
-        .padding({ top: 8, bottom: 8 })
-        .backgroundColor(Theme.bgPage)
-
-        Row() {
-          TextInput({ placeholder: '输入消息', text: this.inputText })
-            .height(42).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(21)
-            .layoutWeight(1)
-            .onChange((value: string) => { this.inputText = value })
-            .onSubmit(() => { this.sendText() })
-          Button(this.isSending ? '发送中' : '发送')
-            .type(ButtonType.Capsule)
-            .height(40)
-            .fontSize(14)
-            .fontColor('#FFFFFF')
-            .backgroundColor(this.inputText.trim().length > 0 ? Theme.primary : Theme.textTertiary)
-            .margin({ left: 10 })
-            .enabled(this.inputText.trim().length > 0 && !this.isSending)
-            .onClick(() => { this.sendText() })
-        }
-        .width('100%')
-        .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+        .padding({ left: 16, right: 16, top: 4, bottom: 8 })
         .backgroundColor('#FFFFFF')
+
+        if (!this.isLoggedIn) {
+          Column() {
+            Text('请先登录').fontSize(20).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
+            Text('登录后可以联系卖家').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 8 })
+            Button('去登录')
+              .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
+              .margin({ top: 20 })
+              .onClick(() => { router.pushUrl({ url: 'pages/LoginPage' }) })
+          }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
+        } else if (this.isLoading) {
+          Column() {
+            LoadingProgress().width(40).height(40).color(Theme.primary)
+            Text('正在加载消息').fontSize(14).fontColor(Theme.textSecondary).margin({ top: 12 })
+          }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
+        } else if (this.errorMsg.length > 0) {
+          Column() {
+            Text(this.errorMsg).fontSize(16).fontColor(Theme.textSecondary)
+            Button('重试')
+              .type(ButtonType.Capsule).backgroundColor(Theme.primary).fontColor('#FFFFFF')
+              .margin({ top: 18 })
+              .onClick(() => { this.prepareConversation() })
+          }.width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
+        } else {
+          List({ scroller: this.messageScroller }) {
+            if (this.messages.length === 0) {
+              ListItem() {
+                Column() {
+                  Text('还没有消息').fontSize(16).fontColor(Theme.textSecondary)
+                  Text('发送第一条消息开始沟通').fontSize(13).fontColor(Theme.textTertiary).margin({ top: 6 })
+                }
+                .width('100%')
+                .padding({ top: 40, left: 16, right: 16 })
+                .alignItems(HorizontalAlign.Center)
+              }
+            } else {
+              ForEach(this.messages, (item: ChatMessage) => {
+                ListItem() {
+                  this.MessageBubble(item)
+                }
+              }, (item: ChatMessage) => item.id.toString())
+            }
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .padding({ top: 8, bottom: 8 })
+          .backgroundColor(Theme.bgPage)
+
+          Column() {
+            Row() {
+              Button() {
+                Text('+')
+                  .fontSize(26)
+                  .fontColor(this.isSending ? Theme.textTertiary : Theme.primary)
+              }
+              .type(ButtonType.Normal)
+              .width(40)
+              .height(40)
+              .backgroundColor(this.showMorePanel ? Theme.bgHover : Theme.primaryLight)
+              .borderRadius(20)
+              .enabled(!this.isSending)
+              .onClick(() => { this.showMorePanel = !this.showMorePanel })
+              TextInput({ placeholder: '输入消息', text: this.inputText })
+                .height(42).fontSize(15).backgroundColor(Theme.bgInput).borderRadius(21)
+                .layoutWeight(1)
+                .margin({ left: 8 })
+                .onChange((value: string) => { this.inputText = value })
+                .onSubmit(() => { this.sendText() })
+              Button(this.isSending ? '发送中' : '发送')
+                .type(ButtonType.Capsule)
+                .height(40)
+                .fontSize(14)
+                .fontColor('#FFFFFF')
+                .backgroundColor(this.inputText.trim().length > 0 ? Theme.primary : Theme.textTertiary)
+                .margin({ left: 10 })
+                .enabled(this.inputText.trim().length > 0 && !this.isSending)
+                .onClick(() => { this.sendText() })
+            }
+            .width('100%')
+            .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+            .backgroundColor('#FFFFFF')
+            if (this.showMorePanel) {
+              this.MorePanel()
+            }
+          }
+          .width('100%')
+          .backgroundColor('#FFFFFF')
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Theme.bgPage)
+
+      if (this.showImagePreview) {
+        this.ImagePreviewOverlay()
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(Theme.bgPage)
   }
 }

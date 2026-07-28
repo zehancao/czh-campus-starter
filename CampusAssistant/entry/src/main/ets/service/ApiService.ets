@@ -171,6 +171,15 @@ export class ApiService {
     return result.photoUris;
   }
 
+  static async pickVideos(): Promise<string[]> {
+    const options: picker.PhotoSelectOptions = new picker.PhotoSelectOptions();
+    options.maxSelectNumber = 1;
+    options.MIMEType = picker.PhotoViewMIMETypes.VIDEO_TYPE;
+    const photoPicker: picker.PhotoViewPicker = new picker.PhotoViewPicker();
+    const result: picker.PhotoSelectResult = await photoPicker.select(options);
+    return result.photoUris;
+  }
+
   private static getExtFromUri(uri: string): string {
     const segments: string[] = uri.split('/');
     const last: string = segments.length > 0 ? segments[segments.length - 1] : '';
@@ -196,6 +205,10 @@ export class ApiService {
       'png': 'image/png',
       'gif': 'image/gif',
       'webp': 'image/webp',
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'm4v': 'video/x-m4v',
+      'avi': 'video/x-msvideo',
       'zip': 'application/zip',
       'rar': 'application/x-rar-compressed'
     };
@@ -250,6 +263,10 @@ export class ApiService {
 
   static async uploadImage(uri: string): Promise<string> {
     return ApiService.uploadFile('/api/product/upload-image', uri);
+  }
+
+  static async uploadChatMedia(uri: string): Promise<string> {
+    return ApiService.uploadFile('/api/chat/upload-media', uri);
   }
 
   static parseUser(obj: Record<string, Object>): UserInfo {

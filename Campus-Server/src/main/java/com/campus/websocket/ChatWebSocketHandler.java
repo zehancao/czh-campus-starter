@@ -78,21 +78,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 ChatMessageVO vo = chatService.sendMessage(userId, conversationId, content, msgType);
 
                 Long receiverId = chatService.getReceiverId(conversationId, userId);
-
-                String msgJson = buildMessageJson("message", vo);
-                sendMessageToUser(userId, msgJson);
-                sendMessageToUser(receiverId, msgJson);
-
-                if (receiverId != null && !sessions.containsKey(receiverId)) {
-                    sendMessageToUser(receiverId, buildMessageJson("unread_update",
-                        Map.of("unreadCount", chatService.getUnreadCount(receiverId))));
-                } else if (receiverId != null) {
-                    sendMessageToUser(receiverId, buildMessageJson("unread_update",
-                        Map.of("unreadCount", chatService.getUnreadCount(receiverId))));
-                }
-
-                sendMessageToUser(userId, buildMessageJson("unread_update",
-                    Map.of("unreadCount", chatService.getUnreadCount(userId))));
+                pushChatMessage(vo, userId, receiverId);
             }
 
             if ("mark_read".equals(type)) {
@@ -148,6 +134,20 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     public boolean isUserOnline(Long userId) {
         return sessions.containsKey(userId);
+    }
+
+    public void pushChatMessage(ChatMessageVO vo, Long senderId, Long receiverId) {
+        String msgJson = buildMessageJson("message", vo);
+        sendMessageToUser(senderId, msgJson);
+        sendMessageToUser(receiverId, msgJson);
+        if (receiverId != null) {
+            sendMessageToUser(receiverId, buildMessageJson("unread_update",
+                Map.of("unreadCount", chatService.getUnreadCount(receiverId))));
+        }
+        if (senderId != null) {
+            sendMessageToUser(senderId, buildMessageJson("unread_update",
+                Map.of("unreadCount", chatService.getUnreadCount(senderId))));
+        }
     }
 
     private void broadcastUserStatus(Long userId, boolean online) {

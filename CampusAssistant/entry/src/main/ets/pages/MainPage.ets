@@ -37,6 +37,7 @@ struct MainPage {
   @State productPage: number = 1;
   @State productHasMore: boolean = true;
   @State productLoadingMore: boolean = false;
+  @State productError: string = '';
   @State todayCourses: CourseSchedule[] = [];
   @State scheduleGrid: CourseSchedule[][] = [];
   @State isRefreshing: boolean = false;
@@ -214,7 +215,7 @@ struct MainPage {
         updated.otherUserId = source.otherUserId;
         updated.otherUserName = source.otherUserName;
         updated.otherUserAvatar = source.otherUserAvatar;
-        updated.lastMessage = item.content;
+        updated.lastMessage = this.messagePreviewByType(item.msgType, item.content);
         updated.lastTime = item.createTime;
         updated.unreadCount = item.isMine ? source.unreadCount : source.unreadCount + 1;
         updated.productId = source.productId;
@@ -268,6 +269,19 @@ struct MainPage {
       return true;
     }
     return item.otherUserName.indexOf(key) >= 0 || item.lastMessage.indexOf(key) >= 0;
+  }
+
+  private messagePreviewByType(msgType: string, content: string): string {
+    if (msgType === 'image') {
+      return '[图片]';
+    }
+    if (msgType === 'product') {
+      return '[商品卡片]';
+    }
+    if (msgType === 'video') {
+      return '[视频]';
+    }
+    return content;
   }
 
   private formatConvTime(text: string): string {
@@ -406,6 +420,7 @@ struct MainPage {
     const result: ApiResult = await ApiService.request(http.RequestMethod.GET,
       `/api/product/search?keyword=${encodeURIComponent(this.searchKeyword.trim())}`, undefined, false);
     if (result.code === 200 && result.data !== undefined) {
+      this.productError = '';
       const arr: Object[] = result.data as Object[];
       this.products = [];
       for (let i = 0; i < arr.length; i++) {
@@ -431,6 +446,9 @@ struct MainPage {
         }
         this.products.push(item);
       }
+    } else {
+      this.products = [];
+      this.productError = result.msg.length > 0 ? result.msg : '商品搜索失败';
     }
   }
 
@@ -459,6 +477,7 @@ struct MainPage {
   private async refreshProducts(): Promise<void> {
     this.productPage = 1;
     this.productHasMore = true;
+    this.productError = '';
     const result: ApiResult = await ApiService.getProductList(this.selectedCategoryId, 1, 20);
     if (result.code === 200 && result.data !== undefined) {
       const arr: Object[] = result.data as Object[];
@@ -471,6 +490,10 @@ struct MainPage {
       if (arr.length < 20) {
         this.productHasMore = false;
       }
+    } else {
+      this.products = [];
+      this.productHasMore = false;
+      this.productError = result.msg.length > 0 ? result.msg : '商品加载失败';
     }
   }
 
@@ -491,6 +514,9 @@ struct MainPage {
       if (arr.length < 20) {
         this.productHasMore = false;
       }
+    } else {
+      this.productPage = Math.max(1, this.productPage - 1);
+      this.productError = result.msg.length > 0 ? result.msg : '加载更多失败';
     }
     this.productLoadingMore = false;
   }
@@ -2312,56 +2338,91 @@ struct MainPage {
         .scrollable(ScrollDirection.Horizontal)
         .scrollBar(BarState.Off)
 
-        List() {
-          ListItem() {
-            Row({ space: 8 }) {
-              Column({ space: 8 }) {
-                ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 0), (item: Product) => {
-                  this.ProductCard(item)
-                }, (item: Product, _index: number) => `l-${item.id}`)
-              }
-              .layoutWeight(1)
-
-              Column({ space: 8 }) {
-                ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 1), (item: Product) => {
-                  this.ProductCard(item)
-                }, (item: Product, _index: number) => `r-${item.id}`)
-              }
-              .layoutWeight(1)
-              .margin({ top: 24 })
-            }
-            .width('100%')
+        if (this.productError.length > 0) {
+          Column() {
+            Text(this.productError)
+              .fontSize(15)
+              .fontColor(Theme.textSecondary)
+              .textAlign(TextAlign.Center)
+              .padding({ left: 20, right: 20 })
+            Button('重试')
+              .type(ButtonType.Capsule)
+              .height(40)
+              .fontSize(14)
+              .fontColor('#FFFFFF')
+              .backgroundColor(Theme.primary)
+              .margin({ top: 16 })
+              .onClick(() => { this.refreshProducts() })
           }
-
-          ListItem() {
-            Column() {
-              if (this.productLoadingMore) {
-                Row() {
-                  LoadingProgress().width(20).height(20).color(Theme.primary)
-                  Text('加载更多...')
-                    .fontSize(13).fontColor(Theme.textSecondary).margin({ left: 8 })
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else if (this.products.length === 0) {
+          Column() {
+            Text('暂无商品')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Theme.textPrimary)
+            Text('点击右上角发布你的第一件二手商品')
+              .fontSize(13)
+              .fontColor(Theme.textSecondary)
+              .margin({ top: 8 })
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else {
+          List() {
+            ListItem() {
+              Row({ space: 8 }) {
+                Column({ space: 8 }) {
+                  ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 0), (item: Product) => {
+                    this.ProductCard(item)
+                  }, (item: Product, _index: number) => `l-${item.id}`)
                 }
-                .justifyContent(FlexAlign.Center)
-                .width('100%')
-                .padding({ top: 12, bottom: 12 })
-              } else if (!this.productHasMore && this.products.length > 0) {
-                Text('- 没有更多了 -')
-                  .fontSize(13).fontColor(Theme.textTertiary)
-                  .width('100%').textAlign(TextAlign.Center)
-                  .padding({ top: 12, bottom: 12 })
+                .layoutWeight(1)
+
+                Column({ space: 8 }) {
+                  ForEach(this.products.filter((_v: Product, i: number) => i % 2 === 1), (item: Product) => {
+                    this.ProductCard(item)
+                  }, (item: Product, _index: number) => `r-${item.id}`)
+                }
+                .layoutWeight(1)
+                .margin({ top: 24 })
               }
+              .width('100%')
             }
-            .width('100%')
-            .padding({ bottom: 80 })
+
+            ListItem() {
+              Column() {
+                if (this.productLoadingMore) {
+                  Row() {
+                    LoadingProgress().width(20).height(20).color(Theme.primary)
+                    Text('加载更多...')
+                      .fontSize(13).fontColor(Theme.textSecondary).margin({ left: 8 })
+                  }
+                  .justifyContent(FlexAlign.Center)
+                  .width('100%')
+                  .padding({ top: 12, bottom: 12 })
+                } else if (!this.productHasMore) {
+                  Text('- 没有更多了 -')
+                    .fontSize(13).fontColor(Theme.textTertiary)
+                    .width('100%').textAlign(TextAlign.Center)
+                    .padding({ top: 12, bottom: 12 })
+                }
+              }
+              .width('100%')
+              .padding({ bottom: 80 })
+            }
           }
+          .layoutWeight(1)
+          .scrollBar(BarState.Auto)
+          .edgeEffect(EdgeEffect.Spring)
+          .padding({ left: 12, right: 12, top: 4 })
+          .onReachEnd(() => {
+            this.loadMoreProducts();
+          })
         }
-        .layoutWeight(1)
-        .scrollBar(BarState.Auto)
-        .edgeEffect(EdgeEffect.Spring)
-        .padding({ left: 12, right: 12, top: 4 })
-        .onReachEnd(() => {
-          this.loadMoreProducts();
-        })
       }
       .width('100%')
       .height('100%')
