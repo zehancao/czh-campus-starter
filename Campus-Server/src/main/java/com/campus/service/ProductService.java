@@ -43,12 +43,15 @@ public class ProductService {
         return toVOList(list.subList(start, end));
     }
 
-    public List<ProductVO> searchProducts(String keyword) {
+    public List<ProductVO> searchProducts(String keyword, int page, int size) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return getProductList(null, 1, Integer.MAX_VALUE);
+            return new ArrayList<>();
         }
+        int safePage = Math.max(1, page);
+        int safeSize = Math.min(Math.max(1, size), 50);
         String kw = keyword.trim().toLowerCase();
-        List<Product> list = productMapper.selectSearchWithSeller(kw);
+        int offset = (safePage - 1) * safeSize;
+        List<Product> list = productMapper.selectSearchWithSeller(kw, offset, safeSize);
         return toVOList(list);
     }
 
@@ -57,15 +60,7 @@ public class ProductService {
             return new ArrayList<>();
         }
         String kw = keyword.trim().toLowerCase();
-        List<Product> list = productMapper.selectListWithSeller();
-        List<String> titles = new ArrayList<>();
-        for (Product p : list) {
-            if (p.getTitle() != null && p.getTitle().toLowerCase().contains(kw)) {
-                titles.add(p.getTitle());
-            }
-            if (titles.size() >= 10) break;
-        }
-        return titles;
+        return productMapper.selectTitleSuggestions(kw);
     }
 
     public ProductVO getProductDetail(Long id) {

@@ -18,7 +18,7 @@ spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/campusdb2?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000
     username: root
-    password: jcnystj5.
+    password: Hl20041116
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       connection-timeout: 10000

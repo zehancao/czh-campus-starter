@@ -37,6 +37,7 @@ struct MainPage {
   @State productPage: number = 1;
   @State productHasMore: boolean = true;
   @State productLoadingMore: boolean = false;
+  @State productLoading: boolean = false;
   @State productError: string = '';
   @State todayCourses: CourseSchedule[] = [];
   @State scheduleGrid: CourseSchedule[][] = [];
@@ -412,17 +413,38 @@ struct MainPage {
   }
 
   private async searchProducts(): Promise<void> {
+    this.suggestionRequestId++;
+    if (this.suggestionTimer >= 0) {
+      clearTimeout(this.suggestionTimer);
+      this.suggestionTimer = -1;
+    }
     this.showSuggestions = false;
-    if (this.searchKeyword.trim().length === 0) {
-      this.refreshProducts();
+    this.getUIContext().getFocusController().clearFocus();
+    const keyword: string = this.searchKeyword.trim();
+    if (keyword.length === 0) {
+      this.isSearchMode = false;
+      this.searchRequestId++;
+      await this.refreshProducts();
       return;
     }
+    this.isSearchMode = true;
+    this.productRequestId++;
+    this.productPage = 1;
+    this.productHasMore = true;
+    this.productLoadingMore = false;
+    this.productLoading = true;
+    this.productError = '';
+    this.products = [];
+    const requestId: number = ++this.searchRequestId;
     const result: ApiResult = await ApiService.request(http.RequestMethod.GET,
-      `/api/product/search?keyword=${encodeURIComponent(this.searchKeyword.trim())}`, undefined, false);
+      `/api/product/search?keyword=${encodeURIComponent(keyword)}&page=1&size=20`, undefined, false);
+    if (requestId !== this.searchRequestId) {
+      return;
+    }
     if (result.code === 200 && result.data !== undefined) {
       this.productError = '';
       const arr: Object[] = result.data as Object[];
-      this.products = [];
+      const resultProducts: Product[] = [];
       for (let i = 0; i < arr.length; i++) {
         const obj: Record<string, Object> = arr[i] as Record<string, Object>;
         const item: Product = new Product();
@@ -444,15 +466,18 @@ struct MainPage {
         if (imagesObj !== null && imagesObj !== undefined) {
           item.images = imagesObj as string[];
         }
-        this.products.push(item);
+        resultProducts.push(item);
       }
+      this.products = resultProducts;
+      this.productHasMore = arr.length >= 20;
     } else {
       this.products = [];
       this.productError = result.msg.length > 0 ? result.msg : '商品搜索失败';
     }
+    this.productLoading = false;
   }
 
-  private async loadSearchSuggestions(keyword: string): Promise<void> {
+  private async loadSearchSuggestions(keyword: string, requestId: number): Promise<void> {
     if (keyword.trim().length === 0) {
       this.searchSuggestions = [];
       this.showSuggestions = false;
@@ -460,14 +485,17 @@ struct MainPage {
     }
     const result: ApiResult = await ApiService.request(http.RequestMethod.GET,
       `/api/product/search-suggest?keyword=${encodeURIComponent(keyword.trim())}`, undefined, false);
+    if (requestId !== this.suggestionRequestId || keyword.trim() !== this.searchKeyword.trim()) {
+      return;
+    }
     if (result.code === 200 && result.data !== undefined) {
       const arr: Object[] = result.data as Object[];
       const list: string[] = [];
       for (const obj of arr) {
         list.push(obj as string);
       }
-      this.searchSuggestions = list;
-      this.showSuggestions = list.length > 0;
+      this.searchSuggestions = list.slice(0, 7);
+      this.showSuggestions = this.searchSuggestions.length > 0;
     } else {
       this.searchSuggestions = [];
       this.showSuggestions = false;
@@ -475,10 +503,18 @@ struct MainPage {
   }
 
   private async refreshProducts(): Promise<void> {
+    this.isSearchMode = false;
+    this.searchRequestId++;
+    const requestId: number = ++this.productRequestId;
     this.productPage = 1;
     this.productHasMore = true;
+    this.productLoading = true;
+    this.productLoadingMore = false;
     this.productError = '';
     const result: ApiResult = await ApiService.getProductList(this.selectedCategoryId, 1, 20);
+    if (requestId !== this.productRequestId) {
+      return;
+    }
     if (result.code === 200 && result.data !== undefined) {
       const arr: Object[] = result.data as Object[];
       this.products = [];
@@ -495,10 +531,15 @@ struct MainPage {
       this.productHasMore = false;
       this.productError = result.msg.length > 0 ? result.msg : '商品加载失败';
     }
+    this.productLoading = false;
   }
 
   private async loadMoreProducts(): Promise<void> {
     if (this.productLoadingMore || !this.productHasMore) {
+      return;
+    }
+    if (this.isSearchMode) {
+      await this.loadMoreSearchProducts();
       return;
     }
     this.productLoadingMore = true;
@@ -516,6 +557,34 @@ struct MainPage {
       }
     } else {
       this.productPage = Math.max(1, this.productPage - 1);
+      this.productError = result.msg.length > 0 ? result.msg : '加载更多失败';
+    }
+    this.productLoadingMore = false;
+  }
+
+  private async loadMoreSearchProducts(): Promise<void> {
+    if (this.searchKeyword.trim().length === 0 || this.productLoadingMore || !this.productHasMore) {
+      return;
+    }
+    const requestId: number = this.searchRequestId;
+    const nextPage: number = this.productPage + 1;
+    this.productLoadingMore = true;
+    const result: ApiResult = await ApiService.request(http.RequestMethod.GET,
+      `/api/product/search?keyword=${encodeURIComponent(this.searchKeyword.trim())}&page=${nextPage}&size=20`,
+      undefined, false);
+    if (requestId !== this.searchRequestId || !this.isSearchMode) {
+      this.productLoadingMore = false;
+      return;
+    }
+    if (result.code === 200 && result.data !== undefined) {
+      const arr: Object[] = result.data as Object[];
+      for (let i = 0; i < arr.length; i++) {
+        const obj: Record<string, Object> = arr[i] as Record<string, Object>;
+        this.products.push(this.parseProduct(obj));
+      }
+      this.productPage = nextPage;
+      this.productHasMore = arr.length >= 20;
+    } else {
       this.productError = result.msg.length > 0 ? result.msg : '加载更多失败';
     }
     this.productLoadingMore = false;
@@ -2145,12 +2214,21 @@ struct MainPage {
   @State searchKeyword: string = '';
   @State searchSuggestions: string[] = [];
   @State showSuggestions: boolean = false;
+  @State isSearchMode: boolean = false;
 
   @State marketRefreshing: boolean = false;
+  private suggestionTimer: number = -1;
+  private suggestionRequestId: number = 0;
+  private productRequestId: number = 0;
+  private searchRequestId: number = 0;
 
   private async refreshMarket(): Promise<void> {
     this.marketRefreshing = true;
-    await this.refreshProducts();
+    if (this.isSearchMode && this.searchKeyword.trim().length > 0) {
+      await this.searchProducts();
+    } else {
+      await this.refreshProducts();
+    }
     this.marketRefreshing = false;
   }
 
@@ -2263,44 +2341,103 @@ struct MainPage {
         .width('100%')
         .padding({ left: 20, right: 20, top: 18, bottom: 12 })
 
-        Stack() {
+        Column() {
+          Row() {
           TextInput({ placeholder: '搜索商品...', text: this.searchKeyword })
             .fontSize(14)
             .height(40)
+            .layoutWeight(1)
             .borderRadius(20)
-            .backgroundColor(Theme.bgCard)
-            .padding({ left: 16, right: 16 })
-            .shadow(ShadowStyle.sm)
+            .backgroundColor('transparent')
+            .padding({ left: 16, right: 28 })
             .onChange((v: string) => {
               this.searchKeyword = v;
-              this.loadSearchSuggestions(v);
+              this.suggestionRequestId++;
+              if (this.suggestionTimer >= 0) {
+                clearTimeout(this.suggestionTimer);
+                this.suggestionTimer = -1;
+              }
+              if (v.trim().length === 0) {
+                this.searchSuggestions = [];
+                this.showSuggestions = false;
+                return;
+              }
+              const requestId: number = this.suggestionRequestId;
+              this.suggestionTimer = setTimeout(() => {
+                this.loadSearchSuggestions(v, requestId);
+              }, 250);
             })
             .onSubmit(() => {
               this.searchProducts();
             })
-          if (this.showSuggestions && this.searchSuggestions.length > 0) {
-            Column() {
-              ForEach(this.searchSuggestions, (suggestion: string) => {
-                Row() {
-                  Text(suggestion)
-                    .fontSize(14)
-                    .fontColor(Theme.textPrimary)
-                    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+          if (this.searchKeyword.length > 0) {
+            Text('×')
+              .fontSize(22)
+              .fontColor(Theme.textTertiary)
+              .position({ right: 68, y: 7 })
+              .onClick(() => {
+                this.searchKeyword = '';
+                this.isSearchMode = false;
+                this.searchSuggestions = [];
+                this.showSuggestions = false;
+                this.suggestionRequestId++;
+                if (this.suggestionTimer >= 0) {
+                  clearTimeout(this.suggestionTimer);
+                  this.suggestionTimer = -1;
                 }
-                .width('100%')
-                .onClick(() => {
-                  this.searchKeyword = suggestion;
-                  this.showSuggestions = false;
-                  this.searchProducts();
-                })
-              }, (suggestion: string, index: number) => `${index}`)
+                this.refreshProducts();
+              })
+          }
+          Button(this.productLoading ? '搜索中' : '搜索')
+            .type(ButtonType.Capsule)
+            .width(60)
+            .height(32)
+            .fontSize(12)
+            .fontColor('#FFFFFF')
+            .backgroundColor(this.productLoading ? Theme.textTertiary : Theme.primary)
+            .enabled(!this.productLoading)
+            .margin({ right: 4 })
+            .onClick(() => {
+              this.searchProducts();
+            })
+          }
+          .width('100%')
+          .height(44)
+          .backgroundColor(Theme.bgCard)
+          .borderRadius(20)
+          .shadow(ShadowStyle.sm)
+          if (this.showSuggestions && this.searchSuggestions.length > 0) {
+            Scroll() {
+              Column() {
+                ForEach(this.searchSuggestions, (suggestion: string) => {
+                  Row() {
+                    Text(suggestion)
+                      .fontSize(14)
+                      .fontColor(Theme.textPrimary)
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      .layoutWeight(1)
+                      .height(40)
+                      .padding({ left: 16, right: 16 })
+                  }
+                  .width('100%')
+                  .height(40)
+                  .onClick(() => {
+                    this.searchKeyword = suggestion;
+                    this.showSuggestions = false;
+                    this.suggestionRequestId++;
+                    this.searchProducts();
+                  })
+                }, (suggestion: string, index: number) => `${suggestion}-${index}`)
+              }
+              .width('100%')
             }
-            .width('92%')
+            .width('100%')
+            .height(Math.min(this.searchSuggestions.length * 40, 280))
             .backgroundColor(Theme.bgCard)
             .borderRadius(Theme.cardRadius)
             .shadow(ShadowStyle.md)
-            .position({ y: 42 })
-            .zIndex(10)
+            .margin({ top: 4 })
           }
         }
         .width('100%')
@@ -2317,6 +2454,14 @@ struct MainPage {
               .shadow(ShadowStyle.sm)
               .onClick(() => {
                 this.selectedCategoryId = 0;
+                this.searchKeyword = '';
+                this.searchSuggestions = [];
+                this.showSuggestions = false;
+                this.suggestionRequestId++;
+                if (this.suggestionTimer >= 0) {
+                  clearTimeout(this.suggestionTimer);
+                  this.suggestionTimer = -1;
+                }
                 this.refreshProducts();
               })
             ForEach(this.categories, (cat: ProductCategory) => {
@@ -2329,6 +2474,14 @@ struct MainPage {
                 .shadow(ShadowStyle.sm)
                 .onClick(() => {
                   this.selectedCategoryId = cat.id;
+                  this.searchKeyword = '';
+                  this.searchSuggestions = [];
+                  this.showSuggestions = false;
+                  this.suggestionRequestId++;
+                  if (this.suggestionTimer >= 0) {
+                    clearTimeout(this.suggestionTimer);
+                    this.suggestionTimer = -1;
+                  }
                   this.refreshProducts();
                 })
             }, (cat: ProductCategory) => `${cat.id}`)
@@ -2338,7 +2491,21 @@ struct MainPage {
         .scrollable(ScrollDirection.Horizontal)
         .scrollBar(BarState.Off)
 
-        if (this.productError.length > 0) {
+        if (this.productLoading) {
+          Column() {
+            LoadingProgress()
+              .width(40)
+              .height(40)
+              .color(Theme.primary)
+            Text(this.isSearchMode ? '正在搜索商品...' : '正在加载商品...')
+              .fontSize(14)
+              .fontColor(Theme.textSecondary)
+              .margin({ top: 12 })
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else if (this.productError.length > 0) {
           Column() {
             Text(this.productError)
               .fontSize(15)
@@ -2352,7 +2519,38 @@ struct MainPage {
               .fontColor('#FFFFFF')
               .backgroundColor(Theme.primary)
               .margin({ top: 16 })
-              .onClick(() => { this.refreshProducts() })
+              .onClick(() => {
+                if (this.isSearchMode) {
+                  this.searchProducts();
+                } else {
+                  this.refreshProducts();
+                }
+              })
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else if (this.products.length === 0 && this.isSearchMode) {
+          Column() {
+            Text('没有找到相关商品')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Theme.textPrimary)
+            Text('换个关键词试试，或清空搜索条件')
+              .fontSize(13)
+              .fontColor(Theme.textSecondary)
+              .margin({ top: 8 })
+            Text('清空搜索')
+              .fontSize(13)
+              .fontColor(Theme.primary)
+              .margin({ top: 14 })
+              .onClick(() => {
+                this.searchKeyword = '';
+                this.isSearchMode = false;
+                this.searchSuggestions = [];
+                this.showSuggestions = false;
+                this.refreshProducts();
+              })
           }
           .width('100%')
           .layoutWeight(1)

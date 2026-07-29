@@ -12,7 +12,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://localhost:8080';
+  static baseUrl: string = 'http://192.168.117.1:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;

@@ -25,7 +25,9 @@ export default class EntryAbility extends UIAbility {
   private windowStage_: window.WindowStage | undefined = undefined;
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    AppStore.getInstance().setContext(this.context);
+    const appStore: AppStore = AppStore.getInstance();
+    appStore.setContext(this.context);
+    appStore.restore();
     try {
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     } catch (err) {
@@ -71,7 +73,8 @@ export default class EntryAbility extends UIAbility {
         this.selectPage = '';
       });
     } else {
-      windowStage.loadContent('pages/LoginPage', (err) => {
+      const startPage: string = AppStore.getInstance().isLoggedIn ? 'pages/MainPage' : 'pages/LoginPage';
+      windowStage.loadContent(startPage, (err) => {
         if (err.code) {
           hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
           return;

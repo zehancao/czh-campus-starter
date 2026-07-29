@@ -41,8 +41,11 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public Result<List<ProductVO>> search(@RequestParam("keyword") String keyword) {
-        return Result.ok(productService.searchProducts(keyword));
+    public Result<List<ProductVO>> search(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        return Result.ok(productService.searchProducts(keyword, page, size));
     }
 
     @GetMapping("/search-suggest")
