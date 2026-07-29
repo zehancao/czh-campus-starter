@@ -139,6 +139,15 @@ public class UserService {
         }
     }
 
+    public void updateProfile(Long userId, String name, String phone) {
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setName(name);
+            user.setPhone(phone);
+            userMapper.updateById(user);
+        }
+    }
+
     public void updatePhone(Long userId, String phone) {
         User user = userMapper.selectById(userId);
         if (user != null) {

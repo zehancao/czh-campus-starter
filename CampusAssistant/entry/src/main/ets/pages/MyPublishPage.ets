@@ -221,7 +221,6 @@ struct MyActivityCard {
 struct MyCarpoolCard {
   item: CarpoolOrder = new CarpoolOrder();
   onTap?: () => void;
-  onDelete?: () => void;
 
   build() {
     Row() {
@@ -251,15 +250,6 @@ struct MyCarpoolCard {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
-          Text('删除')
-            .fontSize(12)
-            .fontColor(Theme.danger)
-            .margin({ left: 8 })
-            .onClick(() => {
-              if (this.onDelete !== undefined) {
-                this.onDelete();
-              }
-            })
         }
         .width('100%')
 
@@ -550,25 +540,6 @@ struct MyPublishPage {
     }
   }
 
-  private confirmDeleteCarpool(orderId: number): void {
-    AlertDialog.show({
-      message: '确定删除这条拼车信息吗？',
-      primaryButton: { value: '取消', action: () => {} },
-      secondaryButton: { value: '删除', action: () => { this.doDeleteCarpool(orderId) } }
-    });
-  }
-
-  private async doDeleteCarpool(orderId: number): Promise<void> {
-    const result: ApiResult = await ApiService.deleteCarpool(orderId);
-    if (result.code === 200) {
-      this.carpools = this.carpools.filter((c: CarpoolOrder) => c.id !== orderId);
-      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
-    } else {
-      const msg: string = result.msg ?? '删除失败';
-      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
-    }
-  }
-
   private confirmDeleteStudyShare(shareId: number): void {
     AlertDialog.show({
       message: '确定删除这份资料吗？',
@@ -688,7 +659,6 @@ struct MyPublishPage {
           .padding({ left: 12, right: 12, bottom: 20 })
         }
         .width('100%')
-        .height('100%')
         .justifyContent(FlexAlign.Start)
       }
       .width('100%')
@@ -730,7 +700,6 @@ struct MyPublishPage {
           }, (item: ClubActivityItem) => `${item.id}`)
         }
         .width('100%')
-        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
         .justifyContent(FlexAlign.Start)
       }
@@ -767,13 +736,11 @@ struct MyPublishPage {
               item: item,
               onTap: () => {
                 router.pushUrl({ url: 'pages/CarpoolDetailPage', params: { 'id': `${item.id}` } as Record<string, string> });
-              },
-              onDelete: () => { this.confirmDeleteCarpool(item.id) }
+              }
             })
           }, (item: CarpoolOrder) => `${item.id}`)
         }
         .width('100%')
-        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
         .justifyContent(FlexAlign.Start)
       }
@@ -813,7 +780,6 @@ struct MyPublishPage {
           }, (item: ConfessionPost) => `${item.id}`)
         }
         .width('100%')
-        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
         .justifyContent(FlexAlign.Start)
       }
@@ -856,7 +822,6 @@ struct MyPublishPage {
           }, (item: StudyShareItem) => `${item.id}`)
         }
         .width('100%')
-        .height('100%')
         .padding({ left: 12, right: 12, top: 8, bottom: 20 })
         .justifyContent(FlexAlign.Start)
       }

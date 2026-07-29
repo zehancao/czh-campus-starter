@@ -478,6 +478,16 @@ struct ChatPage {
     return item.content;
   }
 
+  private carpoolComplaintReasonPrefix(): string {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const content: string = this.messages[i].content;
+      if (content.indexOf('拼车已取消：') >= 0 || content.indexOf('取消此次约车活动') >= 0) {
+        return `【拼车投诉】${content} 投诉原因：`;
+      }
+    }
+    return '';
+  }
+
   @Builder
   MessageContent(item: ChatMessage) {
     if (item.msgType === 'image') {
@@ -710,7 +720,10 @@ struct ChatPage {
                   'defendantId': this.otherUserId,
                   'defendantName': this.otherUserName
                 }
-                if (this.productId > 0) {
+                const reasonPrefix: string = this.carpoolComplaintReasonPrefix()
+                if (reasonPrefix.length > 0) {
+                  params['reasonPrefix'] = reasonPrefix
+                } else if (this.productId > 0) {
                   params['productId'] = this.productId
                 }
                 router.pushUrl({ url: 'pages/MyComplaintsPage', params: params })

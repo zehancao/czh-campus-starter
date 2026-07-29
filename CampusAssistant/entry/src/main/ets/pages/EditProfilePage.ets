@@ -46,10 +46,11 @@ struct EditProfilePage {
     this.phone = copy.phone;
   }
 
-  private updateLocalUser(nextName: string, nextAvatar: string): void {
+  private updateLocalUser(nextName: string, nextAvatar: string, nextPhone: string): void {
     const next: UserInfo = this.user;
     next.name = nextName;
     next.avatar = nextAvatar;
+    next.phone = nextPhone;
     this.user = next;
     AppStore.getInstance().setUserInfo(next);
   }
@@ -74,7 +75,7 @@ struct EditProfilePage {
         const url: string = await ApiService.uploadAvatar(uris[0]);
         if (url.length > 0 && !url.startsWith('ERROR:')) {
           this.avatar = url;
-          this.updateLocalUser(this.userName, this.avatar);
+          this.updateLocalUser(this.userName, this.avatar, this.phone);
           this.getUIContext().getPromptAction().showToast({ message: '头像已更新' });
         } else {
           this.errorMsg = '头像上传失败';
@@ -97,7 +98,7 @@ struct EditProfilePage {
       const result: ApiResult = await ApiService.updateAvatar(emoji);
       if (result.code === 200) {
         this.avatar = emoji;
-        this.updateLocalUser(this.userName, this.avatar);
+        this.updateLocalUser(this.userName, this.avatar, this.phone);
         this.getUIContext().getPromptAction().showToast({ message: '头像已更新' });
       } else {
         this.errorMsg = result.msg.length > 0 ? result.msg : '设置失败';
@@ -123,7 +124,7 @@ struct EditProfilePage {
     const result: ApiResult = await ApiService.updateName(nextName);
     if (result.code === 200) {
       this.userName = nextName;
-      this.updateLocalUser(nextName, this.avatar);
+      this.updateLocalUser(nextName, this.avatar, this.phone);
       this.getUIContext().getPromptAction().showToast({ message: '用户名已保存' });
     } else {
       this.errorMsg = result.msg.length > 0 ? result.msg : '保存失败';
@@ -152,6 +153,36 @@ struct EditProfilePage {
     } else {
       this.errorMsg = result.msg.length > 0 ? result.msg : '保存失败';
     }
+    this.isSavingPhone = false;
+  }
+
+  private async saveProfile(): Promise<void> {
+    if (this.isSavingName || this.isSavingPhone) {
+      return;
+    }
+    const nextName: string = this.userName.trim();
+    const nextPhone: string = this.phone.trim();
+    if (nextName.length === 0) {
+      this.errorMsg = '用户名不能为空';
+      return;
+    }
+    if (nextPhone.length === 0) {
+      this.errorMsg = '手机号不能为空';
+      return;
+    }
+    this.errorMsg = '';
+    this.isSavingName = true;
+    this.isSavingPhone = true;
+    const result: ApiResult = await ApiService.updateProfile(nextName, nextPhone);
+    if (result.code === 200) {
+      this.userName = nextName;
+      this.phone = nextPhone;
+      this.updateLocalUser(nextName, this.avatar, nextPhone);
+      this.getUIContext().getPromptAction().showToast({ message: '资料已保存' });
+    } else {
+      this.errorMsg = result.msg.length > 0 ? result.msg : '保存失败';
+    }
+    this.isSavingName = false;
     this.isSavingPhone = false;
   }
 
@@ -291,7 +322,7 @@ struct EditProfilePage {
               router.pushUrl({ url: 'pages/PasswordChangePage' });
             })
 
-            Button(this.isSavingName ? '保存中...' : '保存修改')
+            Button((this.isSavingName || this.isSavingPhone) ? '保存中...' : '保存修改')
               .width('100%')
               .height(48)
               .fontSize(16)
@@ -300,9 +331,9 @@ struct EditProfilePage {
               .borderRadius(24)
               .margin({ top: 30 })
               .shadow(ShadowStyle.sm)
-              .enabled(!this.isSavingName)
+              .enabled(!this.isSavingName && !this.isSavingPhone)
               .onClick(() => {
-                this.saveUserName();
+                this.saveProfile();
               })
           }
           .width('100%')

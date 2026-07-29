@@ -25,6 +25,7 @@ struct CarpoolDetailPage {
   @State private passengers: PassengerItem[] = [];
   @State private isLoading: boolean = true;
   @State private isOwner: boolean = false;
+  @State private isContacting: boolean = false;
   private orderId: number = 0;
 
   aboutToAppear(): void {
@@ -88,29 +89,81 @@ struct CarpoolDetailPage {
     }
   }
 
-  private confirmDeleteCarpool(): void {
-    AlertDialog.show({
-      message: '确定删除这条拼车信息吗？删除后不可恢复。',
-      primaryButton: {
-        value: '取消',
-        action: () => {}
-      },
-      secondaryButton: {
-        value: '删除',
-        action: () => { this.doDeleteCarpool() }
-      }
+  private parseConversationId(data: Object | undefined): number {
+    if (data === undefined || data === null) {
+      return 0;
+    }
+    if (typeof data === 'number') {
+      return data as number;
+    }
+    const record: Record<string, Object> = data as Record<string, Object>;
+    const value: Object = record['conversationId'];
+    if (typeof value === 'number') {
+      return value as number;
+    }
+    if (value !== null && value !== undefined) {
+      const parsed: number = Number(value as string);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    const idObj: Object = record['id'];
+    if (typeof idObj === 'number') {
+      return idObj as number;
+    }
+    return 0;
+  }
+
+  private async contactPublisher(): Promise<void> {
+    if (this.isContacting) {
+      return;
+    }
+    if (this.order.userId <= 0) {
+      AlertDialog.show({ message: '发起者信息异常', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    if (this.isOwner) {
+      AlertDialog.show({ message: '这是您发起的拼车', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    this.isContacting = true;
+    const result: ApiResult = await ApiService.createConversation(this.order.userId, 0);
+    this.isContacting = false;
+    if (result.code !== 200) {
+      AlertDialog.show({ title: '联系失败', message: result.msg || '会话创建失败', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    const conversationId: number = this.parseConversationId(result.data);
+    if (conversationId <= 0) {
+      AlertDialog.show({ title: '联系失败', message: '会话创建失败', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    router.pushUrl({
+      url: 'pages/ChatPage',
+      params: {
+        'conversationId': conversationId.toString(),
+        'otherUserId': this.order.userId.toString(),
+        'otherUserName': this.order.publisherName
+      } as Record<string, string>
     });
   }
 
-  private async doDeleteCarpool(): Promise<void> {
-    const result: ApiResult = await ApiService.deleteCarpool(this.orderId);
-    if (result.code === 200) {
-      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
-      this.getUIContext().getRouter().back();
-    } else {
-      const msg: string = result.msg ?? '删除失败';
-      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
+  private reportPublisher(): void {
+    if (this.isOwner) {
+      AlertDialog.show({ message: '不能投诉自己的拼车', confirm: { value: '好的', action: () => {} } });
+      return;
     }
+    if (this.order.userId <= 0) {
+      AlertDialog.show({ message: '发起者信息异常', confirm: { value: '好的', action: () => {} } });
+      return;
+    }
+    const reasonPrefix: string = `【拼车投诉】${this.order.departure} → ${this.order.destination}，出发时间：${this.formatTime(this.order.departureTime)}。投诉原因：`;
+    router.pushUrl({
+      url: 'pages/MyComplaintsPage',
+      params: {
+        'defendantId': this.order.userId.toString(),
+        'defendantName': this.order.publisherName,
+        'reasonPrefix': reasonPrefix
+      } as Record<string, string>
+    });
   }
 
   private formatTime(timeStr: string): string {
@@ -242,45 +295,51 @@ struct CarpoolDetailPage {
 
             Column() {
               if (this.isOwner) {
-                Button('删除拼车')
-                  .width('100%').height(44).type(ButtonType.Normal)
-                  .backgroundColor('#FEE2E2').fontColor(Theme.danger)
-                  .borderRadius(Theme.radiusMd)
-                  .margin({ bottom: 10 })
-                  .onClick(() => { this.confirmDeleteCarpool() })
-                if (this.order.status === 0) {
+                if (this.order.status !== 2 && this.order.status !== 3) {
                   Button('取消拼车')
                     .width('100%').height(44).type(ButtonType.Normal)
                     .backgroundColor('#FEF3C7').fontColor(Theme.warning)
                     .borderRadius(Theme.radiusMd)
                     .onClick(() => { this.cancelOrder() })
                 }
-              } else if (this.order.status === 0 || this.order.status === 1) {
-                if (this.order.joined) {
-                  Button('退出拼车')
+              } else {
+                Button(this.isContacting ? '连接中...' : '联系发起者')
+                  .width('100%').height(44).type(ButtonType.Normal)
+                  .backgroundColor(Theme.primary).fontColor('#FFFFFF')
+                  .borderRadius(Theme.radiusMd)
+                  .margin({ bottom: 10 })
+                  .enabled(!this.isContacting)
+                  .onClick(() => { this.contactPublisher() })
+
+                if (this.order.status === 0 || this.order.status === 1) {
+                  if (this.order.joined) {
+                    Button('退出拼车')
+                      .width('100%').height(44).type(ButtonType.Normal)
+                      .backgroundColor('#FEF3C7').fontColor(Theme.warning)
+                      .borderRadius(Theme.radiusMd)
+                      .onClick(() => { this.cancelJoin() })
+                  } else if (this.order.currentPassengers < this.order.maxPassengers) {
+                    Button('加入拼车')
+                      .width('100%').height(44).type(ButtonType.Normal)
+                      .backgroundColor(Theme.primary).fontColor('#FFFFFF')
+                      .borderRadius(Theme.radiusMd)
+                      .onClick(() => { this.joinOrder() })
+                  } else {
+                    Text('已满员，无法加入')
+                      .fontSize(14).fontColor(Theme.textDisabled)
+                      .width('100%').textAlign(TextAlign.Center)
+                  }
+                } else if (this.order.status === 3) {
+                  Button('投诉发起者')
                     .width('100%').height(44).type(ButtonType.Normal)
-                    .backgroundColor('#FEF3C7').fontColor(Theme.warning)
+                    .backgroundColor('#FEE2E2').fontColor(Theme.danger)
                     .borderRadius(Theme.radiusMd)
-                    .onClick(() => { this.cancelJoin() })
-                } else if (this.order.currentPassengers < this.order.maxPassengers) {
-                  Button('加入拼车')
-                    .width('100%').height(44).type(ButtonType.Normal)
-                    .backgroundColor(Theme.primary).fontColor('#FFFFFF')
-                    .borderRadius(Theme.radiusMd)
-                    .onClick(() => { this.joinOrder() })
-                } else {
-                  Text('已满员，无法加入')
+                    .onClick(() => { this.reportPublisher() })
+                } else if (this.order.status === 2) {
+                  Text('该拼车已出发')
                     .fontSize(14).fontColor(Theme.textDisabled)
                     .width('100%').textAlign(TextAlign.Center)
                 }
-              } else if (this.order.status === 3) {
-                Text('该拼车已取消')
-                  .fontSize(14).fontColor(Theme.textDisabled)
-                  .width('100%').textAlign(TextAlign.Center)
-              } else if (this.order.status === 2) {
-                Text('该拼车已出发')
-                  .fontSize(14).fontColor(Theme.textDisabled)
-                  .width('100%').textAlign(TextAlign.Center)
               }
             }
             .width('100%')

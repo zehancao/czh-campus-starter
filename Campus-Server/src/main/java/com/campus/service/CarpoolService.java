@@ -2,6 +2,7 @@ package com.campus.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.dto.CarpoolOrderVO;
+import com.campus.dto.ChatMessageVO;
 import com.campus.dto.PassengerVO;
 import com.campus.entity.CarpoolOrder;
 import com.campus.entity.CarpoolPassenger;
@@ -9,8 +10,10 @@ import com.campus.entity.User;
 import com.campus.mapper.CarpoolOrderMapper;
 import com.campus.mapper.CarpoolPassengerMapper;
 import com.campus.mapper.UserMapper;
+import com.campus.websocket.ChatWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,13 +36,31 @@ public class CarpoolService {
     @Autowired
     private UserMapper userMapper;
 
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    @Autowired
+    private ChatService chatService;
 
+    @Autowired
+    private ChatWebSocketHandler chatWebSocketHandler;
+
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final String CANCEL_MESSAGE = "取消此次约车活动";
+
+    @Transactional
     public CarpoolOrder publish(Long userId, CarpoolOrder order) {
+        Integer maxPassengers = order.getMaxPassengers();
+        if (maxPassengers == null || maxPassengers < 1) {
+            maxPassengers = 4;
+        }
         order.setUserId(userId);
-        order.setCurrentPassengers(0);
-        order.setStatus(0);
+        order.setMaxPassengers(maxPassengers);
+        order.setCurrentPassengers(1);
+        order.setStatus(maxPassengers <= 1 ? 1 : 0);
         carpoolOrderMapper.insert(order);
+
+        CarpoolPassenger passenger = new CarpoolPassenger();
+        passenger.setOrderId(order.getId());
+        passenger.setUserId(userId);
+        carpoolPassengerMapper.insert(passenger);
         return order;
     }
 
@@ -93,7 +114,13 @@ public class CarpoolService {
         return true;
     }
 
+    @Transactional
     public boolean cancelJoin(Long userId, Long orderId) {
+        CarpoolOrder ownerOrder = carpoolOrderMapper.selectById(orderId);
+        if (ownerOrder != null && userId.equals(ownerOrder.getUserId())) {
+            return cancelOrder(userId, orderId);
+        }
+
         LambdaQueryWrapper<CarpoolPassenger> w = new LambdaQueryWrapper<>();
         w.eq(CarpoolPassenger::getOrderId, orderId)
          .eq(CarpoolPassenger::getUserId, userId);
@@ -116,6 +143,7 @@ public class CarpoolService {
     public boolean delete(Long userId, Long orderId) {
         CarpoolOrder order = carpoolOrderMapper.selectById(orderId);
         if (order == null || !order.getUserId().equals(userId)) return false;
+        if (order.getStatus() == null || order.getStatus() != 3) return false;
         LambdaQueryWrapper<CarpoolPassenger> w = new LambdaQueryWrapper<>();
         w.eq(CarpoolPassenger::getOrderId, orderId);
         carpoolPassengerMapper.delete(w);
@@ -123,12 +151,37 @@ public class CarpoolService {
         return true;
     }
 
+    @Transactional
     public boolean cancelOrder(Long userId, Long orderId) {
         CarpoolOrder order = carpoolOrderMapper.selectById(orderId);
         if (order == null || !order.getUserId().equals(userId)) return false;
+        LambdaQueryWrapper<CarpoolPassenger> passengersWrapper = new LambdaQueryWrapper<>();
+        passengersWrapper.eq(CarpoolPassenger::getOrderId, orderId);
+        List<CarpoolPassenger> passengers = carpoolPassengerMapper.selectList(passengersWrapper);
+        notifyCancelMessage(userId, passengers);
+
+        if (order.getStatus() != null && order.getStatus() == 3) {
+            carpoolPassengerMapper.delete(passengersWrapper);
+            return true;
+        }
+
         order.setStatus(3);
         carpoolOrderMapper.updateById(order);
+
+        carpoolPassengerMapper.delete(passengersWrapper);
         return true;
+    }
+
+    private void notifyCancelMessage(Long userId, List<CarpoolPassenger> passengers) {
+        Set<Long> notifiedUserIds = new HashSet<>();
+        for (CarpoolPassenger passenger : passengers) {
+            Long passengerUserId = passenger.getUserId();
+            if (passengerUserId != null && !passengerUserId.equals(userId) && notifiedUserIds.add(passengerUserId)) {
+                Long conversationId = chatService.getOrCreateConversation(userId, passengerUserId, null);
+                ChatMessageVO vo = chatService.sendMessage(userId, conversationId, CANCEL_MESSAGE, "text");
+                chatWebSocketHandler.pushChatMessage(vo, userId, passengerUserId);
+            }
+        }
     }
 
     public List<CarpoolOrderVO> getMyOrders(Long userId) {
@@ -152,7 +205,13 @@ public class CarpoolService {
         if (orderIds.isEmpty()) return new ArrayList<>();
 
         List<CarpoolOrder> orders = carpoolOrderMapper.selectBatchIds(orderIds);
-        return toVOList(orders, userId, false);
+        List<CarpoolOrder> visibleOrders = new ArrayList<>();
+        for (CarpoolOrder order : orders) {
+            if (order.getStatus() != null && order.getStatus() != 3) {
+                visibleOrders.add(order);
+            }
+        }
+        return toVOList(visibleOrders, userId, false);
     }
 
     private List<CarpoolOrderVO> toVOList(List<CarpoolOrder> list, Long userId, boolean withPassengers) {

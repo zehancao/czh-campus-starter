@@ -80,9 +80,16 @@ struct CCard {
 struct ComplaintDlg {
   private controller?: CustomDialogController
   private dName: string = ''
+  private initialReason: string = ''
   private onSubmit?: (reason: string) => void
 
   @State private reason: string = ''
+
+  aboutToAppear(): void {
+    if (this.reason.length === 0 && this.initialReason.length > 0) {
+      this.reason = this.initialReason
+    }
+  }
 
   build() {
     Column() {
@@ -141,6 +148,7 @@ struct MyComplaintsPage {
   private dId: number = 0
   private dName: string = ''
   private pId: number = 0
+  private reasonPrefix: string = ''
 
   aboutToAppear(): void {
     try {
@@ -149,6 +157,7 @@ struct MyComplaintsPage {
         this.dId = p['defendantId'] !== undefined ? Number(p['defendantId']) : 0
         this.dName = (p['defendantName'] as string) ?? ''
         this.pId = p['productId'] !== undefined ? Number(p['productId']) : 0
+        this.reasonPrefix = (p['reasonPrefix'] as string) ?? ''
       }
     } catch (e) {}
     if (!AppStore.getInstance().isLoggedIn) { this.loading = false; return }
@@ -196,10 +205,11 @@ struct MyComplaintsPage {
     this.dlgController = new CustomDialogController({
       builder: ComplaintDlg({
         dName: this.dName,
+        initialReason: this.reasonPrefix,
         onSubmit: (reason: string) => this.doSubmit(reason)
       }),
       autoCancel: true,
-      cancel: () => { this.dId = 0; this.dName = ''; this.pId = 0 },
+      cancel: () => { this.dId = 0; this.dName = ''; this.pId = 0; this.reasonPrefix = '' },
       alignment: DialogAlignment.Bottom,
       customStyle: true
     })
@@ -212,7 +222,7 @@ struct MyComplaintsPage {
     const res = await ApiService.submitComplaint(p)
     if (res.code === 200) {
       promptAction.showToast({ message: '投诉已提交，等待管理员审核', duration: 2000 })
-      this.dId = 0; this.dName = ''; this.pId = 0
+      this.dId = 0; this.dName = ''; this.pId = 0; this.reasonPrefix = ''
       this.loadAll()
     } else {
       AlertDialog.show({ message: res.msg || '提交失败', confirm: { value: '好的', action: () => {} } })

@@ -651,6 +651,14 @@ export class ApiService {
     return ApiService.request(http.RequestMethod.POST, '/api/user/update-name', body, true);
   }
 
+  static async updateProfile(name: string, phone: string): Promise<ApiResult> {
+    const body: Record<string, Object> = {
+      'name': name,
+      'phone': phone,
+    };
+    return ApiService.request(http.RequestMethod.POST, '/api/user/update-profile', body, true);
+  }
+
   static async uploadAvatar(uri: string): Promise<string> {
     return ApiService.uploadFile('/api/user/upload-avatar', uri);
   }

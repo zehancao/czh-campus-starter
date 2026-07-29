@@ -1,9 +1,8 @@
 import { router } from '@kit.ArkUI';
-import { ApiService, ApiResult } from '../service/ApiService';
+import { ApiService } from '../service/ApiService';
 import { CarpoolOrder } from '../model/Models';
 import { Theme, ShadowStyle } from '../common/Theme';
 import { NavHeader } from '../common/NavHeader';
-import { AppStore } from '../service/AppStore';
 
 const STATUS_TABS: string[] = ['全部', '招募中', '已满', '已出发'];
 const STATUS_VALUES: number[] = [-1, 0, 1, 2];
@@ -33,7 +32,6 @@ struct CarpoolCard {
   private onTapCallback?: () => void;
   private onJoinCallback?: () => void;
   private onCancelJoinCallback?: () => void;
-  private onDeleteCallback?: () => void;
 
   build() {
     Column() {
@@ -43,16 +41,6 @@ struct CarpoolCard {
         Text(this.formatTime(this.itemData.createTime))
           .fontSize(11).fontColor(Theme.textTertiary).margin({ left: 8 })
         Blank()
-        if (AppStore.getInstance().isLoggedIn && AppStore.getInstance().userInfo.id === this.itemData.userId) {
-          Text('删除')
-            .fontSize(12).fontColor(Theme.textTertiary)
-            .margin({ right: 8 })
-            .onClick(() => {
-              if (this.onDeleteCallback !== undefined) {
-                this.onDeleteCallback();
-              }
-            })
-        }
         Text(STATUS_LABELS[`${this.itemData.status}`] ?? '未知')
           .fontSize(10).fontWeight(FontWeight.Medium)
           .fontColor(STATUS_COLORS[`${this.itemData.status}`] ?? Theme.textTertiary)
@@ -278,35 +266,6 @@ struct CarpoolPage {
     }
   }
 
-  private confirmDeleteCarpool(item: CarpoolOrder): void {
-    AlertDialog.show({
-      message: '确定删除这条拼车信息吗？',
-      primaryButton: {
-        value: '取消',
-        action: () => {}
-      },
-      secondaryButton: {
-        value: '删除',
-        action: () => { this.doDeleteCarpool(item.id) }
-      }
-    });
-  }
-
-  private async doDeleteCarpool(orderId: number): Promise<void> {
-    const result: ApiResult = await ApiService.deleteCarpool(orderId);
-    if (result.code === 200) {
-      this.getUIContext().getPromptAction().showToast({ message: '删除成功', duration: 1500 });
-      if (this.showMine) {
-        this.loadMyOrders();
-      } else {
-        this.refreshList();
-      }
-    } else {
-      const msg: string = result.msg ?? '删除失败';
-      this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
-    }
-  }
-
   build() {
     Column() {
       NavHeader({ title: '拼车' }) {
@@ -373,11 +332,10 @@ struct CarpoolPage {
                   itemData: item,
                   onTapCallback: () => this.goToDetail(item),
                   onJoinCallback: () => this.joinOrder(item),
-                  onCancelJoinCallback: () => this.cancelJoinOrder(item),
-                  onDeleteCallback: () => this.confirmDeleteCarpool(item)
+                  onCancelJoinCallback: () => this.cancelJoinOrder(item)
                 })
               }
-            }, (item: CarpoolOrder) => `${item.id}`)
+            }, (item: CarpoolOrder) => `${item.id}-${item.status}-${item.currentPassengers}-${item.joined}`)
           } else {
             ListItem() {
               Column() {

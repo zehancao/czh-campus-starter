@@ -103,6 +103,21 @@ public class UserController {
         return Result.ok();
     }
 
+    @PostMapping("/update-profile")
+    public Result<Void> updateProfile(HttpServletRequest request, @RequestBody Map<String, String> body) {
+        Long userId = (Long) request.getAttribute("userId");
+        String name = body.get("name");
+        String phone = body.get("phone");
+        if (name == null || name.trim().isEmpty()) {
+            return Result.error(400, "用户名不能为空");
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            return Result.error(400, "手机号不能为空");
+        }
+        userService.updateProfile(userId, name.trim(), phone.trim());
+        return Result.ok();
+    }
+
     @PostMapping("/update-avatar")
     public Result<Void> updateAvatar(HttpServletRequest request, @RequestBody Map<String, String> body) {
         Long userId = (Long) request.getAttribute("userId");

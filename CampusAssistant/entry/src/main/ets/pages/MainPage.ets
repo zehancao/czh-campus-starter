@@ -615,7 +615,7 @@ struct MainPage {
 
   private async loadAllData(): Promise<void> {
     this.isRefreshing = true;
-    await Promise.all([this.loadSchedule(), this.loadAnnouncements(), this.refreshProducts(), this.loadMyActivities(), this.loadUnreadCount()]);
+    await Promise.all([this.loadSchedule(), this.loadAnnouncements(), this.refreshProducts(), this.loadMyActivities(), this.loadMyCarpools(), this.loadUnreadCount()]);
     this.isRefreshing = false;
   }
 
@@ -645,7 +645,7 @@ struct MainPage {
     if (!store.isLoggedIn) return;
     const result: ApiResult = await ApiService.getMyCarpoolOrders();
     if (result.code === 200 && result.data !== undefined) {
-      this.myCarpools = ApiService.parseCarpoolOrders(result.data);
+      this.myCarpools = ApiService.parseCarpoolOrders(result.data).filter((item: CarpoolOrder) => item.status !== 3 && item.joined);
     }
   }
 

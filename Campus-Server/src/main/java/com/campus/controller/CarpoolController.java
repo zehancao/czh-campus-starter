@@ -58,7 +58,7 @@ public class CarpoolController {
     public Result<Boolean> delete(@RequestAttribute("userId") Long userId,
                                    @RequestParam Long orderId) {
         boolean ok = carpoolService.delete(userId, orderId);
-        if (!ok) return Result.error(400, "删除失败（非作者或拼车单不存在）");
+        if (!ok) return Result.error(400, "删除失败（请先取消拼车，或拼车单不存在/非作者）");
         return Result.ok(true);
     }
 
