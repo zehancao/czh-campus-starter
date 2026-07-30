@@ -6,6 +6,17 @@
     </n-card>
 
     <n-modal
+      v-model:show="showImagePreview"
+      preset="card"
+      :bordered="false"
+      style="width: auto; max-width: 90vw"
+      :show-cancel="false"
+      :show-confirm="false"
+    >
+      <img :src="previewImageUrl" style="max-width: 100%; max-height: 70vh; display: block; margin: 0 auto" />
+    </n-modal>
+
+    <n-modal
       v-model:show="showReviewModal"
       preset="card"
       title="投诉审核"
@@ -56,7 +67,34 @@
                 </div>
                 <div class="message-bubble" :class="{ defendant: msg.senderRole === 'defendant' }">
                   <template v-if="msg.msgType === 'image'">
-                    [图片] {{ msg.content }}
+                    <img
+                      :src="normalizeImageUrl(msg.content)"
+                      class="chat-image"
+                      @click="previewImage(normalizeImageUrl(msg.content))"
+                    />
+                  </template>
+                  <template v-else-if="msg.msgType === 'product'">
+                    <div class="product-card">
+                      <img
+                        v-if="parseProductCard(msg.content).image"
+                        :src="normalizeImageUrl(parseProductCard(msg.content).image)"
+                        class="product-card-img"
+                      />
+                      <div v-else class="product-card-placeholder">商</div>
+                      <div class="product-card-info">
+                        <div class="product-card-title">{{ parseProductCard(msg.content).title || '商品卡片' }}</div>
+                        <div class="product-card-price">¥{{ parseProductCard(msg.content).price.toFixed(2) }}</div>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else-if="msg.msgType === 'video'">
+                    <div class="video-card">
+                      <span class="video-icon">▶</span>
+                      <div class="video-info">
+                        <div>视频</div>
+                        <div class="video-sub">已发送视频文件</div>
+                      </div>
+                    </div>
                   </template>
                   <template v-else>
                     {{ msg.content }}
@@ -108,6 +146,34 @@ const currentComplaint = ref<any | null>(null)
 const chatMessages = ref<any[]>([])
 const chatLoading = ref(false)
 const actionLoading = ref(false)
+const showImagePreview = ref(false)
+const previewImageUrl = ref('')
+
+function normalizeImageUrl(url: string) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url
+}
+
+function parseProductCard(content: string) {
+  try {
+    const obj = JSON.parse(content)
+    return {
+      productId: obj.productId ?? 0,
+      title: obj.title || '',
+      price: typeof obj.price === 'number' ? obj.price : parseFloat(obj.price) || 0,
+      image: obj.image || '',
+      status: obj.status ?? 1,
+    }
+  } catch {
+    return { productId: 0, title: content, price: 0, image: '', status: 1 }
+  }
+}
+
+function previewImage(url: string) {
+  previewImageUrl.value = url
+  showImagePreview.value = true
+}
 
 async function fetchComplaints() {
   const res = await fetch('/api/complaint/list', {
@@ -292,6 +358,104 @@ onMounted(() => {
 
 .message-bubble.defendant {
   background: #e8f3ff;
+}
+
+.chat-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: cover;
+}
+
+.product-card {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  min-width: 220px;
+}
+
+.product-card-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.product-card-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  background: #ecf5ff;
+  color: #409eff;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.product-card-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.product-card-title {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.product-card-price {
+  font-size: 13px;
+  color: #f56c6c;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.video-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.video-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ecf5ff;
+  color: #409eff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-info div:first-child {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.video-sub {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
 }
 
 .review-actions {

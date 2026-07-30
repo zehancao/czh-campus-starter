@@ -43,6 +43,28 @@ public class ClubActivityService {
         return activity;
     }
 
+    public Map<String, List<String>> getClubList() {
+        List<String> preset = List.of("篮球", "排球", "足球", "羽毛球", "乒乓球", "剧本杀", "桌游", "唱歌", "学习", "琴棋书画", "电竞", "户外", "聚餐");
+        LambdaQueryWrapper<ClubActivity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(ClubActivity::getClub);
+        wrapper.isNotNull(ClubActivity::getClub);
+        wrapper.ne(ClubActivity::getClub, "");
+        wrapper.groupBy(ClubActivity::getClub);
+        wrapper.orderByAsc(ClubActivity::getClub);
+        List<ClubActivity> list = clubActivityMapper.selectList(wrapper);
+        List<String> custom = new ArrayList<>();
+        for (ClubActivity a : list) {
+            String club = a.getClub();
+            if (!preset.contains(club)) {
+                custom.add(club);
+            }
+        }
+        Map<String, List<String>> result = new HashMap<>();
+        result.put("preset", preset);
+        result.put("custom", custom);
+        return result;
+    }
+
     public List<ClubActivityVO> getList(String club, Integer status, Long userId) {
         LambdaQueryWrapper<ClubActivity> wrapper = new LambdaQueryWrapper<>();
         if (club != null && !club.isEmpty()) {

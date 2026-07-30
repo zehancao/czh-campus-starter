@@ -12,7 +12,7 @@ export interface ApiResult {
 }
 
 export class ApiService {
-  static baseUrl: string = 'http://192.168.117.1:8080';
+  static baseUrl: string = 'http://192.168.1.10:8080';
 
   static setBaseUrl(url: string): void {
     ApiService.baseUrl = url;
@@ -45,7 +45,21 @@ export class ApiService {
       const result: ApiResult = JSON.parse(resultStr) as ApiResult;
       return result;
     } catch (err) {
-      const errMsg: string = err !== null && err !== undefined ? String(err) : 'unknown';
+      let errMsg: string = '网络连接失败，请检查网络';
+      if (err !== null && err !== undefined) {
+        if (typeof err === 'string') {
+          errMsg = err;
+        } else if (typeof err === 'object') {
+          const errObj: Record<string, Object> = err as Record<string, Object>;
+          if (errObj['message'] !== undefined) {
+            errMsg = String(errObj['message']);
+          } else if (errObj['name'] !== undefined) {
+            errMsg = String(errObj['name']);
+          } else {
+            errMsg = '请求超时或网络异常';
+          }
+        }
+      }
       const errResult: ApiResult = { code: -1, msg: `网络错误: ${errMsg}`, data: undefined };
       promptAction.showToast({ message: errMsg, duration: 3000 });
       return errResult;
@@ -679,6 +693,10 @@ export class ApiService {
       'phone': phone,
     };
     return ApiService.request(http.RequestMethod.POST, '/api/user/update-phone', body, true);
+  }
+
+  static async getClubCategoryList(): Promise<ApiResult> {
+    return ApiService.request(http.RequestMethod.GET, '/api/club-activity/clubs', undefined, false);
   }
 
   static async getClubActivityList(club: string, status: number, page: number, size: number): Promise<ApiResult> {

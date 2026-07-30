@@ -23,7 +23,7 @@ public class FeedbackController {
             return Result.error("反馈内容不能为空");
         }
         try {
-            feedbackService.sendFeedback(userName, contact, content);
+            feedbackService.sendFeedbackAsync(userName, contact, content);
             return Result.ok("反馈已发送，感谢您的意见！");
         } catch (Exception e) {
             return Result.error("发送失败，请稍后重试");

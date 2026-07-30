@@ -19,17 +19,52 @@ struct ClubActivityListPage {
   @State currentPage: number = 1;
   @State hasMore: boolean = true;
   @State isLoadingMore: boolean = false;
-  private clubOptions: string[] = ['', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
-  private clubLabels: string[] = ['全部', '篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
+  @State clubCategories: string[] = ['篮球', '排球', '足球', '羽毛球', '乒乓球', '剧本杀', '桌游', '唱歌', '学习', '琴棋书画', '电竞', '户外', '聚餐'];
+  @State customCategories: string[] = [];
+  @State showCustomPanel: boolean = false;
   private statusValues: number[] = [0, 1, 2];
   private statusLabels: string[] = ['全部', '报名中', '已满'];
 
   aboutToAppear(): void {
+    this.loadCategories();
     this.refreshActivities();
   }
 
   onPageShow(): void {
     this.refreshActivities();
+  }
+
+  private async loadCategories(): Promise<void> {
+    const result: ApiResult = await ApiService.getClubCategoryList();
+    if (result.code === 200 && result.data !== undefined) {
+      const obj: Record<string, Object> = result.data as Record<string, Object>;
+      const presetObj: Object = obj['preset'];
+      const customObj: Object = obj['custom'];
+      if (presetObj !== undefined) {
+        const arr: Object[] = presetObj as Object[];
+        const list: string[] = [];
+        for (let i = 0; i < arr.length; i++) {
+          const s: string = arr[i] as string;
+          if (s.length > 0) {
+            list.push(s);
+          }
+        }
+        if (list.length > 0) {
+          this.clubCategories = list;
+        }
+      }
+      if (customObj !== undefined) {
+        const arr: Object[] = customObj as Object[];
+        const list: string[] = [];
+        for (let i = 0; i < arr.length; i++) {
+          const s: string = arr[i] as string;
+          if (s.length > 0) {
+            list.push(s);
+          }
+        }
+        this.customCategories = list;
+      }
+    }
   }
 
   private async refreshActivities(): Promise<void> {
@@ -212,13 +247,13 @@ struct ClubActivityListPage {
   build() {
     Column() {
       NavHeader({ title: '校园活动' }) {
-        Button('组局')
-          .height(36)
-          .fontSize(14)
+        Button('发布活动')
+          .height(32)
+          .fontSize(12)
           .fontColor(Color.White)
           .backgroundColor(Theme.primary)
-          .borderRadius(18)
-          .padding({ left: 16, right: 16 })
+          .borderRadius(16)
+          .padding({ left: 12, right: 12 })
           .onClick(() => {
             this.getUIContext().getRouter().pushUrl({ url: 'pages/ClubActivityPublishPage' });
           })
@@ -253,8 +288,18 @@ struct ClubActivityListPage {
       if (!this.showMine) {
         Scroll() {
           Row({ space: 8 }) {
-            ForEach(this.clubOptions, (club: string, index: number) => {
-              Text(this.clubLabels[index])
+            Text('全部')
+              .fontSize(13)
+              .fontColor(this.selectedClub === '' ? Color.White : Theme.textSecondary)
+              .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+              .backgroundColor(this.selectedClub === '' ? Theme.primary : Theme.bgInput)
+              .borderRadius(15)
+              .onClick(() => {
+                this.selectedClub = '';
+                this.refreshActivities();
+              })
+            ForEach(this.clubCategories, (club: string) => {
+              Text(club)
                 .fontSize(13)
                 .fontColor(this.selectedClub === club ? Color.White : Theme.textSecondary)
                 .padding({ left: 14, right: 14, top: 7, bottom: 7 })
@@ -264,7 +309,18 @@ struct ClubActivityListPage {
                   this.selectedClub = club;
                   this.refreshActivities();
                 })
-            }, (club: string, index: number) => `${index}-${club}`)
+            }, (club: string) => club)
+            if (this.customCategories.length > 0) {
+              Text('其他')
+                .fontSize(13)
+                .fontColor(this.showCustomPanel ? Color.White : Theme.textSecondary)
+                .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+                .backgroundColor(this.showCustomPanel ? Theme.primary : Theme.bgInput)
+                .borderRadius(15)
+                .onClick(() => {
+                  this.showCustomPanel = !this.showCustomPanel;
+                })
+            }
           }
           .padding({ left: 16, right: 16 })
         }
@@ -273,6 +329,27 @@ struct ClubActivityListPage {
         .width('100%')
         .height(44)
         .backgroundColor(Theme.bgCard)
+
+        if (this.showCustomPanel && this.customCategories.length > 0) {
+          Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Start }) {
+            ForEach(this.customCategories, (club: string) => {
+              Text(club)
+                .fontSize(13)
+                .fontColor(this.selectedClub === club ? Color.White : Theme.textSecondary)
+                .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+                .backgroundColor(this.selectedClub === club ? Theme.primary : Theme.bgInput)
+                .borderRadius(15)
+                .margin({ right: 8, bottom: 8 })
+                .onClick(() => {
+                  this.selectedClub = club;
+                  this.refreshActivities();
+                })
+            }, (club: string) => club)
+          }
+          .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+          .width('100%')
+          .backgroundColor(Theme.bgCard)
+        }
 
         Scroll() {
           Row({ space: 8 }) {

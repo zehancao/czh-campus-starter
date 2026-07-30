@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +25,11 @@ public class ClubActivityController {
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
+
+    @GetMapping("/clubs")
+    public Result<Map<String, List<String>>> getClubList() {
+        return Result.ok(clubActivityService.getClubList());
+    }
 
     @GetMapping("/list")
     public Result<List<ClubActivityVO>> getList(

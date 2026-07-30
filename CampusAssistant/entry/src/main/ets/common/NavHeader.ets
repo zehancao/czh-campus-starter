@@ -35,7 +35,7 @@ export struct NavHeader {
         Row() {
           this.rightSlot();
         }
-        .width(44)
+        .constraintSize({ minWidth: 44 })
         .height(44)
         .justifyContent(FlexAlign.End)
         .alignItems(VerticalAlign.Center)
